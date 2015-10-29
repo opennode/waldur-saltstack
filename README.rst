@@ -1,22 +1,22 @@
-NodeConductor SaltMGMT
-======================
+NodeConductor SaltStack
+=======================
 
-NodeConductor SaltMGMT allows to manage saltstack driven infrastructure
+NodeConductor SaltStack allows to manage saltstack driven infrastructure
 
 
 Installation
 ------------
 
  * `Install NodeConductor <http://nodeconductor.readthedocs.org/en/latest/guide/intro.html#installation-from-source>`_
- * Clone NodeConductor SaltMGMT
+ * Clone NodeConductor SaltStack
 
   .. code-block:: bash
 
-    git clone git@code.opennodecloud.com:nodeconductor/nodeconductor-saltmgmt.git
+    git clone git@code.opennodecloud.com:nodeconductor/nodeconductor-saltstack.git
 
- * Install NodeConductor SaltMGMT into NodeConductor virtual environment
+ * Install NodeConductor SaltStack into NodeConductor virtual environment
 
   .. code-block:: bash
 
-    cd /path/to/saltmgmt/
+    cd /path/to/saltstack/
     python setup.py install
