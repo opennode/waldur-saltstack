@@ -4,13 +4,13 @@ from setuptools import setup, find_packages
 
 
 install_requires = [
-    'nodeconductor>=0.76.0',
+    'nodeconductor>=0.78.0',
 ]
 
 
 setup(
     name='nodeconductor-saltstack',
-    version='0.1.0',
+    version='0.1.1',
     author='OpenNode Team',
     author_email='info@opennodecloud.com',
     url='http://nodeconductor.com',
