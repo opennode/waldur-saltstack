@@ -1,6 +1,3 @@
-SaltStack service provides an interface to SaltStack master server.
-It allows to create and manage different resources via SaltStack.
-
 SaltStack services list
 -----------------------
 
@@ -156,16 +153,16 @@ Response example:
 
 .. code-block:: javascript
 
-[
-    {
-        "url": "http://example.com/api/saltstack-domains/24156c367e3a41eea81e374073fa1060/users/a67a5b55-bb5f-1259-60a2-562e3c88fb34/",
-        "id": "a67a5b55-bb5f-1259-60a2-562e3c88fb34",
-        "email": "joe@test.com",
-        "first_name": "Joe",
-        "last_name": "Doe",
-        "mailbox_size": "50"
-    }
-]
+    [
+        {
+            "url": "http://example.com/api/saltstack-domains/24156c367e3a41eea81e374073fa1060/users/a67a5b55-bb5f-1259-60a2-562e3c88fb34/",
+            "id": "a67a5b55-bb5f-1259-60a2-562e3c88fb34",
+            "email": "joe@test.com",
+            "first_name": "Joe",
+            "last_name": "Doe",
+            "mailbox_size": "50"
+        }
+    ]
 
 
 Create new domain mailbox
@@ -207,7 +204,7 @@ To delete domain mailbox - issue DELETE request against **/api/saltstack-domains
 
 
 Create a site
----------------
+-------------
 Site is a SaltStack resource which represents MS Sharepoint site.
 A new site can be created by users with project administrator role, customer owner role or with
 staff privilege (is_staff=True). To create a site, client must issue POST request to **/api/saltstack-sites/** with
