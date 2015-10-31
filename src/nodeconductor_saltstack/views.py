@@ -1,9 +1,9 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import decorators, exceptions, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.response import Response
 
 from nodeconductor.structure.managers import filter_queryset_for_user
-from nodeconductor.structure import ServiceBackendError, views as structure_views
+from nodeconductor.structure import views as structure_views
 from . import models, serializers
 
 
@@ -15,21 +15,6 @@ class SaltStackServiceViewSet(structure_views.BaseServiceViewSet):
 class SaltStackServiceProjectLinkViewSet(structure_views.BaseServiceProjectLinkViewSet):
     queryset = models.SaltStackServiceProjectLink.objects.all()
     serializer_class = serializers.ServiceProjectLinkSerializer
-
-
-class SaltResourceViewSet(object):
-
-    @decorators.detail_route(methods=['post'])
-    def pshell(self, request, uuid=None):
-        resource = self.get_object()
-        backend = resource.get_backend()
-
-        try:
-            result = backend.hook('pshell')
-        except ServiceBackendError as e:
-            raise exceptions.APIException(e)
-
-        return Response(result)
 
 
 class DomainViewSet(structure_views.BaseResourceViewSet):
