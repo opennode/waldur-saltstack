@@ -3,6 +3,10 @@
 from setuptools import setup, find_packages
 
 
+dev_requires = [
+    'Sphinx==1.2.2',
+]
+
 install_requires = [
     'nodeconductor>=0.78.0',
 ]
@@ -20,10 +24,9 @@ setup(
     packages=find_packages('src', exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=install_requires,
     zip_safe=False,
-    # extras_require={
-    #     'test': tests_requires,
-    #     'dev': dev_requires,
-    # },
+    extras_require={
+        'dev': dev_requires,
+    },
     entry_points={
         'nodeconductor_extensions': (
             'nodeconductor_saltstack = nodeconductor_saltstack.urls',
