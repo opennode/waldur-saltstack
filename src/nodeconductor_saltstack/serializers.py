@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.reverse import reverse
 
 from nodeconductor.structure import serializers as structure_serializers
 from nodeconductor.structure import SupportedServices
