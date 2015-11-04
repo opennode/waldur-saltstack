@@ -29,7 +29,7 @@ setup(
     },
     entry_points={
         'nodeconductor_extensions': (
-            'nodeconductor_saltstack = nodeconductor_saltstack.urls',
+            'nodeconductor_saltstack = nodeconductor_saltstack.extension:SaltStackExtension',
         ),
     },
     # tests_require=tests_requires,
