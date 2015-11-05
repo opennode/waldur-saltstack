@@ -1,6 +1,8 @@
 from django.db import models
 
-from nodeconductor.structure import models as structure_models
+from nodeconductor.billing.models import PaidResource
+from nodeconductor.cost_tracking import CostConstants
+from nodeconductor.structure import ServiceBackend, models as structure_models
 
 
 class SaltStackService(structure_models.Service):
@@ -25,9 +27,15 @@ class SaltStackServiceProjectLink(structure_models.ServiceProjectLink):
         return 'saltstack-spl'
 
 
-class Domain(structure_models.Resource):
+class Domain(PaidResource, structure_models.Resource):
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='domains', on_delete=models.PROTECT)
+
+    def get_usage_state(self):
+        return {
+            CostConstants.PriceItem.USERS: 0,                          # XXX: get users count from backend
+            CostConstants.PriceItem.STORAGE: ServiceBackend.mb2gb(0),  # XXX: get storage size from backend
+        }
 
     @classmethod
     def get_url_name(cls):
@@ -37,9 +45,15 @@ class Domain(structure_models.Resource):
         return super(Domain, self).get_backend(target=self.service_project_link.exchange_target)
 
 
-class Site(structure_models.Resource):
+class Site(PaidResource, structure_models.Resource):
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='sites', on_delete=models.PROTECT)
+
+    def get_usage_state(self):
+        return {
+            CostConstants.PriceItem.USAGE: 1,
+            CostConstants.PriceItem.STORAGE: ServiceBackend.mb2gb(0),  # XXX: get storage size from backend
+        }
 
     @classmethod
     def get_url_name(cls):
