@@ -9,7 +9,6 @@ dev_requires = [
 
 install_requires = [
     'nodeconductor>=0.79.0',
-    'salt-pepper>=0.4.0',
 ]
 
 

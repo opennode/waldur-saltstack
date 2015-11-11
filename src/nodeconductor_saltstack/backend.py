@@ -1,8 +1,9 @@
 import json
 import logging
+import requests
 
-from pepper import Pepper
 from nodeconductor.structure import ServiceBackend, ServiceBackendError
+from nodeconductor import __version__
 
 from .models import Domain, Site
 
@@ -44,24 +45,49 @@ class SaltStackBaseBackend(ServiceBackend):
 
 class SaltStackRealBackend(SaltStackBaseBackend):
 
-    @property
-    def manager(self):
-        manager = Pepper(self.settings.backend_url)
-        manager.login(self.settings.username, self.settings.password, 'pam')
-        return manager
+    def request(self, url, data=None):
+        if not data:
+            data = {}
+
+        data.update({
+            'username': self.settings.username,
+            'password': self.settings.password,
+            'eauth': 'pam'
+        })
+
+        headers = {
+            'User-Agent': 'NodeConductor/%s' % __version__,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        }
+
+        url = self.settings.backend_url.rstrip('/') + url
+        response = requests.post(url, data=json.dumps(data).encode(), headers=headers, verify=False)
+
+        if response.ok:
+            return response.json()
+        else:
+            raise SaltStackBackendError(
+                "Request to salt API %s failed: %s %s" % (url, response.response, response.text))
 
     def _run_cmd(self, tgt, cmd, **kwargs):
         command = 'powershell.exe -f D:\\SaaS\\bin\\%s.ps1 %s' % (
             self._get_cmd(cmd), ' '.join(['-%s "%s"' % (k, v) for k, v in kwargs.items()]))
-        response = json.loads(self.manager.local(tgt, 'cmd.run', command)['return'][0][tgt])
+        response = self.request('/run', {
+            'client': 'local',
+            'fun': 'cmd.run',
+            'tgt': tgt,
+            'arg': command,
+        })
 
-        if response['Status'] == 'OK':
-            return response['Output']
+        result = json.loads(response['return'][0][tgt])
+        if result['Status'] == 'OK':
+            return result['Output']
         else:
             raise SaltStackBackendError(
-                "Cannot run command %s on %s: %s" % (cmd, tgt, response['Output']))
+                "Cannot run command %s on %s: %s" % (cmd, tgt, result['Output']))
 
-        return json.loads(response)
+        return json.loads(result)
 
     def _get_cmd(self, cmd):
         # https://confluence.nortal.com/pages/viewpage.action?title=Provisioning+scripts&spaceKey=ITACLOUD
