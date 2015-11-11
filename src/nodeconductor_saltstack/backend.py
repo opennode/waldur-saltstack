@@ -1,8 +1,8 @@
+import json
 import logging
-import requests
 
+from pepper import Pepper
 from nodeconductor.structure import ServiceBackend, ServiceBackendError
-from nodeconductor import __version__
 
 from .models import Domain, Site
 
@@ -26,9 +26,8 @@ class SaltStackBackend(object):
 
 class SaltStackBaseBackend(ServiceBackend):
 
-    def __init__(self, settings, target=None):
+    def __init__(self, settings):
         self.settings = settings
-        self.target = target
 
     def provision(self, resource, **kwargs):
         # XXX: to be implemented
@@ -45,31 +44,43 @@ class SaltStackBaseBackend(ServiceBackend):
 
 class SaltStackRealBackend(SaltStackBaseBackend):
 
-    def request(self, url, data=None, verify=False, **kwargs):
-        headers = {'User-Agent': 'NodeConductor/%s' % __version__,
-                   'Content-Type': 'application/x-www-form-urlencoded',
-                   'Accept': 'application/json'}
+    @property
+    def manager(self):
+        manager = Pepper(self.settings.backend_url)
+        manager.login(self.settings.username, self.settings.password, 'pam')
+        return manager
 
-        if not data:
-            data = {}
+    def _run_cmd(self, tgt, cmd, **kwargs):
+        command = 'powershell.exe -f D:\\SaaS\\bin\\%s.ps1 %s' % (
+            self._get_cmd(cmd), ' '.join(['-%s "%s"' % (k, v) for k, v in kwargs.items()]))
+        response = json.loads(self.manager.local(tgt, 'cmd.run', command)['return'][0][tgt])
 
-        data['tgt'] = self.target
-        data['secretkey'] = self.settings.password
-
-        url = self.settings.backend_url.rstrip('/') + url
-        response = requests.post(url, data=data, headers=headers, verify=verify)
-
-        if response.ok:
-            result = response.json()
-            if not result['success']:
-                raise SaltStackBackendError('Wrong response from salt API %s: %s' % (url, response.text))
-            else:
-                return result
+        if response['Status'] == 'OK':
+            return response['Output']
         else:
-            raise SaltStackBackendError('Request to salt API %s failed: %s' % (url, response.text))
+            raise SaltStackBackendError(
+                "Cannot run command %s on %s: %s" % (cmd, tgt, response['Output']))
 
-    def hook(self, name):
-        return self.request('/hook/%s' % name)
+        return json.loads(response)
+
+    def _get_cmd(self, cmd):
+        # https://confluence.nortal.com/pages/viewpage.action?title=Provisioning+scripts&spaceKey=ITACLOUD
+        # The list of supported commands with ability to overwrite their backend names
+        options = self.settings.options or {}
+        MAPPING = options.get('commands_mapping') or {
+            'AddUser': None,
+            'DelUser': None,
+            'SomeCommand': 'SomeCommandFixed',
+        }
+        return MAPPING.get(cmd) or cmd
+
+    def run_exchange(self, cmd, **kwargs):
+        options = self.settings.options or {}
+        return self._run_cmd(options.get('exchange_target', ''), cmd, **kwargs)
+
+    def run_sharepoint(self, cmd, **kwargs):
+        options = self.settings.options or {}
+        return self._run_cmd(options.get('sharepoint_target', ''), cmd, **kwargs)
 
     def list_users(self):
         return []
@@ -77,11 +88,23 @@ class SaltStackRealBackend(SaltStackBaseBackend):
     def get_user(self, user_id):
         return {}
 
-    def delete_user(self, user_id):
-        pass
+    def delete_user(self, username):
+        return self.run_exchange(
+            'DelUser',
+            UserName=username,
+        )
 
-    def create_user(self, **kwargs):
-        return {}
+    def create_user(self, tenant=None, domain=None, username=None, first_name=None, last_name=None):
+        return self.run_exchange(
+            'AddUser',
+            TenantName=tenant,
+            TenantDomain=domain,
+            UserName=username,
+            UserFirstName=first_name,
+            UserLastName=last_name,
+            DisplayName="%s %s" % (first_name, last_name),
+            UserInitials="%s %s" % (first_name[0], last_name[0]),
+        )
 
 
 class SaltStackDummyBackend(SaltStackBaseBackend):
