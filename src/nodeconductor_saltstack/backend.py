@@ -1,3 +1,4 @@
+import json
 import logging
 import requests
 
@@ -24,11 +25,63 @@ class SaltStackBackend(object):
         return getattr(self.backend, name)
 
 
-class SaltStackBaseBackend(ServiceBackend):
+class SaltStackAPI(object):
 
-    def __init__(self, settings, target=None):
-        self.settings = settings
+    COMMAND = 'powershell.exe -f D:\\SaaS\\bin\\{name}.ps1 {args}'
+    MAPPING = {}
+
+    def __init__(self, api_url, username, password, target, cmd_mapping=None):
+        self.api_url = api_url.rstrip('/')
         self.target = target
+        self.auth = {'username': username, 'password': password, 'eauth': 'pam'}
+
+        if cmd_mapping and isinstance(cmd_mapping, dict):
+            self.MAPPING = cmd_mapping
+
+    def request(self, url, data=None):
+        if not data:
+            data = {}
+
+        data.update(self.auth)
+
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'NodeConductor/%s' % __version__,
+        }
+
+        response = requests.post(
+            self.api_url + url, data=json.dumps(data).encode(), headers=headers, verify=False)
+
+        if response.ok:
+            return response.json()
+        else:
+            raise SaltStackBackendError(
+                "Request to salt API %s failed: %s %s" % (url, response.response, response.text))
+
+    def run_cmd(self, cmd, **kwargs):
+        command = self.COMMAND.format(
+            name=self.MAPPING.get(cmd) or cmd,
+            args=' '.join(['-%s "%s"' % (k, v) for k, v in kwargs.items()]))
+
+        response = self.request('/run', {
+            'client': 'local',
+            'fun': 'cmd.run',
+            'tgt': self.target,
+            'arg': command,
+        })
+
+        result = json.loads(response['return'][0][self.target])
+        if result['Status'] == 'OK':
+            return result['Output']
+        else:
+            raise SaltStackBackendError(
+                "Cannot run command %s on %s: %s" % (cmd, self.target, result['Output']))
+
+        return json.loads(result)
+
+
+class SaltStackBaseBackend(ServiceBackend):
 
     def provision(self, resource, **kwargs):
         # XXX: to be implemented
@@ -45,43 +98,50 @@ class SaltStackBaseBackend(ServiceBackend):
 
 class SaltStackRealBackend(SaltStackBaseBackend):
 
-    def request(self, url, data=None, verify=False, **kwargs):
-        headers = {'User-Agent': 'NodeConductor/%s' % __version__,
-                   'Content-Type': 'application/x-www-form-urlencoded',
-                   'Accept': 'application/json'}
+    class Exchange(SaltStackAPI):
 
-        if not data:
-            data = {}
+        MAPPING = {
+            'AddUser': None,
+            'DelUser': None,
+        }
 
-        data['tgt'] = self.target
-        data['secretkey'] = self.settings.password
+        def list_users(self):
+            return []
 
-        url = self.settings.backend_url.rstrip('/') + url
-        response = requests.post(url, data=data, headers=headers, verify=verify)
+        def get_user(self, user_id):
+            return {}
 
-        if response.ok:
-            result = response.json()
-            if not result['success']:
-                raise SaltStackBackendError('Wrong response from salt API %s: %s' % (url, response.text))
-            else:
-                return result
-        else:
-            raise SaltStackBackendError('Request to salt API %s failed: %s' % (url, response.text))
+        def delete_user(self, username):
+            return self.run_cmd(
+                'DelUser',
+                UserName=username,
+            )
 
-    def hook(self, name):
-        return self.request('/hook/%s' % name)
+        def create_user(self, tenant=None, domain=None, username=None, first_name=None, last_name=None):
+            return self.run_cmd(
+                'AddUser',
+                TenantName=tenant,
+                TenantDomain=domain,
+                UserName=username,
+                UserFirstName=first_name,
+                UserLastName=last_name,
+                DisplayName="%s %s" % (first_name, last_name),
+                UserInitials="%s %s" % (first_name[0], last_name[0]),
+            )
 
-    def list_users(self):
-        return []
-
-    def get_user(self, user_id):
-        return {}
-
-    def delete_user(self, user_id):
+    class Sharepoint(SaltStackAPI):
         pass
 
-    def create_user(self, **kwargs):
-        return {}
+    def __init__(self, settings):
+        options = settings.options or {}
+        self.settings = settings
+        self.exchange = self.Exchange(
+            settings.backend_url, settings.username, settings.password,
+            options.get('exchange_target', ''), options.get('exchange_mapping'))
+
+        self.sharepoint = self.Sharepoint(
+            settings.backend_url, settings.username, settings.password,
+            options.get('sharepoint_target', ''), options.get('sharepoint_mapping'))
 
 
 class SaltStackDummyBackend(SaltStackBaseBackend):

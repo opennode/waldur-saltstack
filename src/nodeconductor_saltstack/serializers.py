@@ -15,8 +15,14 @@ class ServiceSerializer(structure_serializers.BaseServiceSerializer):
 
     SERVICE_TYPE = SupportedServices.Types.SaltStack
     SERVICE_ACCOUNT_FIELDS = {
-        'backend_url': 'URL for slat master API (required, e.g.: http://salt-master.example.com:8080)',
-        'password': 'Secret key',
+        'backend_url': 'URL for SaltStack master API (required, e.g.: http://salt-master.example.com:8080)',
+        'username': 'PAM user account with access to SaltStack API',
+        'password': '',
+    }
+
+    SERVICE_ACCOUNT_EXTRA_FIELDS = {
+        'exchange_target': 'Salt minion target with MS Exchange Domains',
+        'sharepoint_target': 'Salt minion target with MS Sharepoint Sites',
     }
 
     class Meta(structure_serializers.BaseServiceSerializer.Meta):
@@ -32,8 +38,6 @@ class ServiceProjectLinkSerializer(structure_serializers.BaseServiceProjectLinkS
         extra_kwargs = {
             'service': {'lookup_field': 'uuid', 'view_name': 'saltstack-detail'},
         }
-        fields = structure_serializers.BaseServiceProjectLinkSerializer.Meta.fields + (
-            'exchange_target', 'sharepoint_target')
 
 
 class DomainSerializer(structure_serializers.BaseResourceSerializer):

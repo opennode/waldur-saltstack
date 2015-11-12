@@ -50,7 +50,7 @@ class DomainUserViewSet(viewsets.ViewSet):
         super(DomainUserViewSet, self).initial(request, domain_uuid, *args, **kwargs)
         queryset = filter_queryset_for_user(models.Domain.objects.all(), request.user)
         self.domain = get_object_or_404(queryset, uuid=domain_uuid)
-        self.backend = self.domain.get_backend()
+        self.backend = self.domain.get_backend().exchange
 
     def get_serializer_context(self):
         return {'domain': self.domain, 'request': self.request}
