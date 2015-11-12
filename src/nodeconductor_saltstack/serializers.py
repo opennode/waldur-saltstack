@@ -15,8 +15,8 @@ class ServiceSerializer(structure_serializers.BaseServiceSerializer):
 
     SERVICE_TYPE = SupportedServices.Types.SaltStack
     SERVICE_ACCOUNT_FIELDS = {
-        'backend_url': 'URL for slat master API (required, e.g.: http://salt-master.example.com:8080)',
-        'username': '',
+        'backend_url': 'URL for SaltStack master API (required, e.g.: http://salt-master.example.com:8080)',
+        'username': 'PAM user account with access to SaltStack API',
         'password': '',
     }
 
