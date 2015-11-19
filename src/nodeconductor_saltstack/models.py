@@ -1,6 +1,5 @@
 from django.db import models
 
-from nodeconductor.billing.models import PaidResource
 from nodeconductor.structure import models as structure_models
 
 
@@ -21,7 +20,7 @@ class SaltStackServiceProjectLink(structure_models.ServiceProjectLink):
         return 'saltstack-spl'
 
 
-class Domain(PaidResource, structure_models.Resource):
+class Domain(structure_models.Resource, structure_models.PaidResource):
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='domains', on_delete=models.PROTECT)
 
@@ -30,7 +29,7 @@ class Domain(PaidResource, structure_models.Resource):
         return 'saltstack-domains'
 
 
-class Site(PaidResource, structure_models.Resource):
+class Site(structure_models.Resource, structure_models.PaidResource):
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='sites', on_delete=models.PROTECT)
 
