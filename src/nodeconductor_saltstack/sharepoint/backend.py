@@ -11,7 +11,6 @@ class SharepointBackend(SaltStackBaseBackend):
 
     TARGET_OPTION_NAME = 'sharepoint_target'
     MAPPING_OPTION_NAME = 'sharepoint_mapping'
-
-    @property
-    def api(self):
-        return self.get_api(SharepointAPI)
+    API = {
+        'api': SharepointAPI,
+    }

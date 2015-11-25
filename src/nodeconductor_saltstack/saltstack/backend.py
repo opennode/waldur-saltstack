@@ -30,16 +30,19 @@ class SaltStackBaseBackend(ServiceBackend):
 
     TARGET_OPTION_NAME = NotImplemented
     MAPPING_OPTION_NAME = NotImplemented
-
-    def get_api(self, api_cls):
-        return api_cls(
-            self.settings.backend_url, self.settings.username, self.settings.password,
-            self.options.get(self.TARGET_OPTION_NAME, ''),
-            self.options.get(self.MAPPING_OPTION_NAME))
+    API = {}
 
     def __init__(self, settings):
-        self.options = settings.options or {}
         self.settings = settings
+
+        options = settings.options or {}
+        for name, api_cls in self.API.items():
+            api = api_cls(
+                settings.backend_url, settings.username, settings.password,
+                options.get(self.TARGET_OPTION_NAME, ''),
+                options.get(self.MAPPING_OPTION_NAME))
+
+            setattr(self, name, api)
 
 
 class SaltStackAPI(object):
@@ -110,53 +113,53 @@ class SaltStackAPI(object):
 class BackendAPIMetaclass(type):
     """ Creates API methods according to provided mappings. """
 
-    @staticmethod
-    def obj2dict(obj, reverse=False):
-        result = {}
-        for key, val in obj.__dict__.items():
-            if not key.startswith('_'):
-                if reverse:
-                    if not isinstance(val, tuple):
-                        val = (val,)
-                    for v in val:
-                        result[v] = key
-                else:
-                    result[key] = val[0] if isinstance(val, tuple) else val
-        return result
+    obj2dict = staticmethod(lambda obj: {k: v for k, v in obj.__dict__.items() if not k.startswith('_')})
 
     def __new__(cls, name, bases, cls_args):
-        fields = cls_args.pop('Fields')
         methods = cls.obj2dict(cls_args.pop('Methods'))
-        fields_forth = cls.obj2dict(fields)
-        fields_back = cls.obj2dict(fields, reverse=True)
 
-        def create_entity(entity):
+        def create_entity(entity, mapping, clean=None):
+            if not mapping:
+                return None
+
             opts = {}
             for key, val in entity.items():
-                if key in fields_back:
-                    opts[fields_back[key]] = val
+                if key in mapping:
+                    if clean and key in clean:
+                        val = clean[key](val)
+                    opts[mapping[key]] = val
                 else:
                     logger.debug(
                         "Unknown field %s in method %s.%s output" % (key, name, fn_name.lower()))
 
             return type(name.replace('API', ''), (object,), opts)
 
-        for fn_name, method_name in methods.items():
+        for fn_name, method in methods.items():
+            inp = method.get('input') or {}
+            out = method.get('output')
+            clean = method.get('clean')
+
             def method_fn(self, **kwargs):
                 opts = {}
+
+                if 'defaults' in method:
+                    for opt in method['defaults']:
+                        if opt not in kwargs:
+                            kwargs[opt] = method['defaults'][opt].format(**kwargs)
+
                 for opt, val in kwargs.items():
-                    if opt in fields_forth:
-                        opts[fields_forth[opt]] = val
+                    if opt in inp:
+                        opts[inp[opt]] = val
                     else:
                         raise NotImplementedError(
                             "Unknow argument %s for method %s.%s" % (opt, name, fn_name.lower()))
 
-                results = self.run_cmd(method_name, **opts)
+                results = self.run_cmd(method['name'], **opts)
 
                 if isinstance(results, list):
-                    return [create_entity(entity) for entity in results]
+                    return [create_entity(entity, out, clean) for entity in results]
                 elif isinstance(results, dict):
-                    return create_entity(results)
+                    return create_entity(results, out, clean)
                 else:
                     raise RuntimeError(
                         "Wrong output for method %s.%s: %s" % (name, fn_name.lower(), results))
@@ -174,16 +177,18 @@ class SaltStackBaseAPI(SaltStackAPI):
             Example:
 
             class Methods:
-                ADD = 'AddUser'
-                LIST = 'UserList'
-        """
-
-    class Fields:
-        """ Fields mapping.
-            Example:
-
-            class Fields:
-                id = 'Guid'
-                email = 'Email Address'
-                name = 'DisplayName'
+                # method name as to be used within API
+                add = dict(
+                    name='AddTenant',  # command name to be called on backend
+                    input={  # input arguments mapping
+                        'tenant': 'TenantName',
+                        'domain': 'TenantDomain',
+                        'mailbox_size': 'TenantMailboxSize',
+                        'max_users': 'TenantMaxUsers',
+                    },
+                    output={   # input fields mapping
+                        'Accepted DomainName': 'domain',
+                        'DistinguishedName': 'dn',
+                    },
+                )
         """
