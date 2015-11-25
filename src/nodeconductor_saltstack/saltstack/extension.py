@@ -5,7 +5,7 @@ class SaltStackExtension(NodeConductorExtension):
 
     @staticmethod
     def django_app():
-        return 'nodeconductor_saltstack'
+        return 'nodeconductor_saltstack.saltstack'
 
     @staticmethod
     def rest_urls():
