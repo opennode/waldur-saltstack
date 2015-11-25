@@ -2,8 +2,10 @@ import json
 import logging
 import requests
 
+from django.utils import six
+
 from nodeconductor.structure import ServiceBackend, ServiceBackendError
-from nodeconductor import __version__
+from .. import __version__
 
 
 logger = logging.getLogger(__name__)
@@ -26,14 +28,14 @@ class SaltStackBackend(object):
 
 class SaltStackBaseBackend(ServiceBackend):
 
-    @property
-    def api(self):
-        return self._get_api(SaltStackAPI, '')
+    TARGET_OPTION_NAME = NotImplemented
+    MAPPING_OPTION_NAME = NotImplemented
 
-    def _get_api(self, api_cls, tgt_name, cmd_mapping=''):
+    def get_api(self, api_cls):
         return api_cls(
             self.settings.backend_url, self.settings.username, self.settings.password,
-            self.options.get(tgt_name, ''), self.options.get(cmd_mapping))
+            self.options.get(self.TARGET_OPTION_NAME, ''),
+            self.options.get(self.MAPPING_OPTION_NAME))
 
     def __init__(self, settings):
         self.options = settings.options or {}
@@ -51,7 +53,7 @@ class SaltStackAPI(object):
         self.auth = {'username': username, 'password': password, 'eauth': 'pam'}
 
         if not target:
-            raise SaltStackBackendError("Unknownt target, can't move on")
+            raise SaltStackBackendError("Unknown target, can't move on")
 
         if cmd_mapping and isinstance(cmd_mapping, dict):
             self.MAPPING = cmd_mapping
@@ -65,7 +67,7 @@ class SaltStackAPI(object):
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'User-Agent': 'NodeConductor/%s' % __version__,
+            'User-Agent': 'NodeConductorSaltStack/%s' % __version__,
         }
 
         response = requests.post(
@@ -89,7 +91,13 @@ class SaltStackAPI(object):
             'arg': command,
         })
 
-        result = json.loads(response['return'][0][self.target])
+        result = response['return'][0][self.target]
+        try:
+            result = json.loads(result)
+        except ValueError:
+            raise SaltStackBackendError(
+                "Error during execution of %s on %s: %s" % (cmd, self.target, result))
+
         if result['Status'] == 'OK':
             return result['Output']
         else:
@@ -97,3 +105,85 @@ class SaltStackAPI(object):
                 "Cannot run command %s on %s: %s" % (cmd, self.target, result['Output']))
 
         return json.loads(result)
+
+
+class BackendAPIMetaclass(type):
+    """ Creates API methods according to provided mappings. """
+
+    @staticmethod
+    def obj2dict(obj, reverse=False):
+        result = {}
+        for key, val in obj.__dict__.items():
+            if not key.startswith('_'):
+                if reverse:
+                    if not isinstance(val, tuple):
+                        val = (val,)
+                    for v in val:
+                        result[v] = key
+                else:
+                    result[key] = val[0] if isinstance(val, tuple) else val
+        return result
+
+    def __new__(cls, name, bases, cls_args):
+        fields = cls_args.pop('Fields')
+        methods = cls.obj2dict(cls_args.pop('Methods'))
+        fields_forth = cls.obj2dict(fields)
+        fields_back = cls.obj2dict(fields, reverse=True)
+
+        def create_entity(entity):
+            opts = {}
+            for key, val in entity.items():
+                if key in fields_back:
+                    opts[fields_back[key]] = val
+                else:
+                    logger.debug(
+                        "Unknown field %s in method %s.%s output" % (key, name, fn_name.lower()))
+
+            return type(name.replace('API', ''), (object,), opts)
+
+        for fn_name, method_name in methods.items():
+            def method_fn(self, **kwargs):
+                opts = {}
+                for opt, val in kwargs.items():
+                    if opt in fields_forth:
+                        opts[fields_forth[opt]] = val
+                    else:
+                        raise NotImplementedError(
+                            "Unknow argument %s for method %s.%s" % (opt, name, fn_name.lower()))
+
+                results = self.run_cmd(method_name, **opts)
+
+                if isinstance(results, list):
+                    return [create_entity(entity) for entity in results]
+                elif isinstance(results, dict):
+                    return create_entity(results)
+                else:
+                    raise RuntimeError(
+                        "Wrong output for method %s.%s: %s" % (name, fn_name.lower(), results))
+
+            cls_args[fn_name.lower()] = method_fn
+
+        return super(BackendAPIMetaclass, cls).__new__(cls, name, bases, cls_args)
+
+
+@six.add_metaclass(BackendAPIMetaclass)
+class SaltStackBaseAPI(SaltStackAPI):
+
+    class Methods:
+        """ Methods mapping.
+            Example:
+
+            class Methods:
+                ADD = 'AddUser'
+                LIST = 'UserList'
+        """
+
+    class Fields:
+        """ Fields mapping.
+            Example:
+
+            class Fields:
+                id = 'Guid'
+                email = 'Email Address'
+                name = 'DisplayName'
+        """
