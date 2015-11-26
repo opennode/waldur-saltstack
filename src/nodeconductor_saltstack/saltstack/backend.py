@@ -145,7 +145,7 @@ class SaltStackBaseAPI(SaltStackAPI):
             clean = fn_opts.get('clean')
 
             if not entity or not out:
-                return [] if fn_opts.get('many') else None
+                return None
 
             opts = {}
             for key, val in entity.items():
@@ -166,11 +166,7 @@ class SaltStackBaseAPI(SaltStackAPI):
                     info = ", ".join("%s=%s" % (k, getattr(self, k)) for k in reprkeys)
                     return "<%s %s>" % (self.__class__.__name__, info)
 
-            entity = type(name.replace('API', ''), (Entity,), {})(opts)
-            if fn_opts.get('many') and not isinstance(entity, list):
-                entity = [entity]
-
-            return entity
+            return type(name.replace('API', ''), (Entity,), {})(opts)
 
         def method_fn(self, fn_opts=(), **kwargs):
             inp = fn_opts.get('input') or {}
@@ -201,7 +197,8 @@ class SaltStackBaseAPI(SaltStackAPI):
             if isinstance(results, list):
                 return [create_entity(entity, fn_opts) for entity in results]
             elif isinstance(results, dict):
-                return create_entity(results, fn_opts)
+                entity = create_entity(results, fn_opts)
+                return [entity] if entity else [] if fn_opts.get('many') else entity
             else:
                 raise NotImplementedError(
                     "Wrong output for method %s.%s: %s" % (name, func, results))

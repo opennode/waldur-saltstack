@@ -82,7 +82,7 @@ class UserSerializer(PropertySerializer):
         tenant = self.context['resource']
         users = tenant.get_backend().users.list()
 
-        if users and "{first_name} {last_name}".format(attrs) in (u.name for u in users):
+        if users and "{first_name} {last_name}".format(**attrs) in (u.name for u in users):
             raise serializers.ValidationError({'first_name': "This name is already used"})
 
         return attrs

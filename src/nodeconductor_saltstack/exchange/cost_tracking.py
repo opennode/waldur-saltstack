@@ -3,30 +3,27 @@ from django.contrib.contenttypes.models import ContentType
 from nodeconductor.cost_tracking import CostTrackingBackend
 from nodeconductor.cost_tracking.models import DefaultPriceListItem
 
+from ..saltstack.backend import SaltStackBackendError
 from .backend import ExchangeBackend
 from .models import Tenant
 
 
 class Type(object):
     CONTACTS = 'contacts'
-    DISTGROUPS = 'distgroups'
+    GROUPS = 'groups'
     USERS = 'users'
     STORAGE = 'storage'
 
-    CONTACTS_KEY = 'count'
-    DISTGROUPS_KEY = 'count'
-    STORAGE_KEY = '1 GB'
-    USERS_KEY = 'count'
-
     CHOICES = {
-        CONTACTS: CONTACTS_KEY,
-        DISTGROUPS: DISTGROUPS_KEY,
-        USERS: USERS_KEY,
-        STORAGE: STORAGE_KEY,
+        CONTACTS: 'count',
+        GROUPS: 'count',
+        USERS: 'count',
+        STORAGE: '1 GB',
     }
 
 
 class SaltStackCostTrackingBackend(CostTrackingBackend):
+
     @classmethod
     def get_default_price_list_items(cls):
         content_type = ContentType.objects.get_for_model(Tenant)
@@ -35,12 +32,22 @@ class SaltStackCostTrackingBackend(CostTrackingBackend):
 
     @classmethod
     def get_used_items(cls, tenant):
-        api = tenant.get_backend().api
-        users = api.list_users(tenant.name)
-        storage = sum(user['mailbox_size'] for user in users)
-        return [
-            (Type.CONTACTS, Type.CHOICES[Type.CONTACTS], len(api.list_contacts(tenant.name))),
-            (Type.DISTGROUPS, Type.CHOICES[Type.DISTGROUPS], len(api.list_distgroups(tenant.name))),
-            (Type.USERS, Type.CHOICES[Type.USERS], len(users)),
-            (Type.STORAGE, Type.CHOICES[Type.STORAGE], ExchangeBackend.mb2gb(storage)),
-        ]
+        backend = tenant.get_backend()
+        users = backend.users.list()
+
+        def get_mailboxes_usage(users):
+            for user in users:
+                try:
+                    stats = backend.users.stats(id=user.id)
+                    yield stats.usage
+                except SaltStackBackendError:
+                    yield 0
+
+        items = {
+            Type.CONTACTS: len(backend.contacts.list()),
+            Type.GROUPS: len(backend.groups.list()),
+            Type.USERS: len(users),
+            Type.STORAGE: ExchangeBackend.mb2gb(sum(get_mailboxes_usage(users))),
+        }
+
+        return [(item, key, items[item]) for item, key in Type.CHOICES.iteritems()]

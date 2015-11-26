@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 def parse_size(size_str):
     """ Convert string notation of size to integer in MB """
     MAPPING = {
+        'KB': lambda s: float(s) / 1024,
         'MB': lambda s: int(s),
         'GB': lambda s: ExchangeBackend.gb2mb(int(s)),
     }
@@ -143,7 +144,7 @@ class UserAPI(SaltStackBaseAPI):
             },
             clean={
                 'Quota Limit': parse_size,
-                'MailboxQuota': parse_size,
+                'MailboxUsage': parse_size,
             },
         )
 
