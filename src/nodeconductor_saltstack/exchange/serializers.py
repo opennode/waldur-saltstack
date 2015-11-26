@@ -80,22 +80,26 @@ class UserSerializer(PropertySerializer):
 
     def validate(self, attrs):
         tenant = self.context['resource']
-        users = tenant.get_backend().users.list()
-
-        if users and "{first_name} {last_name}".format(**attrs) in (u.name for u in users):
+        if tenant.get_backend().users.findall(name="{first_name} {last_name}".format(**attrs)):
             raise serializers.ValidationError({'first_name': "This name is already used"})
 
         return attrs
 
 
 class ContactSerializer(PropertySerializer):
+    url = serializers.SerializerMethodField()
     id = serializers.CharField(read_only=True)
+    email = serializers.EmailField()
+    name = serializers.EmailField(read_only=True)
+    first_name = serializers.CharField(max_length=60, write_only=True)
+    last_name = serializers.CharField(max_length=60, write_only=True)
 
     def get_url_name(self):
         return 'exchange-contacts-detail'
 
 
 class GroupSerializer(PropertySerializer):
+    url = serializers.SerializerMethodField()
     id = serializers.CharField(read_only=True)
 
     def get_url_name(self):

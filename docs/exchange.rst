@@ -177,7 +177,7 @@ Response example:
             "url": "http://example.com/api/exchange-tenants/24156c367e3a41eea81e374073fa1060/contacts/5b6d80ea-bb3e-4321-8722-fe8ab17ec649/",
             "id": "5b6d80ea-bb3e-4321-8722-fe8ab17ec649",
             "email": "alice@example.com",
-            "name": "Joe Doe"
+            "name": "Alice Lebowski"
         }
     ]
 

@@ -195,10 +195,14 @@ class SaltStackBaseAPI(SaltStackAPI):
             results = self.run_cmd(func, **opts)
 
             if isinstance(results, list):
-                return [create_entity(entity, fn_opts) for entity in results]
+                entities = [create_entity(entity, fn_opts) for entity in results]
+                return entities if fn_opts.get('many') else entities[0]
             elif isinstance(results, dict):
                 entity = create_entity(results, fn_opts)
-                return [entity] if entity else [] if fn_opts.get('many') else entity
+                if fn_opts.get('many'):
+                    return [entity] if entity else []
+                else:
+                    return entity
             else:
                 raise NotImplementedError(
                     "Wrong output for method %s.%s: %s" % (name, func, results))

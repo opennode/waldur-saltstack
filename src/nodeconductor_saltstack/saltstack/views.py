@@ -40,7 +40,7 @@ class BasePropertyViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk=None, **kwargs):
         user = self.api.get(pk)
         if user is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            raise exceptions.NotFound
         return Response(self.get_serializer(user).data)
 
     def destroy(self, request, pk=None, **kwargs):
@@ -48,6 +48,7 @@ class BasePropertyViewSet(viewsets.ViewSet):
             self.api.delete(id=pk)
         except SaltStackBackendError as e:
             raise exceptions.APIException(e)
+        return Response({'status': 'Deleted'}, status=status.HTTP_202_ACCEPTED)
 
     def create(self, request, **kwargs):
         serializer = self.get_serializer(data=request.data)

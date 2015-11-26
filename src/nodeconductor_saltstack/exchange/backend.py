@@ -12,7 +12,7 @@ def parse_size(size_str):
     """ Convert string notation of size to integer in MB """
     MAPPING = {
         'KB': lambda s: float(s) / 1024,
-        'MB': lambda s: int(s),
+        'MB': lambda s: float(s),
         'GB': lambda s: ExchangeBackend.gb2mb(int(s)),
     }
 
@@ -196,7 +196,7 @@ class ContactAPI(SaltStackBaseAPI):
         delete = dict(
             name='DelContact',
             input={
-                'id': 'ContactID',
+                'id': 'Id',
             },
         )
 
