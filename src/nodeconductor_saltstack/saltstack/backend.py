@@ -155,7 +155,7 @@ class SaltStackBaseAPI(SaltStackAPI):
                     opts[out[key]] = val
                 else:
                     logger.debug(
-                        "Unknown field %s in method %s.%s output" % (key, name, fn_name.lower()))
+                        "Unknown field '%s' in method %s.%s output" % (key, name, fn_name.lower()))
 
             class Entity(object):
                 def __init__(self, opts):
@@ -183,14 +183,14 @@ class SaltStackBaseAPI(SaltStackAPI):
                             kwargs[opt] = fn(self.backend, **kwargs)
                         else:
                             raise NotImplementedError(
-                                "Unknown default argument %s for method %s.%s" % (opt, name, func))
+                                "Unknown default argument '%s' for method %s.%s" % (opt, name, func))
 
             for opt, val in kwargs.items():
                 if opt in inp:
                     opts[inp[opt]] = val
                 else:
                     raise NotImplementedError(
-                        "Unknown argument %s for method %s.%s" % (opt, name, func))
+                        "Unknown argument '%s' for method %s.%s" % (opt, name, func))
 
             results = self.run_cmd(func, **opts)
 

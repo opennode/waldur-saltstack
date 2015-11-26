@@ -1,8 +1,11 @@
+import re
+
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
 from nodeconductor.structure import serializers as structure_serializers
 
+from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.models import SaltStackServiceProjectLink
 from .models import Tenant
 
@@ -30,21 +33,22 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         )
 
     def validate(self, attrs):
-        spl = attrs['service_project_link']
-        qs = Tenant.objects.filter(
-            service_project_link__service=spl.service,
-            state=Tenant.States.ONLINE)
-
-        if qs.filter(name=attrs['name']).exists():
-            raise serializers.ValidationError({'name': "This name is already used"})
-
-        if qs.filter(domain=attrs['domain']).exists():
-            raise serializers.ValidationError({'domain': "This domain is already used"})
-
         tenant_size = int(attrs['mailbox_size']) * int(attrs['max_users'])
         if tenant_size * .9 > 2048:
             raise serializers.ValidationError({
                 'max_users': "Total mailbox size should be lower than 2 TB"})
+
+        backend = Tenant(service_project_link=attrs['service_project_link']).get_backend()
+        try:
+            backend.tenants.check(tenant=attrs['name'], domain=attrs['domain'])
+        except SaltStackBackendError as e:
+            message = "This tenant name or domain is already taken"
+            try:
+                error = eval(re.sub(r'Cannot[^:]+: ', '', str(e)))
+                message += ": " + '; '.join(["%s: %s" % (k, v) for k, v in error.items()])
+            except SyntaxError:
+                pass
+            raise serializers.ValidationError({'name': message})
 
         return attrs
 

@@ -54,6 +54,14 @@ class TenantAPI(SaltStackBaseAPI):
             },
         )
 
+        check = dict(
+            name='CheckTenant',
+            input={
+                'tenant': 'TenantName',
+                'domain': 'TenantDomain',
+            },
+        )
+
 
 class UserAPI(SaltStackBaseAPI):
 
