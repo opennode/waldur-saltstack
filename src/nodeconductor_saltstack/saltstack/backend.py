@@ -12,7 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 class SaltStackBackendError(ServiceBackendError):
-    pass
+
+    def __init__(self, message, traceback=None):
+        super(SaltStackBackendError, self).__init__(message)
+        self.traceback_str = '; '.join(["%s: %s" % (k, v) for k, v in traceback.items()])
+        self.traceback = traceback
 
 
 class SaltStackBackend(object):
@@ -106,7 +110,8 @@ class SaltStackAPI(object):
             return result['Output']
         else:
             raise SaltStackBackendError(
-                "Cannot run command %s on %s: %s" % (cmd, self.target, result['Output']))
+                "Cannot run command %s on %s: %s" % (cmd, self.target, result['Output']),
+                result['Output'])
 
         return json.loads(result)
 

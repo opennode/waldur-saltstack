@@ -1,5 +1,3 @@
-import re
-
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
@@ -42,13 +40,8 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         try:
             backend.tenants.check(tenant=attrs['name'], domain=attrs['domain'])
         except SaltStackBackendError as e:
-            message = "This tenant name or domain is already taken"
-            try:
-                error = eval(re.sub(r'Cannot[^:]+: ', '', str(e)))
-                message += ": " + '; '.join(["%s: %s" % (k, v) for k, v in error.items()])
-            except SyntaxError:
-                pass
-            raise serializers.ValidationError({'name': message})
+            raise serializers.ValidationError({
+                'name': "This tenant name or domain is already taken: %s" % e.traceback_str})
 
         return attrs
 
