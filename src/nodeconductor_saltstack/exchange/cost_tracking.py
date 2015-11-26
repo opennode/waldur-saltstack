@@ -41,7 +41,7 @@ class SaltStackCostTrackingBackend(CostTrackingBackend):
                     stats = backend.users.stats(id=user.id)
                     yield stats.usage
                 except SaltStackBackendError:
-                    yield 0
+                    continue
 
         items = {
             Type.CONTACTS: len(backend.contacts.list()),

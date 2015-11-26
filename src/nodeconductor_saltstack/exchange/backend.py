@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def parse_size(size_str):
-    """ Convert string notation of size to integer in MB """
+    """ Convert string notation of size to a number in MB """
     MAPPING = {
         'KB': lambda s: float(s) / 1024,
         'MB': lambda s: float(s),
@@ -21,9 +21,6 @@ def parse_size(size_str):
 
 
 class TenantAPI(SaltStackBaseAPI):
-    # powershell -f AddTenant.ps1 -TenantName TEST -TenantDomain example.com -TenantMailboxSize 3 -TenantMaxUsers 500
-    # powershell -f DelTenant.ps1 -TenantName TEST -TenantDomain example.com
-    # powershell -f EditDomain.ps1 -TenantName TEST -TenantDomain example.com
 
     class Methods:
         create = dict(
@@ -59,11 +56,6 @@ class TenantAPI(SaltStackBaseAPI):
 
 
 class UserAPI(SaltStackBaseAPI):
-    # powershell -f AddUser.ps1 -TenantName TEST -TenantDomain example.com -DisplayName "John Jonson" -UserName john.jonson -UserFirstName "John" -UserLastName "Jonson"  -UserInitials "JJ" -UserMailboxSize 4
-    # powershell -f DelUser.ps1 -Identity john.jonson@example.com
-    # powershell -f DelUser.ps1 -Identity  e88471c7-fcf5-4e12-8163-2a8ad9c87f4b
-    # powershell -f EditUser.ps1 -Guid  e88471c7-fcf5-4e12-8163-2a8ad9c87f4b -UserLastName Malkovich
-    # powershell -f EditUser.ps1 -Guid e88471c7-fcf5-4e12-8163-2a8ad9c87f4b -UserQuota 3
 
     class Methods:
         _base = dict(
@@ -150,10 +142,6 @@ class UserAPI(SaltStackBaseAPI):
 
 
 class ContactAPI(SaltStackBaseAPI):
-    # powershell -f AddContact.ps1 -TenantName TEST -ContactName "Joe Doe" -ContactEmail joe@domain.com -ContactFirstName Joe -ContactLastName Doe
-    # powershell -f DelContact.ps1 -ContactID d7760e2a-0430-4767-838a-b57a7ab8852e
-    # powershell -f EditContact.ps1 -Guid 5b6d80ea-bb3e-4321-8722-fe8ab17ec649 -ContactEmail alice@test.com
-    # powershell -f ContactList.ps1 -TenantName TEST
 
     class Methods:
         _base = dict(
@@ -211,16 +199,6 @@ class ContactAPI(SaltStackBaseAPI):
 
 
 class DistributionGroupAPI(SaltStackBaseAPI):
-    # powershell -f AddDistGrp.ps1 -TenantName TEST -TenantDomain example.com -DisplayName "TEST Managers" -Alias mngr -ManagedByUser john.jonson@example.com
-    # powershell -f DelDistGrp.ps1 -Id 99b7febb-4efb-4a2e-b183-6a0624e2e2b0
-    # powershell -f DelDistGrp.ps1 -Id mngr@example.com
-    # powershell -f EditDg.ps1 -Guid 99b7febb-4efb-4a2e-b183-6a0624e2e2b0 -DisplayName "TEST MGR" -EmailAddress itamngr -ManagedByUser jane.falconer@example.com
-    # powershell -f AddDgMember.ps1 -Id 99b7febb-4efb-4a2e-b183-6a0624e2e2b0 -MemberId e941ccc0-75cd-46ab-9c03-a4cda0b62b99
-    # powershell -f DelDgMember.ps1 -Id mngr@example.com -MemberId john.jonson@example.com
-    # powershell -f DelDgMember.ps1 -Id 99b7febb-4efb-4a2e-b183-6a0624e2e2b0 -MemberId e941ccc0-75cd-46ab-9c03-a4cda0b62b99
-    # powershell -f DgMemberList.ps1 -Id 99b7febb-4efb-4a2e-b183-6a0624e2e2b0
-    # powershell -f DgMemberList.ps1 -Id mngr@example.com
-    # powershell -f DgList.ps1 -TenantName TEST
 
     class Methods:
         _base = dict(
