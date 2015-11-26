@@ -11,7 +11,7 @@ class Site(structure_models.Resource, structure_models.PaidResource):
 
     @classmethod
     def get_url_name(cls):
-        return 'saltstack-sites'
+        return 'sharepoint-sites'
 
     def get_backend(self):
         from .backend import SharepointBackend

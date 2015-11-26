@@ -24,9 +24,9 @@ parameters:
     Host: example.com
 
     {
-        "name": "TNT",
+        "name": "TST",
         "service_project_link": "http://example.com/api/saltstack-service-project-link/1/",
-        "tenant": "test.com",
+        "domain": "test.com",
         "max_users": "500",
         "mailbox_size": "3"
     }
@@ -45,7 +45,7 @@ Example rendering of the tenant object:
         {
             "url": "http://example.com/api/exchange-tenants/7693d9308e0641baa95720d0046e5696/",
             "uuid": "7693d9308e0641baa95720d0046e5696",
-            "name": "TNT",
+            "name": "TST",
             "description": "",
             "start_time": null,
             "service": "http://example.com/api/saltstack/655b79490b63442d9264d76ab9478f62/",
@@ -59,9 +59,13 @@ Example rendering of the tenant object:
             "customer_native_name": "",
             "customer_abbreviation": "",
             "project_groups": [],
+            "error_message": "",
             "resource_type": "SaltStack.Tenant",
             "state": "Online",
-            "created": "2015-10-20T10:35:19.146Z"
+            "created": "2015-10-20T10:35:19.146Z",
+            "domain": "test.com",
+            "max_users": "500",
+            "mailbox_size": "3"
         }
     ]
 
@@ -187,7 +191,7 @@ To delete tenant contact - issue DELETE request against **/api/exchange-tenants/
 Create tenant distribution group
 --------------------------------
 
-To create new tenant distribution group - issue POST request against **/api/exchange-tenants/<tenant_uuid>/distgroups/**.
+To create new tenant distribution group - issue POST request against **/api/exchange-tenants/<tenant_uuid>/groups/**.
 
 Request parameters:
 
@@ -199,7 +203,7 @@ Example of a request:
 
 .. code-block:: http
 
-    POST /api/exchange-tenants/24156c367e3a41eea81e374073fa1060/distgroups/ HTTP/1.1
+    POST /api/exchange-tenants/24156c367e3a41eea81e374073fa1060/groups/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
@@ -216,7 +220,7 @@ List tenant distribution groups
 -------------------------------
 
 To get a list of all tenant distribution groups - issue GET request against
-**/api/exchange-tenants/<tenant_uuid>/distgroups/**.
+**/api/exchange-tenants/<tenant_uuid>/groups/**.
 Only users with view access to tenant can view tenant distribution groups.
 
 Response example:
@@ -225,7 +229,7 @@ Response example:
 
     [
         {
-            "url": "http://example.com/api/exchange-tenants/24156c367e3a41eea81e374073fa1060/distgroups/99b7febb-4efb-4a2e-b183-6a0624e2e2b0/",
+            "url": "http://example.com/api/exchange-tenants/24156c367e3a41eea81e374073fa1060/groups/99b7febb-4efb-4a2e-b183-6a0624e2e2b0/",
             "id": "99b7febb-4efb-4a2e-b183-6a0624e2e2b0",
             "email": "my_grp@test.com",
             "name": "My Group"
@@ -237,14 +241,14 @@ Delete tenant distribution group
 --------------------------------
 
 To delete tenant distribution group - issue DELETE request against
-**/api/exchange-tenants/<tenant_uuid>/distgroups/<distgroup_id>/**.
+**/api/exchange-tenants/<tenant_uuid>/groups/<group_id>/**.
 
 
 List distribution group members
 -------------------------------
 
 To get a list of all distribution group members - issue GET request against
-**/api/exchange-tenants/<tenant_uuid>/distgroups/<distgroup_id>/**.
+**/api/exchange-tenants/<tenant_uuid>/groups/<group_id>/**.
 Only users with view access to tenant can view tenant distribution group members.
 
 Response example:
@@ -264,7 +268,7 @@ Add member to distribution group
 --------------------------------
 
 To add new member to distribution group - issue POST request against
-**/api/exchange-tenants/<tenant_uuid>/distgroups/<distgroup_id>/add_member/**.
+**/api/exchange-tenants/<tenant_uuid>/groups/<group_id>/add_member/**.
 
 Request parameters:
 
@@ -274,7 +278,7 @@ Example of a request:
 
 .. code-block:: http
 
-    POST /api/exchange-tenants/24156c367e3a41eea81e374073fa1060/distgroups/99b7febb-4efb-4a2e-b183-6a0624e2e2b0/add_member/ HTTP/1.1
+    POST /api/exchange-tenants/24156c367e3a41eea81e374073fa1060/groups/99b7febb-4efb-4a2e-b183-6a0624e2e2b0/add_member/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
@@ -289,7 +293,7 @@ Delete member from distribution group
 -------------------------------------
 
 To remove member from distribution group - issue POST request against
-**/api/exchange-tenants/<tenant_uuid>/distgroups/<distgroup_id>/del_member/**.
+**/api/exchange-tenants/<tenant_uuid>/groups/<group_id>/del_member/**.
 
 Request parameters:
 
@@ -299,7 +303,7 @@ Example of a request:
 
 .. code-block:: http
 
-    POST /api/exchange-tenants/24156c367e3a41eea81e374073fa1060/distgroups/99b7febb-4efb-4a2e-b183-6a0624e2e2b0/del_member/ HTTP/1.1
+    POST /api/exchange-tenants/24156c367e3a41eea81e374073fa1060/groups/99b7febb-4efb-4a2e-b183-6a0624e2e2b0/del_member/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4

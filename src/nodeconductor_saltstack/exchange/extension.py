@@ -1,7 +1,7 @@
 from nodeconductor.core import NodeConductorExtension
 
 
-class SaltStackExtension(NodeConductorExtension):
+class ExchangeExtension(NodeConductorExtension):
 
     @staticmethod
     def django_app():

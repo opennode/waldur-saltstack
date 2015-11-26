@@ -19,29 +19,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='DistributionGroup',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, verbose_name='created', editable=False)),
-                ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, verbose_name='modified', editable=False)),
-                ('description', models.CharField(max_length=500, verbose_name='description', blank=True)),
-                ('name', models.CharField(max_length=150, verbose_name='name')),
-                ('uuid', uuidfield.fields.UUIDField(unique=True, max_length=32, editable=False, blank=True)),
-                ('error_message', models.TextField(blank=True)),
-                ('billing_backend_id', models.CharField(help_text='ID of a resource in backend', max_length=255, blank=True)),
-                ('last_usage_update_time', models.DateTimeField(null=True, blank=True)),
-                ('backend_id', models.CharField(max_length=255, blank=True)),
-                ('start_time', models.DateTimeField(null=True, blank=True)),
-                ('state', django_fsm.FSMIntegerField(default=1, help_text='WARNING! Should not be changed manually unless you really know what you are doing.', max_length=1, choices=[(1, 'Provisioning Scheduled'), (2, 'Provisioning'), (3, 'Online'), (4, 'Offline'), (5, 'Starting Scheduled'), (6, 'Starting'), (7, 'Stopping Scheduled'), (8, 'Stopping'), (9, 'Erred'), (10, 'Deletion Scheduled'), (11, 'Deleting'), (13, 'Resizing Scheduled'), (14, 'Resizing'), (15, 'Restarting Scheduled'), (16, 'Restarting')])),
-                ('email', models.EmailField(unique=True, max_length=75)),
-                ('service_project_link', models.ForeignKey(related_name='+', on_delete=django.db.models.deletion.PROTECT, to='saltstack.SaltStackServiceProjectLink')),
-            ],
-            options={
-                'abstract': False,
-            },
-            bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.core.models.DescendantMixin, nodeconductor.logging.log.LoggableMixin, models.Model),
-        ),
-        migrations.CreateModel(
             name='Tenant',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
@@ -57,17 +34,13 @@ class Migration(migrations.Migration):
                 ('start_time', models.DateTimeField(null=True, blank=True)),
                 ('state', django_fsm.FSMIntegerField(default=1, help_text='WARNING! Should not be changed manually unless you really know what you are doing.', max_length=1, choices=[(1, 'Provisioning Scheduled'), (2, 'Provisioning'), (3, 'Online'), (4, 'Offline'), (5, 'Starting Scheduled'), (6, 'Starting'), (7, 'Stopping Scheduled'), (8, 'Stopping'), (9, 'Erred'), (10, 'Deletion Scheduled'), (11, 'Deleting'), (13, 'Resizing Scheduled'), (14, 'Resizing'), (15, 'Restarting Scheduled'), (16, 'Restarting')])),
                 ('domain', models.CharField(max_length=255)),
-                ('service_project_link', models.ForeignKey(related_name='+', on_delete=django.db.models.deletion.PROTECT, to='saltstack.SaltStackServiceProjectLink')),
+                ('max_users', models.PositiveSmallIntegerField(help_text=b'Maximum number of mailboxes')),
+                ('mailbox_size', models.PositiveSmallIntegerField(help_text=b'Maximum size of single mailbox, GB')),
+                ('service_project_link', models.ForeignKey(related_name='tenants', on_delete=django.db.models.deletion.PROTECT, to='saltstack.SaltStackServiceProjectLink')),
             ],
             options={
                 'abstract': False,
             },
             bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.core.models.DescendantMixin, nodeconductor.logging.log.LoggableMixin, models.Model),
-        ),
-        migrations.AddField(
-            model_name='distributiongroup',
-            name='tenant',
-            field=models.ForeignKey(related_name='users', to='exchange.Tenant'),
-            preserve_default=True,
         ),
     ]

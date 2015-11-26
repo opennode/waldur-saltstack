@@ -28,6 +28,6 @@ class SiteSerializer(structure_serializers.BaseResourceSerializer):
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
         model = Site
-        view_name = 'saltstack-sites-detail'
+        view_name = 'sharepoint-sites-detail'
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
             'domain', 'storage_size')

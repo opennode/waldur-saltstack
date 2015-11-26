@@ -1,6 +1,8 @@
 import logging
 
-from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend, SaltStackBackendError
+from nodeconductor.core.tasks import send_task
+
+from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend
 
 
 logger = logging.getLogger(__name__)
@@ -13,7 +15,7 @@ def parse_size(size_str):
         'GB': lambda s: ExchangeBackend.gb2mb(int(s)),
     }
 
-    size, unit = size_str
+    size, unit = size_str.split()
     return MAPPING[unit](size)
 
 
@@ -23,7 +25,7 @@ class TenantAPI(SaltStackBaseAPI):
     # powershell -f EditDomain.ps1 -TenantName TEST -TenantDomain example.com
 
     class Methods:
-        add = dict(
+        create = dict(
             name='AddTenant',
             input={
                 'tenant': 'TenantName',
@@ -32,6 +34,7 @@ class TenantAPI(SaltStackBaseAPI):
                 'max_users': 'TenantMaxUsers',
             },
             output={
+                'UPNSuffix': 'id',
                 'Accepted DomainName': 'domain',
                 'DistinguishedName': 'dn',
             },
@@ -62,7 +65,6 @@ class UserAPI(SaltStackBaseAPI):
     # powershell -f EditUser.ps1 -Guid e88471c7-fcf5-4e12-8163-2a8ad9c87f4b -UserQuota 3
 
     class Methods:
-
         _base = dict(
             output={
                 'Guid': 'id',
@@ -79,7 +81,7 @@ class UserAPI(SaltStackBaseAPI):
             },
         )
 
-        add = dict(
+        create = dict(
             name='AddUser',
             input={
                 'tenant': 'TenantName',
@@ -87,11 +89,13 @@ class UserAPI(SaltStackBaseAPI):
                 'name': 'DisplayName',
                 'username': 'UserName',
                 'first_name': 'UserFirstName',
-                'last_name': 'UserFirstName',
+                'last_name': 'UserLastName',
                 'abbreviation': 'UserInitials',
                 'mailbox_size': 'UserMailboxSize',
             },
             defaults={
+                'tenant': lambda backend, **kw: backend.tenant.name,
+                'domain': lambda backend, **kw: backend.tenant.domain,
                 'name': "{first_name} {last_name}",
                 'abbreviation': "{first_name[0]}{last_name[0]}",
             },
@@ -103,6 +107,10 @@ class UserAPI(SaltStackBaseAPI):
             input={
                 'tenant': 'TenantName',
             },
+            defaults={
+                'tenant': lambda backend, **kw: backend.tenant.name,
+            },
+            many=True,
             **_base
         )
 
@@ -147,7 +155,6 @@ class ContactAPI(SaltStackBaseAPI):
     # powershell -f ContactList.ps1 -TenantName TEST
 
     class Methods:
-
         _base = dict(
             output={
                 'Guid': 'id',
@@ -157,7 +164,7 @@ class ContactAPI(SaltStackBaseAPI):
             },
         )
 
-        add = dict(
+        create = dict(
             name='AddContact',
             input={
                 'tenant': 'TenantName',
@@ -167,6 +174,7 @@ class ContactAPI(SaltStackBaseAPI):
                 'last_name': 'ContactLastName',
             },
             defaults={
+                'tenant': lambda backend, **kw: backend.tenant.name,
                 'name': "{first_name} {last_name}",
             },
             **_base
@@ -177,6 +185,10 @@ class ContactAPI(SaltStackBaseAPI):
             input={
                 'tenant': 'TenantName',
             },
+            defaults={
+                'tenant': lambda backend, **kw: backend.tenant.name,
+            },
+            many=True,
             **_base
         )
 
@@ -210,7 +222,6 @@ class DistributionGroupAPI(SaltStackBaseAPI):
     # powershell -f DgList.ps1 -TenantName TEST
 
     class Methods:
-
         _base = dict(
             output={
                 'Guid': 'id',
@@ -220,7 +231,7 @@ class DistributionGroupAPI(SaltStackBaseAPI):
             },
         )
 
-        add = dict(
+        create = dict(
             name='AddDistGrp',
             input={
                 'tenant': 'TenantName',
@@ -228,6 +239,10 @@ class DistributionGroupAPI(SaltStackBaseAPI):
                 'name': 'DisplayName',
                 'username': 'Alias',
                 'manager': 'ManagedByUser',
+            },
+            defaults={
+                'tenant': lambda backend, **kw: backend.tenant.name,
+                'domain': lambda backend, **kw: backend.tenant.domain,
             },
             **_base
         )
@@ -237,6 +252,10 @@ class DistributionGroupAPI(SaltStackBaseAPI):
             input={
                 'tenant': 'TenantName',
             },
+            defaults={
+                'tenant': lambda backend, **kw: backend.tenant.name,
+            },
+            many=True,
             **_base
         )
 
@@ -299,18 +318,14 @@ class ExchangeBackend(SaltStackBaseBackend):
         'users': UserAPI,
     }
 
-    def provision(self, tenant, domain=None, max_users=None, mailbox_size=None):
-        try:
-            self.tenants.add(
-                name=tenant.name,
-                domain=tenant.domain,
-                mailbox_size=mailbox_size,
-                max_users=max_users)
-        except SaltStackBackendError as e:
-            logger.exception('Failed to provision tenant %s: %s', tenant.name, e)
-            tenant.error_message = str(e)
-            tenant.set_erred()
-            tenant.save()
-        else:
-            tenant.state = tenant.States.ONLINE
-            tenant.save()
+    def __init__(self, *args, **kwargs):
+        super(ExchangeBackend, self).__init__(*args, **kwargs)
+        self.tenant = kwargs.get('tenant')
+
+    def provision(self, tenant):
+        send_task('exchange', 'provision')(tenant.uuid.hex)
+
+    def destroy(self, tenant):
+        tenant.schedule_deletion()
+        tenant.save()
+        send_task('exchange', 'destroy')(tenant.uuid.hex)
