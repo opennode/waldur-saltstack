@@ -1,8 +1,11 @@
 from django.shortcuts import get_object_or_404
+from rest_framework import status, exceptions, decorators
+from rest_framework.response import Response
 
 from nodeconductor.structure.managers import filter_queryset_for_user
 from nodeconductor.structure import views as structure_views
 
+from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.views import BasePropertyViewSet
 from . import models, serializers
 
@@ -38,3 +41,24 @@ class ContactViewSet(TenantPropertyViewSet):
 class GroupViewSet(TenantPropertyViewSet):
     serializer_class = serializers.GroupSerializer
     api_name = 'groups'
+
+    @decorators.detail_route(methods=['post', 'delete'])
+    def members(self, request, pk=None, **kwargs):
+        if request.method == 'POST':
+            serializer = serializers.GroupMemberSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            try:
+                member = self.api.add_member(id=pk, user_id=request.data['id'])
+                member_data = serializers.GroupMemberSerializer(member).data
+            except SaltStackBackendError as e:
+                raise exceptions.APIException(e)
+
+            return Response(member_data, status=status.HTTP_201_CREATED)
+
+        if request.method == 'DELETE':
+            try:
+                self.api.del_member(id=pk, user_id=request.data['id'])
+            except SaltStackBackendError as e:
+                raise exceptions.APIException(e)
+            return Response({'status': 'Deleted'}, status=status.HTTP_202_ACCEPTED)

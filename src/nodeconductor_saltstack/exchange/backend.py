@@ -227,6 +227,7 @@ class DistributionGroupAPI(SaltStackBaseAPI):
             output={
                 'Guid': 'id',
                 'EmailAddress': 'email',
+                'Email Address': 'email',
                 'DisplayName': 'name',
                 'DistinguishedName': 'dn',
             },
@@ -239,7 +240,7 @@ class DistributionGroupAPI(SaltStackBaseAPI):
                 'domain': 'TenantDomain',
                 'name': 'DisplayName',
                 'username': 'Alias',
-                'manager': 'ManagedByUser',
+                'manager_email': 'ManagedByUser',
             },
             defaults={
                 'tenant': lambda backend, **kw: backend.tenant.name,
@@ -273,7 +274,7 @@ class DistributionGroupAPI(SaltStackBaseAPI):
                 'id': 'Guid',
                 'name': 'DisplayName',
                 'username': 'EmailAddress',
-                'manager': 'ManagedByUser',
+                'manager_email': 'ManagedByUser',
             },
             **_base
         )
@@ -291,7 +292,7 @@ class DistributionGroupAPI(SaltStackBaseAPI):
             name='DelDgMember',
             input={
                 'id': 'Id',
-                'manager': 'Id',
+                'manager_email': 'Id',
                 'user_id': 'MemberId',
                 'user_email': 'MemberId',
             },
@@ -302,8 +303,9 @@ class DistributionGroupAPI(SaltStackBaseAPI):
             name='DgMemberList',
             input={
                 'id': 'Id',
-                'manager': 'Id',
+                'manager_email': 'Id',
             },
+            many=True,
             **_base
         )
 

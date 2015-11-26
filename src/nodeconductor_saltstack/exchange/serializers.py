@@ -79,10 +79,11 @@ class UserSerializer(PropertySerializer):
         return value
 
     def validate(self, attrs):
-        tenant = self.context['resource']
-        if tenant.get_backend().users.findall(name="{first_name} {last_name}".format(**attrs)):
+        backend = self.context['resource'].get_backend()
+        try:
+            next(backend.users.findall(name="{first_name} {last_name}".format(**attrs)))
+        except StopIteration:
             raise serializers.ValidationError({'first_name': "This name is already used"})
-
         return attrs
 
 
@@ -98,9 +99,33 @@ class ContactSerializer(PropertySerializer):
         return 'exchange-contacts-detail'
 
 
+class GroupMemberSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField(read_only=True)
+    email = serializers.EmailField(read_only=True)
+
+
 class GroupSerializer(PropertySerializer):
     url = serializers.SerializerMethodField()
     id = serializers.CharField(read_only=True)
+    name = serializers.CharField()
+    email = serializers.EmailField(read_only=True)
+    username = serializers.SlugField(write_only=True)
+    manager_email = serializers.EmailField(write_only=True)
+    members = serializers.SerializerMethodField(read_only=True)
 
     def get_url_name(self):
         return 'exchange-groups-detail'
+
+    def get_members(self, obj):
+        backend = self.context['resource'].get_backend()
+        return [GroupMemberSerializer(member).data for member in backend.groups.list_members(id=obj.id)]
+
+    def validate_manager_email(self, value):
+        if value:
+            backend = self.context['resource'].get_backend()
+            try:
+                next(backend.users.findall(email=value))
+            except StopIteration:
+                raise serializers.ValidationError("Unknown tenant user: %s" % value)
+        return value
