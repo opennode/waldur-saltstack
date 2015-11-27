@@ -1,11 +1,11 @@
 from nodeconductor.core import NodeConductorExtension
 
 
-class SaltStackExtension(NodeConductorExtension):
+class SharepointExtension(NodeConductorExtension):
 
     @staticmethod
     def django_app():
-        return 'nodeconductor_saltstack'
+        return 'nodeconductor_saltstack.sharepoint'
 
     @staticmethod
     def rest_urls():
