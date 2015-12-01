@@ -15,7 +15,7 @@ class SaltStackBackendError(ServiceBackendError):
 
     def __init__(self, message, traceback=None):
         super(SaltStackBackendError, self).__init__(message)
-        self.traceback_str = '; '.join(["%s: %s" % (k, v) for k, v in traceback.items()])
+        self.traceback_str = '; '.join(["%s: %s" % (k, v) for k, v in traceback.items()]) if traceback else ''
         self.traceback = traceback
 
 
