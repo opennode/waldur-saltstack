@@ -208,6 +208,8 @@ class SaltStackBaseAPI(SaltStackAPI):
                     return [entity] if entity else []
                 else:
                     return entity
+            elif isinstance(results, basestring):
+                entity = results
             else:
                 raise NotImplementedError(
                     "Wrong output for method %s.%s: %s" % (name, func, results))
