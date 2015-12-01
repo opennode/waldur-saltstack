@@ -8,7 +8,7 @@ dev_requires = [
 ]
 
 install_requires = [
-    'nodeconductor>=0.79.0',
+    'nodeconductor>=0.80.0',
 ]
 
 
@@ -29,7 +29,9 @@ setup(
     },
     entry_points={
         'nodeconductor_extensions': (
-            'nodeconductor_saltstack = nodeconductor_saltstack.extension:SaltStackExtension',
+            'saltstack = nodeconductor_saltstack.saltstack.extension:SaltStackExtension',
+            'exchange = nodeconductor_saltstack.exchange.extension:ExchangeExtension',
+            'sharepoint = nodeconductor_saltstack.sharepoint.extension:SharepointExtension',
         ),
     },
     # tests_require=tests_requires,
