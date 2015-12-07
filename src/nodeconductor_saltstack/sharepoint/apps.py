@@ -2,6 +2,7 @@ from django.apps import AppConfig
 
 from nodeconductor.cost_tracking import CostTrackingRegister
 from nodeconductor.structure import SupportedServices
+from nodeconductor.template import TemplateRegistry
 
 
 class SaltStackConfig(AppConfig):
@@ -15,3 +16,7 @@ class SaltStackConfig(AppConfig):
 
         from .backend import SharepointBackend
         SupportedServices.register_backend(SharepointBackend)
+
+        # template
+        from .template import SiteProvisionTemplateForm
+        TemplateRegistry.register(SiteProvisionTemplateForm)
