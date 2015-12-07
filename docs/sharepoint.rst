@@ -1,6 +1,3 @@
-MS Sharepoint
-=============
-
 Create a site
 -------------
 Site is a SaltStack resource which represents MS Sharepoint site.
