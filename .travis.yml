@@ -1,0 +1,19 @@
+language: python
+python:
+- '2.7'
+before_install:
+- sudo apt-get update -qq
+- sudo apt-get install gcc libffi-dev libldap2-dev libsasl2-dev libssl-dev python-dev
+install:
+- python setup.py install
+script:
+- python setup.py test
+deploy:
+  provider: pypi
+  user: opennode
+  distributions: "sdist bdist_wheel"
+  password:
+    secure: V5Dxi+ZQ1kbESD7TZCiBp1u1nnkGV51oiyqERqSBf5nLop0S/Vigs653VYFgXp12K3u3GSumIsuNznYyS752MxvDJ39o2mVIVyDPkZb9ibC+aaf4UOcxqO0RLEUYOO45XXykr2qSGcveGLB7hEGR+vbJqlda1FJBctuKpsItidEOi24M4EpNpYjlzfEgrs1vtY3TyYROAo3MArB/w0XIkGaKbwYnQuexbi/tBnMOjzS/8YOHTQPMo+lhDaUy3uohjkPb2bjb2W943YXuGFwcvDvTGEiS3/3LhzebSvQAQykXu4Ls6oQ6lTcP1y34ZSSkclB6sF8vlmEj3T94Mbr2yGNJe46ZcHfghSIvCAUKEDHkmaLwtA5Hfhr66wtwSfaJY9uXHN520R98/5YgDmh2+cHE9j+2VtvcR7dZvjpamQe7lLgMerNYjW+/afjiK+VcD19Kn3hTbzsY8CQsXVZQ7jujn0crCNns7poLEwUP1heJwY+amv2x1ie/wzXwsa//j5y+Kw6PO+nT7PY3nFNjQhfoX3BJ+rsaI503RIy23vWYYQlt8p427OmEmZidG1138Smcy/TKQ58g8eQqLMERfyPSSAIUdOzfRFStEN183izUAD8fbQ2eIq9PQ2aUBQjxb0rMbBaA8p1S0E+oOlSgvCAK+daILFLzH2TuIMJDVLQ=
+  on:
+    tags: true
+    repo: opennode/nodeconductor-saltstack
