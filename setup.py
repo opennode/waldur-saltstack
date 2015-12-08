@@ -14,7 +14,7 @@ install_requires = [
 
 setup(
     name='nodeconductor-saltstack',
-    version='0.1.1',
+    version='0.1.2',
     author='OpenNode Team',
     author_email='info@opennodecloud.com',
     url='http://nodeconductor.com',
