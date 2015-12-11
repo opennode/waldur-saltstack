@@ -11,7 +11,7 @@ from . import models, serializers
 
 
 class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
-    queryset = models.Tenant.objects.all()
+    queryset = models.ExchangeTenant.objects.all()
     serializer_class = serializers.TenantSerializer
 
     def perform_provision(self, serializer):
@@ -24,7 +24,7 @@ class TenantPropertyViewSet(BasePropertyViewSet):
 
     def initial(self, request, tenant_uuid, *args, **kwargs):
         super(TenantPropertyViewSet, self).initial(request, tenant_uuid, *args, **kwargs)
-        queryset = filter_queryset_for_user(models.Tenant.objects.all(), request.user)
+        queryset = filter_queryset_for_user(models.ExchangeTenant.objects.all(), request.user)
         self.resource = get_object_or_404(queryset, uuid=tenant_uuid)
 
 

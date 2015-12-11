@@ -60,7 +60,7 @@ Example rendering of the tenant object:
             "customer_abbreviation": "",
             "project_groups": [],
             "error_message": "",
-            "resource_type": "SaltStack.Tenant",
+            "resource_type": "SaltStack.ExchangeTenant",
             "state": "Online",
             "created": "2015-10-20T10:35:19.146Z",
             "domain": "test.com",

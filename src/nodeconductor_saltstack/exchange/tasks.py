@@ -5,12 +5,12 @@ from django.utils import timezone
 from nodeconductor.core.tasks import save_error_message, transition
 from nodeconductor.structure.tasks import sync_service_project_links
 
-from .models import Tenant
+from .models import ExchangeTenant
 
 
 @shared_task(name='nodeconductor.exchange.provision')
 def provision(tenant_uuid, **kwargs):
-    tenant = Tenant.objects.get(uuid=tenant_uuid)
+    tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
     chain(
         sync_service_project_links.s(tenant.service_project_link.to_string(), initial=True),
         provision_tenant.si(tenant_uuid, **kwargs),
@@ -20,7 +20,7 @@ def provision(tenant_uuid, **kwargs):
 
 
 @shared_task(name='nodeconductor.exchange.destroy')
-@transition(Tenant, 'begin_deleting')
+@transition(ExchangeTenant, 'begin_deleting')
 @save_error_message
 def destroy(tenant_uuid, transition_entity=None):
     tenant = transition_entity
@@ -36,7 +36,7 @@ def destroy(tenant_uuid, transition_entity=None):
 
 
 @shared_task(is_heavy_task=True)
-@transition(Tenant, 'begin_provisioning')
+@transition(ExchangeTenant, 'begin_provisioning')
 @save_error_message
 def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
     tenant = transition_entity
@@ -52,7 +52,7 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
 
 
 @shared_task
-@transition(Tenant, 'set_online')
+@transition(ExchangeTenant, 'set_online')
 def set_online(tenant_uuid, transition_entity=None):
     tenant = transition_entity
     tenant.start_time = timezone.now()
@@ -60,6 +60,6 @@ def set_online(tenant_uuid, transition_entity=None):
 
 
 @shared_task
-@transition(Tenant, 'set_erred')
+@transition(ExchangeTenant, 'set_erred')
 def set_erred(tenant_uuid, transition_entity=None):
     pass
