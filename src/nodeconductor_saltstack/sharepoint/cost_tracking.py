@@ -4,7 +4,7 @@ from nodeconductor.cost_tracking import CostTrackingBackend
 from nodeconductor.cost_tracking.models import DefaultPriceListItem
 from nodeconductor.structure import ServiceBackend
 
-from .models import Site
+from .models import SharepointTenant
 
 
 class PriceItemTypes(object):
@@ -23,7 +23,7 @@ class PriceItemTypes(object):
 class SaltStackCostTrackingBackend(CostTrackingBackend):
     @classmethod
     def get_default_price_list_items(cls):
-        content_type = ContentType.objects.get_for_model(Site)
+        content_type = ContentType.objects.get_for_model(SharepointTenant)
         for item, key in PriceItemTypes.CHOICES.iteritems():
             yield DefaultPriceListItem(item_type=item, key=key, resource_content_type=content_type)
 

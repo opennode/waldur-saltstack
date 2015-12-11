@@ -3,7 +3,7 @@ from . import models, serializers
 
 
 class SiteViewSet(structure_views.BaseResourceViewSet):
-    queryset = models.Site.objects.all()
+    queryset = models.SharepointTenant.objects.all()
     serializer_class = serializers.SiteSerializer
 
     def perform_provision(self, serializer):

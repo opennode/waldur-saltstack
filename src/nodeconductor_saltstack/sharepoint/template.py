@@ -21,4 +21,4 @@ class SiteProvisionTemplateForm(TemplateForm):
 
     @classmethod
     def get_resource_model(cls):
-        return models.Site
+        return models.SharepointTenant

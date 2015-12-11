@@ -3,7 +3,7 @@ from rest_framework import serializers
 from nodeconductor.structure import serializers as structure_serializers
 
 from ..saltstack.models import SaltStackServiceProjectLink
-from .models import Site
+from .models import SharepointTenant
 
 
 Sizes = (('small', 'Small'),
@@ -27,7 +27,7 @@ class SiteSerializer(structure_serializers.BaseResourceSerializer):
     storage_size = serializers.ChoiceField(write_only=True, choices=Sizes)
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
-        model = Site
+        model = SharepointTenant
         view_name = 'sharepoint-sites-detail'
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
             'domain', 'storage_size')

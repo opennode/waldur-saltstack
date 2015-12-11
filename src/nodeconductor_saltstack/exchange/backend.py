@@ -1,11 +1,6 @@
-import logging
-
 from nodeconductor.core.tasks import send_task
 
 from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend
-
-
-logger = logging.getLogger(__name__)
 
 
 def parse_size(size_str):

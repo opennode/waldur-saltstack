@@ -2,4 +2,4 @@ from . import views
 
 
 def register_in(router):
-    router.register(r'sharepoint-sites', views.SiteViewSet, base_name='sharepoint-sites')
+    router.register(r'sharepoint-tenants', views.SiteViewSet, base_name='sharepoint-tenants')
