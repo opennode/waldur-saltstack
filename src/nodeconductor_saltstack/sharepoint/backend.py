@@ -1,6 +1,7 @@
 from nodeconductor.core.tasks import send_task
 
 from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend
+from .models import Template
 
 
 class TenantAPI(SaltStackBaseAPI):
@@ -37,6 +38,7 @@ class TemplateAPI(SaltStackBaseAPI):
                 'Template Name': 'name',
                 'Template Code': 'code',
             },
+            many=True,
         )
 
 
@@ -54,6 +56,10 @@ class SiteAPI(SaltStackBaseAPI):
                 'admin_id': 'TenantSiteAdmin',
                 'main_quota': 'MainSiteQuota',
                 'my_quota': 'MySiteQuota',
+            },
+            defaults={
+                'tenant': lambda backend, **kw: backend.tenant.name,
+                'domain': lambda backend, **kw: backend.tenant.domain,
             },
             output={
                 'Subscription ID': 'id',
@@ -74,6 +80,7 @@ class SiteAPI(SaltStackBaseAPI):
                 'StorageMax MB': 'storage_limit',
                 'StorageWarning MB': 'storage_warn',
             },
+            many=True,
         )
 
         change = dict(
@@ -102,6 +109,8 @@ class UserAPI(SaltStackBaseAPI):
                 'email': 'UserEmail',
             },
             defaults={
+                'tenant': lambda backend, **kw: backend.tenant.name,
+                'domain': lambda backend, **kw: backend.tenant.domain,
                 'name': "{first_name} {last_name}",
                 'abbreviation': "{first_name[0]}{last_name[0]}",
             },
@@ -142,3 +151,27 @@ class SharepointBackend(SaltStackBaseBackend):
     def __init__(self, *args, **kwargs):
         super(SharepointBackend, self).__init__(*args, **kwargs)
         self.tenant = kwargs.get('tenant')
+
+    def pull_templates(self):
+        settings = self.tenant.service_project_link.service.settings
+        cur_tmpls = {t.backend_id: t for t in Template.objects.filter(settings=settings)}
+        for backend_tmpl in self.templates.list():
+            cur_tmpls.pop(backend_tmpl.code, None)
+            if backend_tmpl.name:
+                Template.objects.update_or_create(
+                    backend_id=backend_tmpl.code,
+                    settings=settings,
+                    defaults={
+                        'name': backend_tmpl.name,
+                        'code': backend_tmpl.code,
+                    })
+
+        map(lambda i: i.delete(), cur_tmpls.values())
+
+    def provision(self, tenant):
+        send_task('sharepoint', 'provision')(tenant.uuid.hex)
+
+    def destroy(self, tenant):
+        tenant.schedule_deletion()
+        tenant.save()
+        send_task('sharepoint', 'destroy')(tenant.uuid.hex)

@@ -16,6 +16,12 @@ class Migration(migrations.Migration):
             old_name='Site',
             new_name='SharepointTenant',
         ),
+        migrations.AddField(
+            model_name='sharepointtenant',
+            name='domain',
+            field=models.CharField(default='', max_length=255),
+            preserve_default=False,
+        ),
         migrations.CreateModel(
             name='Template',
             fields=[

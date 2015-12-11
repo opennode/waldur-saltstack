@@ -3,15 +3,10 @@ from rest_framework import serializers
 from nodeconductor.structure import serializers as structure_serializers
 
 from ..saltstack.models import SaltStackServiceProjectLink
-from .models import SharepointTenant
+from .models import SharepointTenant, Template
 
 
-Sizes = (('small', 'Small'),
-         ('medium', 'Medium'),
-         ('large', 'Large'))
-
-
-class SiteSerializer(structure_serializers.BaseResourceSerializer):
+class TenantSerializer(structure_serializers.BaseResourceSerializer):
     service = serializers.HyperlinkedRelatedField(
         source='service_project_link.service',
         view_name='saltstack-detail',
@@ -24,10 +19,19 @@ class SiteSerializer(structure_serializers.BaseResourceSerializer):
         write_only=True)
 
     domain = serializers.CharField(write_only=True, max_length=255)
-    storage_size = serializers.ChoiceField(write_only=True, choices=Sizes)
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
         model = SharepointTenant
-        view_name = 'sharepoint-sites-detail'
-        fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
-            'domain', 'storage_size')
+        view_name = 'sharepoint-tenants-detail'
+        fields = structure_serializers.BaseResourceSerializer.Meta.fields + ('domain',)
+
+
+class TemplateSerializer(structure_serializers.BasePropertySerializer):
+
+    class Meta(object):
+        model = Template
+        view_name = 'sharepoint-templates-detail'
+        fields = ('url', 'uuid', 'name', 'code')
+        extra_kwargs = {
+            'url': {'lookup_field': 'uuid'},
+        }

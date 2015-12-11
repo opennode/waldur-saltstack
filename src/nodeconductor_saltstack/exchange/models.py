@@ -7,7 +7,7 @@ from ..saltstack.models import SaltStackServiceProjectLink
 
 class ExchangeTenant(structure_models.Resource, structure_models.PaidResource):
     service_project_link = models.ForeignKey(
-        SaltStackServiceProjectLink, related_name='tenants', on_delete=models.PROTECT)
+        SaltStackServiceProjectLink, related_name='exchange_tenants', on_delete=models.PROTECT)
 
     domain = models.CharField(max_length=255)
     max_users = models.PositiveSmallIntegerField(help_text='Maximum number of mailboxes')

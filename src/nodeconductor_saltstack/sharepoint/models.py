@@ -7,7 +7,9 @@ from ..saltstack.models import SaltStackServiceProjectLink
 
 class SharepointTenant(structure_models.Resource, structure_models.PaidResource):
     service_project_link = models.ForeignKey(
-        SaltStackServiceProjectLink, related_name='sites', on_delete=models.PROTECT)
+        SaltStackServiceProjectLink, related_name='sharepoint_tenants', on_delete=models.PROTECT)
+
+    domain = models.CharField(max_length=255)
 
     @classmethod
     def get_url_name(cls):
