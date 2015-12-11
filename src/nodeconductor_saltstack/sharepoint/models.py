@@ -27,6 +27,7 @@ class Template(structure_models.ServiceProperty):
 class User(structure_models.GeneralServiceProperty):
     tenant = models.ForeignKey(SharepointTenant, related_name='users')
     email = models.EmailField(max_length=255)
+    username = models.CharField(max_length=255)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     admin_id = models.CharField(max_length=255)

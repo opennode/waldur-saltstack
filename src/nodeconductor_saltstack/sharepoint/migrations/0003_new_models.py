@@ -45,6 +45,7 @@ class Migration(migrations.Migration):
                 ('uuid', uuidfield.fields.UUIDField(unique=True, max_length=32, editable=False, blank=True)),
                 ('backend_id', models.CharField(unique=True, max_length=255)),
                 ('email', models.EmailField(max_length=255)),
+                ('username', models.CharField(max_length=255)),
                 ('first_name', models.CharField(max_length=255)),
                 ('last_name', models.CharField(max_length=255)),
                 ('admin_id', models.CharField(max_length=255)),

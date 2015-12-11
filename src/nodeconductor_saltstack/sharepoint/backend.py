@@ -58,8 +58,8 @@ class SiteAPI(SaltStackBaseAPI):
                 'my_quota': 'MySiteQuota',
             },
             defaults={
-                'tenant': lambda backend, **kw: backend.tenant.name,
-                'domain': lambda backend, **kw: backend.tenant.domain,
+                'tenant': "{backend.tenant.domain}",
+                'domain': "{backend.tenant.domain}",
             },
             output={
                 'Subscription ID': 'id',
@@ -109,8 +109,9 @@ class UserAPI(SaltStackBaseAPI):
                 'email': 'UserEmail',
             },
             defaults={
-                'tenant': lambda backend, **kw: backend.tenant.name,
-                'domain': lambda backend, **kw: backend.tenant.domain,
+                'tenant': "{backend.tenant.domain}",
+                'domain': "{backend.tenant.domain}",
+                'email': "{username}@{backend.tenant.domain}",
                 'name': "{first_name} {last_name}",
                 'abbreviation': "{first_name[0]}{last_name[0]}",
             },

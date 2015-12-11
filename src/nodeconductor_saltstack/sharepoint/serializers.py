@@ -1,9 +1,10 @@
 from rest_framework import serializers
 
+from nodeconductor.core.serializers import AugmentedSerializerMixin
 from nodeconductor.structure import serializers as structure_serializers
 
 from ..saltstack.models import SaltStackServiceProjectLink
-from .models import SharepointTenant, Template
+from .models import SharepointTenant, Template, User
 
 
 class TenantSerializer(structure_serializers.BaseResourceSerializer):
@@ -34,4 +35,26 @@ class TemplateSerializer(structure_serializers.BasePropertySerializer):
         fields = ('url', 'uuid', 'name', 'code')
         extra_kwargs = {
             'url': {'lookup_field': 'uuid'},
+        }
+
+
+class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
+
+    class Meta(object):
+        model = User
+        view_name = 'sharepoint-users-detail'
+        fields = (
+            'url', 'uuid', 'name', 'email', 'tenant',
+            'username', 'first_name', 'last_name',
+            'admin_id', 'password',
+        )
+        read_only_fields = ('name', 'email', 'uuid', 'admin_id', 'password')
+        write_only_fields = ('username', 'first_name', 'last_name')
+        protected_fields = ('tenant',)
+        extra_kwargs = {
+            'url': {'lookup_field': 'uuid'},
+            'tenant': {'lookup_field': 'uuid', 'view_name': 'sharepoint-tenants-detail'},
+        }
+        related_paths = {
+            'tenant': ('uuid', 'domain')
         }

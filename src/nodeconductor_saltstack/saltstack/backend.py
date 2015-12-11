@@ -15,8 +15,12 @@ class SaltStackBackendError(ServiceBackendError):
 
     def __init__(self, message, traceback=None):
         super(SaltStackBackendError, self).__init__(message)
-        self.traceback_str = '; '.join(["%s: %s" % (k, v) for k, v in traceback.items()]) if traceback else ''
         self.traceback = traceback
+        self.traceback_str = 'Error'
+        if isinstance(traceback, basestring):
+            self.traceback_str = traceback
+        elif isinstance(traceback, dict):
+            self.traceback_str = '; '.join(["%s: %s" % (k, v) for k, v in traceback.items()])
 
 
 class SaltStackBackend(object):
@@ -183,7 +187,7 @@ class SaltStackBaseAPI(SaltStackAPI):
                     if opt not in kwargs:
                         fn = fn_opts['defaults'][opt]
                         if isinstance(fn, basestring):
-                            kwargs[opt] = fn.format(**kwargs)
+                            kwargs[opt] = fn.format(backend=self.backend, **kwargs)
                         elif isinstance(fn, types.FunctionType):
                             kwargs[opt] = fn(self.backend, **kwargs)
                         else:
