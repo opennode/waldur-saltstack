@@ -27,7 +27,7 @@ def destroy(tenant_uuid, transition_entity=None):
     try:
         backend = tenant.get_backend()
         backend_tenant = backend.tenants.delete(tenant=tenant.name, domain=tenant.domain)
-        backend_tenant.destroy()
+        backend_tenant.delete()
     except:
         set_erred(tenant_uuid)
         raise

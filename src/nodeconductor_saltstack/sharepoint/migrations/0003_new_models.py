@@ -22,6 +22,48 @@ class Migration(migrations.Migration):
             field=models.CharField(default='', max_length=255),
             preserve_default=False,
         ),
+        migrations.AddField(
+            model_name='sharepointtenant',
+            name='admin_login',
+            field=models.CharField(default='', blank=True, max_length=255),
+            preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name='sharepointtenant',
+            name='admin_password',
+            field=models.CharField(default='', blank=True, max_length=255),
+            preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name='sharepointtenant',
+            name='admin_url',
+            field=models.URLField(default='', blank=True),
+            preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name='sharepointtenant',
+            name='site_name',
+            field=models.CharField(default='', max_length=255),
+            preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name='sharepointtenant',
+            name='site_url',
+            field=models.URLField(default='', blank=True),
+            preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name='sharepointtenant',
+            name='main_quota',
+            field=models.PositiveSmallIntegerField(default=0, help_text=b'Main site quota, GB'),
+            preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name='sharepointtenant',
+            name='quota',
+            field=models.PositiveSmallIntegerField(default=0, help_text=b'My site quota, GB'),
+            preserve_default=False,
+        ),
         migrations.CreateModel(
             name='Template',
             fields=[
@@ -64,9 +106,9 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=150, verbose_name='name')),
                 ('uuid', uuidfield.fields.UUIDField(unique=True, max_length=32, editable=False, blank=True)),
                 ('backend_id', models.CharField(unique=True, max_length=255)),
-                ('url', models.URLField()),
+                ('site_url', models.CharField(max_length=255)),
+                ('description', models.CharField(max_length=255)),
                 ('user', models.ForeignKey(related_name='sites', to='sharepoint.User')),
-                ('tenant', models.ForeignKey(related_name='sites', to='sharepoint.SharepointTenant')),
             ],
             options={
                 'abstract': False,

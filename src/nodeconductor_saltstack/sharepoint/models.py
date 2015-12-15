@@ -10,6 +10,13 @@ class SharepointTenant(structure_models.Resource, structure_models.PaidResource)
         SaltStackServiceProjectLink, related_name='sharepoint_tenants', on_delete=models.PROTECT)
 
     domain = models.CharField(max_length=255)
+    site_name = models.CharField(max_length=255)
+    site_url = models.URLField(blank=True)
+    admin_url = models.URLField(blank=True)
+    admin_login = models.CharField(max_length=255, blank=True)
+    admin_password = models.CharField(max_length=255, blank=True)
+    main_quota = models.PositiveSmallIntegerField(help_text='Main site quota, GB')
+    quota = models.PositiveSmallIntegerField(help_text='My site quota, GB')
 
     @classmethod
     def get_url_name(cls):
@@ -35,6 +42,6 @@ class User(structure_models.GeneralServiceProperty):
 
 
 class Site(structure_models.GeneralServiceProperty):
-    tenant = models.ForeignKey(SharepointTenant, related_name='sites')
     user = models.ForeignKey(User, related_name='sites')
-    url = models.URLField(max_length=200)
+    description = models.CharField(max_length=255)
+    site_url = models.CharField(max_length=255)

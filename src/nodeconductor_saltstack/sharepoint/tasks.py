@@ -27,7 +27,7 @@ def destroy(tenant_uuid, transition_entity=None):
     try:
         backend = tenant.get_backend()
         backend_tenant = backend.tenants.delete(tenant=tenant.name, domain=tenant.domain)
-        backend_tenant.destroy()
+        backend_tenant.delete()
     except:
         set_erred(tenant_uuid)
         raise
@@ -41,12 +41,20 @@ def destroy(tenant_uuid, transition_entity=None):
 def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
     tenant = transition_entity
     backend = tenant.get_backend()
-    backend.pull_templates()
     backent_tenant = backend.tenants.create(
         tenant=tenant.name,
-        domain=tenant.domain)
+        domain=tenant.domain,
+        name=tenant.site_name,
+        description=tenant.description,
+        main_quota=kwargs['main_quota'],
+        quota=kwargs['quota'],
+        template_code=kwargs['template_code'])
 
     tenant.backend_id = backent_tenant.id
+    tenant.site_url = backent_tenant.site_url
+    tenant.admin_url = backent_tenant.admin_url
+    tenant.admin_login = backent_tenant.admin_login
+    tenant.admin_password = backent_tenant.admin_password
     tenant.save()
 
 

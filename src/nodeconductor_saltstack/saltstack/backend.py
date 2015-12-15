@@ -4,6 +4,7 @@ import logging
 import requests
 import functools
 
+from django.utils import six
 from nodeconductor.structure import ServiceBackend, ServiceBackendError
 from .. import __version__
 
@@ -25,16 +26,33 @@ class SaltStackBackendError(ServiceBackendError):
 
 class SaltStackBackend(object):
 
+    backends = set()
+
     def __init__(self, settings, backend_class=None, **kwargs):
         if not backend_class:
             backend_class = SaltStackBaseBackend
+        if backend_class not in self.backends:
+            raise SaltStackBackendError("Unknown SaltStack backend class: %s" % backend_class)
+
         self.backend = backend_class(settings, **kwargs)
 
     def __getattr__(self, name):
         return getattr(self.backend, name)
 
+    @classmethod
+    def register(cls, backend_class):
+        cls.backends.add(backend_class)
 
-class SaltStackBaseBackend(ServiceBackend):
+
+class SaltStackMetaclass(type):
+
+    def __new__(cls, name, bases, args):
+        new_class = super(SaltStackMetaclass, cls).__new__(cls, name, bases, args)
+        SaltStackBackend.register(new_class)
+        return new_class
+
+
+class SaltStackBaseBackend(six.with_metaclass(SaltStackMetaclass, ServiceBackend)):
 
     TARGET_OPTION_NAME = NotImplemented
     MAPPING_OPTION_NAME = NotImplemented
@@ -52,6 +70,13 @@ class SaltStackBaseBackend(ServiceBackend):
 
             setattr(api, 'backend', self)
             setattr(self, name, api)
+
+    def sync_backend(self):
+        pass
+
+    def sync(self):
+        for cls in SaltStackBackend.backends:
+            cls(self.settings).sync_backend()
 
 
 class SaltStackAPI(object):

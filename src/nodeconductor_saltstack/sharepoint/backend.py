@@ -12,16 +12,47 @@ class TenantAPI(SaltStackBaseAPI):
             input={
                 'tenant': 'TenantName',
                 'domain': 'TenantDomain',
+                'name': 'TenantSiteName',
+                'description': 'TenantSiteDesc',
+                'template_code': 'TenantSiteTemplate',
+                'admin_id': 'TenantSiteAdmin',
+                'main_quota': 'MainSiteQuota',
+                'quota': 'MySiteQuota',
             },
             output={
-                'UPNSuffix': 'id',
+                'Subscription ID': 'id',
                 'Tenant Database': 'db',
-                'WebAppUrl': 'url',
+                'Tenant WebApplication': 'app_name',
+                'WebAppUrl': 'app_url',
+                'Admin Site Admin URL': 'admin_url',
+                'Main Site URL': 'base_url',
+                'My Site URL': 'url',
+                'DistinguishedName': 'dn',
+                'Collection Sites Administrator': 'admin_name',
+                'Administrator Login Name': 'admin_login',
+                'Administrator Password': 'admin_password'
             },
         )
 
         delete = dict(
             name='DelTenant',
+            input={
+                'tenant': 'TenantName',
+                'domain': 'TenantDomain',
+            },
+        )
+
+        change = dict(
+            name='EditSiteQuota',
+            input={
+                'domain': 'TenantDomain',
+                'main_quota': 'MainSiteQuota',
+                'quota': 'MySiteQuota',
+            },
+        )
+
+        check = dict(
+            name='CheckTenant',
             input={
                 'tenant': 'TenantName',
                 'domain': 'TenantDomain',
@@ -45,28 +76,31 @@ class TemplateAPI(SaltStackBaseAPI):
 class SiteAPI(SaltStackBaseAPI):
 
     class Methods:
+        _base = dict(
+            output={
+                'URL': 'url',
+                'StorageMax MB': 'max_quota',
+                'StorageWarning MB': 'warn_quota',
+                'StorageUsage MB': 'usage',
+            },
+        )
+
         create = dict(
-            name='InitializeTenant',
+            name='AddSiteCollection',
             input={
-                'tenant': 'TenantName',
                 'domain': 'TenantDomain',
-                'name': 'TenantSiteName',
-                'description': 'TenantSiteDesc',
-                'template_code': 'TenantSiteTemplate',
-                'admin_id': 'TenantSiteAdmin',
-                'main_quota': 'MainSiteQuota',
-                'my_quota': 'MySiteQuota',
+                'site_url': 'RelativeSiteUrl',
+                'name': 'SiteName',
+                'description': 'SiteDesc',
+                'template_code': 'SiteTemplate',
+                'admin_id': 'SiteAdmin',
+                'max_quota': 'MaxQuota',
+                'warn_quota': 'WarningQuota',
             },
             defaults={
-                'tenant': "{backend.tenant.domain}",
                 'domain': "{backend.tenant.domain}",
             },
-            output={
-                'Subscription ID': 'id',
-                'Admin Site Admin URL': 'admin_url',
-                'Main Site URL': 'base_url',
-                'My Site URL': 'url',
-            },
+            **_base
         )
 
         list = dict(
@@ -75,20 +109,18 @@ class SiteAPI(SaltStackBaseAPI):
                 'tenant': 'TenantName',
                 'domain': 'TenantDomain',
             },
-            output={
-                'URL': 'url',
-                'StorageMax MB': 'storage_limit',
-                'StorageWarning MB': 'storage_warn',
+            defaults={
+                'tenant': "{backend.tenant.name}",
+                'domain': "{backend.tenant.domain}",
             },
             many=True,
+            **_base
         )
 
-        change = dict(
-            name='EditSiteQuota',
+        delete = dict(
+            name='DelSiteCollection',
             input={
                 'url': 'SiteUrl',
-                'storage_limit': 'MaxQuota',
-                'storage_warn': 'WarningQuota',
             },
         )
 
@@ -96,6 +128,34 @@ class SiteAPI(SaltStackBaseAPI):
 class UserAPI(SaltStackBaseAPI):
 
     class Methods:
+        _base = dict(
+            output={
+                'ObjectGUID': 'id',
+                'EmailAddress': 'email',
+                'DisplayName': 'name',
+                'FirstName': 'first_name',
+                'LastName': 'last_name',
+                'userPrincipalName': 'login',
+                'DistinguishedName': 'dn',
+                'SamAccountName': 'admin_id',
+                'UserPassword': 'password',
+            },
+        )
+
+        list = dict(
+            name='ListAllUsers',
+            input={
+                'tenant': 'TenantName',
+                'domain': 'TenantDomain',
+            },
+            defaults={
+                'tenant': "{backend.tenant.name}",
+                'domain': "{backend.tenant.domain}",
+            },
+            many=True,
+            **_base
+        )
+
         create = dict(
             name='AddUser',
             input={
@@ -105,27 +165,21 @@ class UserAPI(SaltStackBaseAPI):
                 'username': 'UserName',
                 'first_name': 'UserFirstName',
                 'last_name': 'UserLastName',
-                'abbreviation': 'UserInitials',
                 'email': 'UserEmail',
             },
             defaults={
-                'tenant': "{backend.tenant.domain}",
+                'tenant': "{backend.tenant.name}",
                 'domain': "{backend.tenant.domain}",
-                'email': "{username}@{backend.tenant.domain}",
                 'name': "{first_name} {last_name}",
-                'abbreviation': "{first_name[0]}{last_name[0]}",
             },
-            output={
-                'ObjectGUID': 'id',
-                'Email Address': 'email',
-                'DisplayName': 'name',
-                'TempPassword': 'password',
-                'FirstName': 'first_name',
-                'LastName': 'last_name',
-                'Initials': 'abbreviation',
-                'DistinguishedName': 'dn',
-                'SamAccountName': 'admin_id',
-                'TempPassword': 'password',
+            **_base
+        )
+
+        change_password = dict(
+            name='ResetUserPassword',
+            input={
+                'id': 'Id',
+                'password': 'Pwd',
             },
         )
 
@@ -135,6 +189,23 @@ class UserAPI(SaltStackBaseAPI):
                 'id': 'Id',
                 'dn': 'Id',
             },
+        )
+
+        change = dict(
+            name='EditUser',
+            input={
+                'domain': 'TenantDomain',
+                'admin_id': 'SamAccName',
+                'name': 'DisplayName',
+                'username': 'UserName',
+                'first_name': 'UserFirstName',
+                'last_name': 'UserLastName',
+                'email': 'UserEmail',
+            },
+            defaults={
+                'domain': "{backend.tenant.domain}",
+            },
+            **_base
         )
 
 
@@ -153,15 +224,14 @@ class SharepointBackend(SaltStackBaseBackend):
         super(SharepointBackend, self).__init__(*args, **kwargs)
         self.tenant = kwargs.get('tenant')
 
-    def pull_templates(self):
-        settings = self.tenant.service_project_link.service.settings
-        cur_tmpls = {t.backend_id: t for t in Template.objects.filter(settings=settings)}
+    def sync_backend(self):
+        cur_tmpls = {t.backend_id: t for t in Template.objects.filter(settings=self.settings)}
         for backend_tmpl in self.templates.list():
             cur_tmpls.pop(backend_tmpl.code, None)
             if backend_tmpl.name:
                 Template.objects.update_or_create(
                     backend_id=backend_tmpl.code,
-                    settings=settings,
+                    settings=self.settings,
                     defaults={
                         'name': backend_tmpl.name,
                         'code': backend_tmpl.code,
@@ -169,8 +239,8 @@ class SharepointBackend(SaltStackBaseBackend):
 
         map(lambda i: i.delete(), cur_tmpls.values())
 
-    def provision(self, tenant):
-        send_task('sharepoint', 'provision')(tenant.uuid.hex)
+    def provision(self, tenant, template=None, **kwargs):
+        send_task('sharepoint', 'provision')(tenant.uuid.hex, template_code=template.code, **kwargs)
 
     def destroy(self, tenant):
         tenant.schedule_deletion()
