@@ -5,7 +5,6 @@ from uuid import uuid4
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, migrations
-import taggit.managers
 
 
 GLOBAL_MAILBOX_SIZE_QUOTA = 'global_mailbox_size'
@@ -46,12 +45,6 @@ class Migration(migrations.Migration):
             model_name='tenant',
             name='mailbox_size',
             field=models.PositiveSmallIntegerField(help_text=b'Maximum size of single mailbox, MB'),
-            preserve_default=True,
-        ),
-        migrations.AlterField(
-            model_name='tenant',
-            name='tags',
-            field=taggit.managers.TaggableManager(to='taggit.Tag', through='taggit.TaggedItem', blank=True, help_text='A comma-separated list of tags.', verbose_name='Tags'),
             preserve_default=True,
         ),
         migrations.RunPython(convert_mailbox_size_to_mb),
