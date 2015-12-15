@@ -257,8 +257,8 @@ class SaltStackBaseAPI(SaltStackAPI):
             if found:
                 yield obj
 
-    def get(self, user_id):
+    def get(self, obj_id):
         try:
-            return next(self.findall(id=user_id))
+            return next(self.findall(id=obj_id))
         except StopIteration:
             return None
