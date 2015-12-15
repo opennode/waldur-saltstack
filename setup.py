@@ -9,16 +9,18 @@ dev_requires = [
 
 install_requires = [
     'nodeconductor>=0.80.0',
+     # transitive dependency from nodeconductor core requires Pillow version <3.0.0
+    'Pillow>=2.0.0,<3.0.0',
 ]
 
 
 setup(
     name='nodeconductor-saltstack',
-    version='0.1.1',
+    version='0.1.3',
     author='OpenNode Team',
     author_email='info@opennodecloud.com',
     url='http://nodeconductor.com',
-    description='NodeConductor SaltStack allows to manage saltstack driven infrastructure',
+    description='NodeConductor SaltStack plugin allows to manage applications via SaltStack RPC',
     long_description=open('README.rst').read(),
     package_dir={'': 'src'},
     packages=find_packages('src', exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
