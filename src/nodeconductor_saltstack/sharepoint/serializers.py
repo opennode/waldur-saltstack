@@ -35,10 +35,10 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             'main_quota', 'quota',
         )
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
-            'admin_url', 'admin_login', 'admin_password',
+            'site_url', 'admin_url', 'admin_login', 'admin_password',
         )
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
-            'template', 'name', 'description', 'domain', 'site_name', 'site_url',
+            'template', 'name', 'description', 'domain', 'site_name',
         )
 
     def validate(self, attrs):
