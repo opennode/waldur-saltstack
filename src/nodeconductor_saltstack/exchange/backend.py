@@ -44,10 +44,6 @@ class TenantAPI(SaltStackBaseAPI):
                 'tenant': 'TenantName',
                 'domain': 'TenantDomain',
             },
-            defaults={
-                'tenant': "{backend.tenant.name}",
-                'domain': "{backend.tenant.domain}",
-            },
         )
 
         change = dict(
