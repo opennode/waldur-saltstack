@@ -15,6 +15,10 @@ class SaltStackService(structure_models.Service):
 class SaltStackServiceProjectLink(structure_models.ServiceProjectLink):
     service = models.ForeignKey(SaltStackService)
 
+    class Meta(object):
+        verbose_name = 'SaltStack service project link'
+        verbose_name_plural = 'SaltStack service project links'
+
     @classmethod
     def get_url_name(cls):
         return 'saltstack-spl'

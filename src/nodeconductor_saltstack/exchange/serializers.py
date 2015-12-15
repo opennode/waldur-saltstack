@@ -9,6 +9,7 @@ from .models import Tenant
 
 
 class TenantSerializer(structure_serializers.BaseResourceSerializer):
+    TENANT_MAX_SIZE = 2 * 1024 * 1024  # 2TB
     service = serializers.HyperlinkedRelatedField(
         source='service_project_link.service',
         view_name='saltstack-detail',
@@ -32,7 +33,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
 
     def validate(self, attrs):
         tenant_size = int(attrs['mailbox_size']) * int(attrs['max_users'])
-        if tenant_size * .9 > 2048:
+        if tenant_size * .9 > self.TENANT_MAX_SIZE:
             raise serializers.ValidationError({
                 'max_users': "Total mailbox size should be lower than 2 TB"})
 

@@ -1,17 +1,23 @@
 from django.db import models
 
+from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
 
 from ..saltstack.models import SaltStackServiceProjectLink
 
 
-class Tenant(structure_models.Resource, structure_models.PaidResource):
+class Tenant(QuotaModelMixin, structure_models.Resource, structure_models.PaidResource):
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='tenants', on_delete=models.PROTECT)
 
     domain = models.CharField(max_length=255)
     max_users = models.PositiveSmallIntegerField(help_text='Maximum number of mailboxes')
-    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of single mailbox, GB')
+    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of single mailbox, MB')
+
+    QUOTAS_NAMES = [
+        'user_count',  # tenant users count
+        'global_mailbox_size',  # size of all tenant mailboxes together
+    ]
 
     @classmethod
     def get_url_name(cls):

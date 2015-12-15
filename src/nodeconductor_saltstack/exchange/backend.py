@@ -314,7 +314,19 @@ class ExchangeBackend(SaltStackBaseBackend):
     def provision(self, tenant):
         send_task('exchange', 'provision')(tenant.uuid.hex)
 
-    def destroy(self, tenant):
+    def destroy(self, tenant, force=False):
         tenant.schedule_deletion()
         tenant.save()
         send_task('exchange', 'destroy')(tenant.uuid.hex)
+
+    def sync_user_count_quota(self, tenant):
+        users_count = len(self.users.list())
+        tenant.set_quota_usage('user_count', users_count)
+
+    def sync_mailbox_global_size_quotas(self, tenant):
+        global_mailbox_size = 0
+        for user in self.users.list():
+            stats = self.user.stats(id=user.id)
+            global_mailbox_size += stats.mailbox_size
+
+        tenant.set_quota_usage('global_mailbox_size', global_mailbox_size)
