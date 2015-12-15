@@ -44,6 +44,10 @@ class TenantAPI(SaltStackBaseAPI):
                 'tenant': 'TenantName',
                 'domain': 'TenantDomain',
             },
+            defaults={
+                'tenant': "{backend.tenant.name}",
+                'domain': "{backend.tenant.domain}",
+            },
         )
 
         change = dict(
@@ -314,7 +318,7 @@ class ExchangeBackend(SaltStackBaseBackend):
     def provision(self, tenant):
         send_task('exchange', 'provision')(tenant.uuid.hex)
 
-    def destroy(self, tenant):
+    def destroy(self, tenant, force=False):
         tenant.schedule_deletion()
         tenant.save()
-        send_task('exchange', 'destroy')(tenant.uuid.hex)
+        send_task('exchange', 'destroy')(tenant.uuid.hex, force=force)
