@@ -22,17 +22,17 @@ def provision(tenant_uuid, **kwargs):
 @shared_task(name='nodeconductor.sharepoint.destroy')
 @transition(SharepointTenant, 'begin_deleting')
 @save_error_message
-def destroy(tenant_uuid, transition_entity=None):
+def destroy(tenant_uuid, force=False, transition_entity=None):
     tenant = transition_entity
     try:
         backend = tenant.get_backend()
-        backend_tenant = backend.tenants.delete(tenant=tenant.name, domain=tenant.domain)
-        backend_tenant.delete()
+        backend.tenants.delete()
     except:
-        set_erred(tenant_uuid)
-        raise
-    else:
-        tenant.delete()
+        if not force:
+            set_erred(tenant_uuid)
+            raise
+
+    tenant.delete()
 
 
 @shared_task(is_heavy_task=True)
@@ -46,8 +46,8 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
         domain=tenant.domain,
         name=tenant.site_name,
         description=tenant.description,
-        main_quota=kwargs['main_quota'],
-        quota=kwargs['quota'],
+        storage_size=kwargs['storage_size'],
+        users_count=kwargs['users_count'],
         template_code=kwargs['template_code'])
 
     tenant.backend_id = backent_tenant.id

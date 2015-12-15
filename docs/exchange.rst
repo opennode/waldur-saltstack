@@ -10,7 +10,7 @@ parameters:
  - link to the service-project-link object;
  - domain - Domain name;
  - max_users - Maximum number of users;
- - mailbox_size - Average mailboxes size (Gb);
+ - mailbox_size - Average mailboxes size (GB);
 
 
  Example of a valid request:

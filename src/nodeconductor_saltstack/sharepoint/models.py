@@ -1,5 +1,6 @@
 from django.db import models
 
+from nodeconductor.core.models import DescribableMixin
 from nodeconductor.structure import models as structure_models
 
 from ..saltstack.models import SaltStackServiceProjectLink
@@ -15,8 +16,6 @@ class SharepointTenant(structure_models.Resource, structure_models.PaidResource)
     admin_url = models.URLField(blank=True)
     admin_login = models.CharField(max_length=255, blank=True)
     admin_password = models.CharField(max_length=255, blank=True)
-    main_quota = models.PositiveSmallIntegerField(help_text='Main site quota, GB')
-    quota = models.PositiveSmallIntegerField(help_text='My site quota, GB')
 
     @classmethod
     def get_url_name(cls):
@@ -41,7 +40,6 @@ class User(structure_models.GeneralServiceProperty):
     password = models.CharField(max_length=255)
 
 
-class Site(structure_models.GeneralServiceProperty):
+class Site(DescribableMixin, structure_models.GeneralServiceProperty):
     user = models.ForeignKey(User, related_name='sites')
-    description = models.CharField(max_length=255)
     site_url = models.CharField(max_length=255)

@@ -1,4 +1,4 @@
-from rest_framework import exceptions, mixins, viewsets
+from rest_framework import decorators, exceptions, mixins, response, viewsets
 
 from nodeconductor.core.exceptions import IncorrectStateException
 from nodeconductor.structure import views as structure_views
@@ -7,9 +7,10 @@ from ..saltstack.backend import SaltStackBackendError
 from . import models, serializers
 
 
-class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
+class TenantViewSet(structure_views.BaseResourceViewSet):
     queryset = models.SharepointTenant.objects.all()
     serializer_class = serializers.TenantSerializer
+    http_method_names = ['head', 'get', 'post', 'delete']
 
     def perform_provision(self, serializer):
         resource = serializer.save()
@@ -17,19 +18,30 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         backend.provision(
             resource,
             template=serializer.validated_data['template'],
-            main_quota=serializer.validated_data['main_quota'],
-            quota=serializer.validated_data['quota'])
+            storage_size=serializer.validated_data['storage_size'],
+            users_count=serializer.validated_data['users_count'])
 
-    def perform_update(self, serializer):
+    @decorators.detail_route(methods=['post'])
+    def set_quotas(self, request, **kwargs):
+        if not request.user.is_staff:
+            raise exceptions.PermissionDenied()
+
         tenant = self.get_object()
-        backend = tenant.get_backend()
+        if tenant.state != models.SharepointTenant.States.OFFLINE:
+            raise IncorrectStateException("Tenant must be in stable state to perform quotas update")
+
+        serializer = serializers.TenantQuotaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         try:
-            backend.tenants.change(domain=tenant.domain, **serializer.validated_data)
+            backend = tenant.get_backend()
+            backend.tenants.change_quota(**serializer.validated_data)
         except SaltStackBackendError as e:
             raise exceptions.APIException(e.traceback_str)
-        else:
-            serializer.save()
+
+        return response.Response(
+            {'status': 'Quota update was scheduled'}, status=status.HTTP_202_ACCEPTED)
+
 
 
 class TemplateViewSet(structure_views.BaseServicePropertyViewSet):

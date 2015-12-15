@@ -16,8 +16,8 @@ class TenantAPI(SaltStackBaseAPI):
                 'description': 'TenantSiteDesc',
                 'template_code': 'TenantSiteTemplate',
                 'admin_id': 'TenantSiteAdmin',
-                'main_quota': 'MainSiteQuota',
-                'quota': 'MySiteQuota',
+                'storage_size': 'MainSiteSizeQuota',
+                'users_count': 'NumberOfUsers',
             },
             output={
                 'Subscription ID': 'id',
@@ -40,14 +40,21 @@ class TenantAPI(SaltStackBaseAPI):
                 'tenant': 'TenantName',
                 'domain': 'TenantDomain',
             },
+            defaults={
+                'tenant': "{backend.tenant.name}",
+                'domain': "{backend.tenant.domain}",
+            },
         )
 
-        change = dict(
+        change_quota = dict(
             name='EditSiteQuota',
             input={
                 'domain': 'TenantDomain',
-                'main_quota': 'MainSiteQuota',
-                'quota': 'MySiteQuota',
+                'storage_size': 'MainSiteSizeQuota',
+                'users_count': 'NumberOfUsers',
+            },
+            defaults={
+                'domain': "{backend.tenant.domain}",
             },
         )
 
@@ -228,21 +235,20 @@ class SharepointBackend(SaltStackBaseBackend):
         cur_tmpls = {t.backend_id: t for t in Template.objects.filter(settings=self.settings)}
         for backend_tmpl in self.templates.list():
             cur_tmpls.pop(backend_tmpl.code, None)
-            if backend_tmpl.name:
-                Template.objects.update_or_create(
-                    backend_id=backend_tmpl.code,
-                    settings=self.settings,
-                    defaults={
-                        'name': backend_tmpl.name,
-                        'code': backend_tmpl.code,
-                    })
+            Template.objects.update_or_create(
+                backend_id=backend_tmpl.code,
+                settings=self.settings,
+                defaults={
+                    'name': backend_tmpl.name,
+                    'code': backend_tmpl.code,
+                })
 
         map(lambda i: i.delete(), cur_tmpls.values())
 
     def provision(self, tenant, template=None, **kwargs):
         send_task('sharepoint', 'provision')(tenant.uuid.hex, template_code=template.code, **kwargs)
 
-    def destroy(self, tenant):
+    def destroy(self, tenant, force=False):
         tenant.schedule_deletion()
         tenant.save()
-        send_task('sharepoint', 'destroy')(tenant.uuid.hex)
+        send_task('sharepoint', 'destroy')(tenant.uuid.hex, force=force)

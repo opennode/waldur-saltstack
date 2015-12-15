@@ -38,8 +38,8 @@ parameters:
  - domain - Domain name;
  - site_name - Site name;
  - description - Site description;
- - main_quota - Main quota (Gb);
- - quota - Your quota (Gb);
+ - storage_size - Site storage size (GB);
+ - users_count - Number of users;
 
 
  Example of a valid request:
@@ -59,8 +59,8 @@ parameters:
         "domain": "blog.com",
         "site_name": "Blog",
         "description": "My blog",
-        "main_quota": 3,
-        "quota": 2
+        "storage_size": 2.5,
+        "users_count": 10
     }
 
 
@@ -108,29 +108,27 @@ Example rendering of the tenant object:
         "admin_url": "http://blog.com/admin",
         "admin_login": "tenantadmin@blog.com",
         "admin_password": "k?6y#3$+0=@a",
-        "main_quota": 5,
-        "quota": 3
     }
 
 
 Update tenant quotas
 --------------------
 
-To update tenant quotas - issue PUT request against **/api/sharepoint-tenants/<tenant_uuid>/**.
+To update tenant quotas - issue POST request against **/api/sharepoint-tenants/<tenant_uuid>/set_quotas/**.
 
 Example of a valid request:
 
 .. code-block:: http
 
-    PUT /api/sharepoint-tenants/8194584bc21449ccbe60509ec34b03e2/ HTTP/1.1
+    PUT /api/sharepoint-tenants/8194584bc21449ccbe60509ec34b03e2/set_quotas/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
     Host: example.com
 
     {
-        "main_quota": 5,
-        "quota": 3
+        "storage_size": 5,
+        "users_count": 20
     }
 
 
@@ -208,6 +206,10 @@ Delete user
 To delete user - issue DELETE request against **/api/sharepoint-users/<user_uuid>/**.
 
 
+Endpoints to be implemented in future release
+---------------------------------------------
+
+
 Create site
 -----------
 
@@ -216,8 +218,8 @@ To create new sharepoint site - issue POST request against **/api/sharepoint-sit
  - name - Site name;
  - site_url - Site URL;
  - description - Site description;
- - max_quota - Maximum site quota (Gb);
- - warn_quota - Warning quota (Gb);
+ - max_quota - Maximum site quota (GB);
+ - warn_quota - Warning quota (GB);
  - link to template object;
  - link to user object;
 

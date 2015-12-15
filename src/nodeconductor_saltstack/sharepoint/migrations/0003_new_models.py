@@ -52,18 +52,6 @@ class Migration(migrations.Migration):
             field=models.URLField(default='', blank=True),
             preserve_default=False,
         ),
-        migrations.AddField(
-            model_name='sharepointtenant',
-            name='main_quota',
-            field=models.PositiveSmallIntegerField(default=0, help_text=b'Main site quota, GB'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='sharepointtenant',
-            name='quota',
-            field=models.PositiveSmallIntegerField(default=0, help_text=b'My site quota, GB'),
-            preserve_default=False,
-        ),
         migrations.CreateModel(
             name='Template',
             fields=[
@@ -107,7 +95,7 @@ class Migration(migrations.Migration):
                 ('uuid', uuidfield.fields.UUIDField(unique=True, max_length=32, editable=False, blank=True)),
                 ('backend_id', models.CharField(unique=True, max_length=255)),
                 ('site_url', models.CharField(max_length=255)),
-                ('description', models.CharField(max_length=255)),
+                ('description', models.CharField(max_length=500, verbose_name='description', blank=True)),
                 ('user', models.ForeignKey(related_name='sites', to='sharepoint.User')),
             ],
             options={

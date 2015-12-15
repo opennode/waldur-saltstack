@@ -26,13 +26,16 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         write_only=True,
         lookup_field='uuid')
 
+    storage_size = serializers.FloatField(min_value=1, write_only=True, help_text='Maximum storage size, GB')
+    users_count = serializers.IntegerField(min_value=1, write_only=True, help_text='Maximum users count')
+
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
         model = SharepointTenant
         view_name = 'sharepoint-tenants-detail'
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
             'template', 'domain', 'site_name', 'site_url',
             'admin_url', 'admin_login', 'admin_password',
-            'main_quota', 'quota',
+            'storage_size', 'users_count',
         )
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
             'site_url', 'admin_url', 'admin_login', 'admin_password',
@@ -42,24 +45,24 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         )
 
     def validate(self, attrs):
-        if attrs['quota'] > attrs['main_quota']:
-            raise serializers.ValidationError({
-                'quota': "Quota exceeds main quota"})
-
         spl = attrs.get('service_project_link')
-        if spl:
-            if spl.service.settings != attrs['template'].settings:
-                raise serializers.ValidationError({
-                    'template': "Template must be within the same service settings"})
+        if spl.service.settings != attrs['template'].settings:
+            raise serializers.ValidationError({
+                'template': "Template must be within the same service settings"})
 
-            backend = SharepointTenant(service_project_link=spl).get_backend()
-            try:
-                backend.tenants.check(tenant=attrs['name'], domain=attrs['domain'])
-            except SaltStackBackendError as e:
-                raise serializers.ValidationError({
-                    'name': "This tenant name is already taken: %s" % e.traceback_str})
+        backend = SharepointTenant(service_project_link=spl).get_backend()
+        try:
+            backend.tenants.check(tenant=attrs['name'], domain=attrs['domain'])
+        except SaltStackBackendError as e:
+            raise serializers.ValidationError({
+                'name': "This tenant name is already taken: %s" % e.traceback_str})
 
         return attrs
+
+
+class TenantQuotaSerializer(serializers.Serializer):
+    storage_size = serializers.FloatField(min_value=1, write_only=True, help_text='Maximum storage size, GB')
+    users_count = serializers.IntegerField(min_value=1, write_only=True, help_text='Maximum users count')
 
 
 class TemplateSerializer(structure_serializers.BasePropertySerializer):

@@ -114,7 +114,7 @@ class SaltStackAPI(object):
             return response.json()
         else:
             raise SaltStackBackendError(
-                "Request to salt API %s failed: %s %s" % (url, response.response, response.text))
+                "Request to salt API %s failed: %s %s" % (url, response.status_code, response.text))
 
     def run_cmd(self, cmd, **kwargs):
         command = self.COMMAND.format(
