@@ -32,6 +32,12 @@ class UserViewSet(TenantPropertyViewSet):
     serializer_class = serializers.UserSerializer
     api_name = 'users'
 
+    def create(self, request, **kwargs):
+        response = super(UserViewSet, self).create(request, **kwargs)
+        self.resource.add_quota_usage('user_count', 1)
+        self.resource.add_quota_usage('global_mailbox_size', self.resource.mailbox_size)
+        return response
+
 
 class ContactViewSet(TenantPropertyViewSet):
     serializer_class = serializers.ContactSerializer

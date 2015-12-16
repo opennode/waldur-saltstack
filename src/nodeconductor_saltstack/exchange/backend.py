@@ -326,7 +326,7 @@ class ExchangeBackend(SaltStackBaseBackend):
     def sync_mailbox_global_size_quotas(self, tenant):
         global_mailbox_size = 0
         for user in self.users.list():
-            stats = self.user.stats(id=user.id)
+            stats = self.users.stats(id=user.id)
             global_mailbox_size += stats.mailbox_size
 
         tenant.set_quota_usage('global_mailbox_size', global_mailbox_size)

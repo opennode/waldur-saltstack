@@ -24,13 +24,13 @@ def init_quotas(apps, schema_editor):
     tenant_ct = ContentType.objects.get_for_model(Tenant)
 
     for tenant in Tenant.objects.all():
-        if not Quota.objects.filter(tenant=tenant, name=GLOBAL_MAILBOX_SIZE_QUOTA):
+        if not Quota.objects.filter(content_type_id=tenant_ct.id, object_id=tenant.id, name=GLOBAL_MAILBOX_SIZE_QUOTA):
             Quota.objects.create(
                 uuid=uuid4(), name=GLOBAL_MAILBOX_SIZE_QUOTA, limit=tenant.max_users*tenant.mailbox_size, usage=0,
                 content_type_id=tenant_ct.id, object_id=tenant.id)
-        if not Quota.objects.filter(tenant=tenant, name=USER_COUNT_QUOTA):
+        if not Quota.objects.filter(content_type_id=tenant_ct.id, object_id=tenant.id, name=USER_COUNT_QUOTA):
             Quota.objects.create(
-                uuid=uuid4(), name=GLOBAL_MAILBOX_SIZE_QUOTA, limit=tenant.max_users, usage=0,
+                uuid=uuid4(), name=USER_COUNT_QUOTA, limit=tenant.max_users, usage=0,
                 content_type_id=tenant_ct.id, object_id=tenant.id)
 
 
