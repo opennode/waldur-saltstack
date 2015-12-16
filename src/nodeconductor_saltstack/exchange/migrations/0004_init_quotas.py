@@ -37,7 +37,7 @@ def init_quotas(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('exchange', '0002_tenant_tags'),
+        ('exchange', '0003_rename_tenant_model'),
     ]
 
     operations = [

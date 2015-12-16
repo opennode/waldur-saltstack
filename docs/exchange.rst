@@ -10,7 +10,7 @@ parameters:
  - link to the service-project-link object;
  - domain - Domain name;
  - max_users - Maximum number of users;
- - mailbox_size - Average mailboxes size (Gb);
+ - mailbox_size - Average mailboxes size (GB);
 
 
  Example of a valid request:
@@ -41,33 +41,31 @@ Example rendering of the tenant object:
 
 .. code-block:: javascript
 
-    [
-        {
-            "url": "http://example.com/api/exchange-tenants/7693d9308e0641baa95720d0046e5696/",
-            "uuid": "7693d9308e0641baa95720d0046e5696",
-            "name": "TST",
-            "description": "",
-            "start_time": null,
-            "service": "http://example.com/api/saltstack/655b79490b63442d9264d76ab9478f62/",
-            "service_name": "My SaltStack",
-            "service_uuid": "655b79490b63442d9264d76ab9478f62",
-            "project": "http://example.com/api/projects/0e86f04bb1fd48e181742d0598db69d5/",
-            "project_name": "My Project",
-            "project_uuid": "0e86f04bb1fd48e181742d0598db69d5",
-            "customer": "http://example.com/api/customers/3b0fc2c0f0ed4f40b26126dc9cbd8f9f/",
-            "customer_name": "Me",
-            "customer_native_name": "",
-            "customer_abbreviation": "",
-            "project_groups": [],
-            "error_message": "",
-            "resource_type": "SaltStack.Tenant",
-            "state": "Online",
-            "created": "2015-10-20T10:35:19.146Z",
-            "domain": "test.com",
-            "max_users": "500",
-            "mailbox_size": "3"
-        }
-    ]
+    {
+        "url": "http://example.com/api/exchange-tenants/7693d9308e0641baa95720d0046e5696/",
+        "uuid": "7693d9308e0641baa95720d0046e5696",
+        "name": "TST",
+        "description": "",
+        "start_time": null,
+        "service": "http://example.com/api/saltstack/655b79490b63442d9264d76ab9478f62/",
+        "service_name": "My SaltStack",
+        "service_uuid": "655b79490b63442d9264d76ab9478f62",
+        "project": "http://example.com/api/projects/0e86f04bb1fd48e181742d0598db69d5/",
+        "project_name": "My Project",
+        "project_uuid": "0e86f04bb1fd48e181742d0598db69d5",
+        "customer": "http://example.com/api/customers/3b0fc2c0f0ed4f40b26126dc9cbd8f9f/",
+        "customer_name": "Me",
+        "customer_native_name": "",
+        "customer_abbreviation": "",
+        "project_groups": [],
+        "error_message": "",
+        "resource_type": "SaltStack.ExchangeTenant",
+        "state": "Online",
+        "created": "2015-10-20T10:35:19.146Z",
+        "domain": "test.com",
+        "max_users": "500",
+        "mailbox_size": "3"
+    }
 
 
 Delete tenant

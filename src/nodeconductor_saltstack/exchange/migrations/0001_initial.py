@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
                 ('domain', models.CharField(max_length=255)),
                 ('max_users', models.PositiveSmallIntegerField(help_text=b'Maximum number of mailboxes')),
                 ('mailbox_size', models.PositiveSmallIntegerField(help_text=b'Maximum size of single mailbox, GB')),
-                ('service_project_link', models.ForeignKey(related_name='tenants', on_delete=django.db.models.deletion.PROTECT, to='saltstack.SaltStackServiceProjectLink')),
+                ('service_project_link', models.ForeignKey(related_name='exchange_tenants', on_delete=django.db.models.deletion.PROTECT, to='saltstack.SaltStackServiceProjectLink')),
             ],
             options={
                 'abstract': False,
