@@ -5,7 +5,7 @@ from nodeconductor.structure import serializers as structure_serializers
 
 from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.models import SaltStackServiceProjectLink
-from .models import Tenant
+from .models import ExchangeTenant
 
 
 class TenantSerializer(structure_serializers.BaseResourceSerializer):
@@ -21,7 +21,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         write_only=True)
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
-        model = Tenant
+        model = ExchangeTenant
         view_name = 'exchange-tenants-detail'
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
             'name', 'domain',
@@ -36,7 +36,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             raise serializers.ValidationError({
                 'max_users': "Total mailbox size should be lower than 2 TB"})
 
-        backend = Tenant(service_project_link=attrs['service_project_link']).get_backend()
+        backend = ExchangeTenant(service_project_link=attrs['service_project_link']).get_backend()
         try:
             backend.tenants.check(tenant=attrs['name'], domain=attrs['domain'])
         except SaltStackBackendError as e:

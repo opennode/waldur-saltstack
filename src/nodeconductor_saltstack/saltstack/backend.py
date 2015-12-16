@@ -4,6 +4,7 @@ import logging
 import requests
 import functools
 
+from django.utils import six
 from nodeconductor.structure import ServiceBackend, ServiceBackendError
 from .. import __version__
 
@@ -15,22 +16,43 @@ class SaltStackBackendError(ServiceBackendError):
 
     def __init__(self, message, traceback=None):
         super(SaltStackBackendError, self).__init__(message)
-        self.traceback_str = '; '.join(["%s: %s" % (k, v) for k, v in traceback.items()]) if traceback else ''
         self.traceback = traceback
+        self.traceback_str = 'Error'
+        if isinstance(traceback, basestring):
+            self.traceback_str = traceback
+        elif isinstance(traceback, dict):
+            self.traceback_str = '; '.join(["%s: %s" % (k, v) for k, v in traceback.items()])
 
 
 class SaltStackBackend(object):
 
+    backends = set()
+
     def __init__(self, settings, backend_class=None, **kwargs):
         if not backend_class:
             backend_class = SaltStackBaseBackend
+        if backend_class not in self.backends:
+            raise SaltStackBackendError("Unknown SaltStack backend class: %s" % backend_class)
+
         self.backend = backend_class(settings, **kwargs)
 
     def __getattr__(self, name):
         return getattr(self.backend, name)
 
+    @classmethod
+    def register(cls, backend_class):
+        cls.backends.add(backend_class)
 
-class SaltStackBaseBackend(ServiceBackend):
+
+class SaltStackMetaclass(type):
+
+    def __new__(cls, name, bases, args):
+        new_class = super(SaltStackMetaclass, cls).__new__(cls, name, bases, args)
+        SaltStackBackend.register(new_class)
+        return new_class
+
+
+class SaltStackBaseBackend(six.with_metaclass(SaltStackMetaclass, ServiceBackend)):
 
     TARGET_OPTION_NAME = NotImplemented
     MAPPING_OPTION_NAME = NotImplemented
@@ -48,6 +70,13 @@ class SaltStackBaseBackend(ServiceBackend):
 
             setattr(api, 'backend', self)
             setattr(self, name, api)
+
+    def sync_backend(self):
+        pass
+
+    def sync(self):
+        for cls in SaltStackBackend.backends:
+            cls(self.settings).sync_backend()
 
 
 class SaltStackAPI(object):
@@ -85,7 +114,7 @@ class SaltStackAPI(object):
             return response.json()
         else:
             raise SaltStackBackendError(
-                "Request to salt API %s failed: %s %s" % (url, response.response, response.text))
+                "Request to salt API %s failed: %s %s" % (url, response.status_code, response.text))
 
     def run_cmd(self, cmd, **kwargs):
         command = self.COMMAND.format(
@@ -183,7 +212,7 @@ class SaltStackBaseAPI(SaltStackAPI):
                     if opt not in kwargs:
                         fn = fn_opts['defaults'][opt]
                         if isinstance(fn, basestring):
-                            kwargs[opt] = fn.format(**kwargs)
+                            kwargs[opt] = fn.format(backend=self.backend, **kwargs)
                         elif isinstance(fn, types.FunctionType):
                             kwargs[opt] = fn(self.backend, **kwargs)
                         else:
@@ -228,8 +257,8 @@ class SaltStackBaseAPI(SaltStackAPI):
             if found:
                 yield obj
 
-    def get(self, user_id):
+    def get(self, obj_id):
         try:
-            return next(self.findall(id=user_id))
+            return next(self.findall(id=obj_id))
         except StopIteration:
             return None

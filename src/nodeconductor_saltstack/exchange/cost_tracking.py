@@ -5,7 +5,7 @@ from nodeconductor.cost_tracking.models import DefaultPriceListItem
 
 from ..saltstack.backend import SaltStackBackendError
 from .backend import ExchangeBackend
-from .models import Tenant
+from .models import ExchangeTenant
 
 
 class Type(object):
@@ -26,7 +26,7 @@ class SaltStackCostTrackingBackend(CostTrackingBackend):
 
     @classmethod
     def get_default_price_list_items(cls):
-        content_type = ContentType.objects.get_for_model(Tenant)
+        content_type = ContentType.objects.get_for_model(ExchangeTenant)
         for item, key in Type.CHOICES.iteritems():
             yield DefaultPriceListItem(item_type=item, key=key, resource_content_type=content_type)
 

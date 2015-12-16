@@ -5,12 +5,12 @@ from django.utils import timezone
 from nodeconductor.core.tasks import save_error_message, transition
 from nodeconductor.structure.tasks import sync_service_project_links
 
-from .models import ExchangeTenant
+from .models import SharepointTenant
 
 
-@shared_task(name='nodeconductor.exchange.provision')
+@shared_task(name='nodeconductor.sharepoint.provision')
 def provision(tenant_uuid, **kwargs):
-    tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
+    tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
     chain(
         sync_service_project_links.s(tenant.service_project_link.to_string(), initial=True),
         provision_tenant.si(tenant_uuid, **kwargs),
@@ -19,14 +19,14 @@ def provision(tenant_uuid, **kwargs):
         link_error=set_erred.si(tenant_uuid))
 
 
-@shared_task(name='nodeconductor.exchange.destroy')
-@transition(ExchangeTenant, 'begin_deleting')
+@shared_task(name='nodeconductor.sharepoint.destroy')
+@transition(SharepointTenant, 'begin_deleting')
 @save_error_message
 def destroy(tenant_uuid, force=False, transition_entity=None):
     tenant = transition_entity
     try:
         backend = tenant.get_backend()
-        backend.tenants.delete(tenant=tenant.name, domain=tenant.domain)
+        backend.tenants.delete()
     except:
         if not force:
             set_erred(tenant_uuid)
@@ -36,7 +36,7 @@ def destroy(tenant_uuid, force=False, transition_entity=None):
 
 
 @shared_task(is_heavy_task=True)
-@transition(ExchangeTenant, 'begin_provisioning')
+@transition(SharepointTenant, 'begin_provisioning')
 @save_error_message
 def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
     tenant = transition_entity
@@ -44,15 +44,22 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
     backent_tenant = backend.tenants.create(
         tenant=tenant.name,
         domain=tenant.domain,
-        mailbox_size=tenant.mailbox_size,
-        max_users=tenant.max_users)
+        name=tenant.site_name,
+        description=tenant.description,
+        storage_size=kwargs['storage_size'],
+        users_count=kwargs['users_count'],
+        template_code=kwargs['template_code'])
 
     tenant.backend_id = backent_tenant.id
+    tenant.site_url = backent_tenant.site_url
+    tenant.admin_url = backent_tenant.admin_url
+    tenant.admin_login = backent_tenant.admin_login
+    tenant.admin_password = backent_tenant.admin_password
     tenant.save()
 
 
 @shared_task
-@transition(ExchangeTenant, 'set_online')
+@transition(SharepointTenant, 'set_online')
 def set_online(tenant_uuid, transition_entity=None):
     tenant = transition_entity
     tenant.start_time = timezone.now()
@@ -60,6 +67,6 @@ def set_online(tenant_uuid, transition_entity=None):
 
 
 @shared_task
-@transition(ExchangeTenant, 'set_erred')
+@transition(SharepointTenant, 'set_erred')
 def set_erred(tenant_uuid, transition_entity=None):
     pass

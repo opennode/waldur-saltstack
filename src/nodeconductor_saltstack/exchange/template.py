@@ -26,4 +26,4 @@ class TenantProvisionTemplateForm(TemplateForm):
 
     @classmethod
     def get_resource_model(cls):
-        return models.Tenant
+        return models.ExchangeTenant
