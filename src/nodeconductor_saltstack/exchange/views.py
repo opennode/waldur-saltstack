@@ -38,6 +38,12 @@ class UserViewSet(TenantPropertyViewSet):
         self.resource.add_quota_usage('global_mailbox_size', self.resource.mailbox_size)
         return response
 
+    def delete(self, request, pk=None, **kwargs):
+        response = super(UserViewSet, self).delete(request, pk=pk, **kwargs)
+        self.resource.add_quota_usage('user_count', -1)
+        self.resource.add_quota_usage('global_mailbox_size', -self.resource.mailbox_size)
+        return response
+
 
 class ContactViewSet(TenantPropertyViewSet):
     serializer_class = serializers.ContactSerializer
