@@ -75,14 +75,6 @@ class UserSerializer(PropertySerializer):
             raise serializers.ValidationError("Mailbox size should be lower than %s GB" % max_size)
         return value
 
-    def validate(self, attrs):
-        backend = self.context['resource'].get_backend()
-        try:
-            next(backend.users.findall(name="{first_name} {last_name}".format(**attrs)))
-        except StopIteration:
-            raise serializers.ValidationError({'first_name': "This name is already used"})
-        return attrs
-
 
 class ContactSerializer(PropertySerializer):
     url = serializers.SerializerMethodField()

@@ -22,17 +22,17 @@ def provision(tenant_uuid, **kwargs):
 @shared_task(name='nodeconductor.exchange.destroy')
 @transition(ExchangeTenant, 'begin_deleting')
 @save_error_message
-def destroy(tenant_uuid, transition_entity=None):
+def destroy(tenant_uuid, force=False, transition_entity=None):
     tenant = transition_entity
     try:
         backend = tenant.get_backend()
-        backend_tenant = backend.tenants.delete(tenant=tenant.name, domain=tenant.domain)
-        backend_tenant.delete()
+        backend.tenants.delete(tenant=tenant.name, domain=tenant.domain)
     except:
-        set_erred(tenant_uuid)
-        raise
-    else:
-        tenant.delete()
+        if not force:
+            set_erred(tenant_uuid)
+            raise
+
+    tenant.delete()
 
 
 @shared_task(is_heavy_task=True)
