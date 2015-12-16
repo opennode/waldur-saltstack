@@ -12,7 +12,7 @@ USER_COUNT_QUOTA = 'user_count'
 
 
 def convert_mailbox_size_to_mb(apps, schema_editor):
-    Tenant = apps.get_model('exchange', 'Tenant')
+    Tenant = apps.get_model('exchange', 'ExchangeTenant')
     for tenant in Tenant.objects.all():
         tenant.mailbox_size *= 1024
         tenant.save()
@@ -20,7 +20,7 @@ def convert_mailbox_size_to_mb(apps, schema_editor):
 
 def init_quotas(apps, schema_editor):
     Quota = apps.get_model('quotas', 'Quota')
-    Tenant = apps.get_model('exchange', 'Tenant')
+    Tenant = apps.get_model('exchange', 'ExchangeTenant')
     tenant_ct = ContentType.objects.get_for_model(Tenant)
 
     for tenant in Tenant.objects.all():
@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterField(
-            model_name='tenant',
+            model_name='exchangetenant',
             name='mailbox_size',
             field=models.PositiveSmallIntegerField(help_text=b'Maximum size of single mailbox, MB'),
             preserve_default=True,
