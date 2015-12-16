@@ -317,7 +317,7 @@ class ExchangeBackend(SaltStackBaseBackend):
     def destroy(self, tenant, force=False):
         tenant.schedule_deletion()
         tenant.save()
-        send_task('exchange', 'destroy')(tenant.uuid.hex)
+        send_task('exchange', 'destroy')(tenant.uuid.hex, force=force)
 
     def sync_user_count_quota(self, tenant):
         users_count = len(self.users.list())
