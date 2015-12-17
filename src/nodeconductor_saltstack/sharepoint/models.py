@@ -29,6 +29,10 @@ class SharepointTenant(structure_models.Resource, structure_models.PaidResource)
 class Template(structure_models.ServiceProperty):
     code = models.CharField(max_length=255)
 
+    @classmethod
+    def get_url_name(cls):
+        return 'sharepoint-templates'
+
 
 class User(structure_models.GeneralServiceProperty):
     tenant = models.ForeignKey(SharepointTenant, related_name='users')
