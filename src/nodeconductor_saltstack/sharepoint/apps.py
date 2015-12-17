@@ -16,3 +16,6 @@ class SaltStackConfig(AppConfig):
         # template
         from .template import SiteProvisionTemplateForm
         TemplateRegistry.register(SiteProvisionTemplateForm)
+
+        # import it here in order to register as SaltStack backend
+        from .backend import SharepointBackend
