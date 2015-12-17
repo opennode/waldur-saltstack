@@ -1,15 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import models, migrations
-import django.utils.timezone
-import django_fsm
-import nodeconductor.core.models
-import django.db.models.deletion
-import nodeconductor.logging.log
-import uuidfield.fields
-import taggit.managers
-import model_utils.fields
+from django.db import migrations
 
 
 class Migration(migrations.Migration):

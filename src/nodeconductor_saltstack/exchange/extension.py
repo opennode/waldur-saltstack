@@ -11,3 +11,14 @@ class ExchangeExtension(NodeConductorExtension):
     def rest_urls():
         from .urls import register_in
         return register_in
+
+    @staticmethod
+    def celery_tasks():
+        from datetime import timedelta
+        return {
+            'exchange-sync-quotas': {
+                'task': 'nodeconductor.exchange.sync_quotas',
+                'schedule': timedelta(hours=1),
+                'args': ()
+            },
+        }

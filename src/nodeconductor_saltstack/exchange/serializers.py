@@ -31,10 +31,13 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         )
 
     def validate(self, attrs):
+        spl = attrs['service_project_link']
         tenant_size = int(attrs['mailbox_size']) * int(attrs['max_users'])
-        if tenant_size * .9 > 2048:
+        exchange_storage_quota = spl.quotas.get(name='exchange_storage')
+        if exchange_storage_quota.is_exceeded(delta=tenant_size):
+            storage_left = exchange_storage_quota.limit - exchange_storage_quota.usage
             raise serializers.ValidationError({
-                'max_users': "Total mailbox size should be lower than 2 TB"})
+                'max_users': "Total mailbox size should be lower than %s MB" % storage_left})
 
         backend = ExchangeTenant(service_project_link=attrs['service_project_link']).get_backend()
         try:
@@ -70,10 +73,18 @@ class UserSerializer(PropertySerializer):
         return 'exchange-users-detail'
 
     def validate_mailbox_size(self, value):
-        max_size = self.context['resource'].mailbox_size
+        tenant = self.context['resource']
+        max_size = tenant.mailbox_size
         if value and value > max_size:
-            raise serializers.ValidationError("Mailbox size should be lower than %s GB" % max_size)
+            raise serializers.ValidationError("Mailbox size should be lower than %s MB" % max_size)
         return value
+
+    def validate(self, attrs):
+        tenant = self.context['resource']
+        user_count_quota = tenant.quotas.get(name='user_count')
+        if user_count_quota.is_exceeded(delta=1):
+            raise serializers.ValidationError('Tenant user count quota exceeded.')
+        return attrs
 
 
 class ContactSerializer(PropertySerializer):

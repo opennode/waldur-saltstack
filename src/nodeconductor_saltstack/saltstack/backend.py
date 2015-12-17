@@ -161,9 +161,18 @@ class SaltStackBaseAPI(SaltStackAPI):
                         'mailbox_size': 'TenantMailboxSize',
                         'max_users': 'TenantMaxUsers',
                     },
-                    output={   # input fields mapping
+                    defaults={  # default parameters for input data
+                        # if default is a function - it will receive backend and method kwargs as parameters
+                        'tenant': lambda backend, **kwargs: backend.tenant.name,
+                        # if default is a string - it will be formatted with method kwargs (.format(**kwargs))
+                        'domain': '{tenant}',
+                    },
+                    output={  # output fields mapping
                         'Accepted DomainName': 'domain',
                         'DistinguishedName': 'dn',
+                    },
+                    clean={  # execute some operations on output before provision
+                        'Accepted DomainName': <clean_function>
                     },
                 )
         """
@@ -247,6 +256,7 @@ class SaltStackBaseAPI(SaltStackAPI):
             func = types.MethodType(functools.partial(method_fn, fn_opts=method), self)
             setattr(self, fn_name, func)
 
+    # methods findall() and get() expects list() method implementation
     def findall(self, **kwargs):
         for obj in self.list():
             found = True
