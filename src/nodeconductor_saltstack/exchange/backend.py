@@ -113,8 +113,8 @@ class UserAPI(SaltStackBaseAPI):
         delete = dict(
             name='DelUser',
             input={
-                'id': 'Identity',
-                'email': 'Identity',
+                'id': 'Id',
+                'email': 'Id',
             },
         )
 

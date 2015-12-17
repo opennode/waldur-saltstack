@@ -18,6 +18,9 @@ class SaltStackConfig(AppConfig):
         from .template import TenantProvisionTemplateForm
         TemplateRegistry.register(TenantProvisionTemplateForm)
 
+        # import it here in order to register as SaltStack backend
+        from .backend import ExchangeBackend
+
         from . import handlers
         from ..saltstack.models import SaltStackServiceProjectLink
         signals.post_save.connect(
