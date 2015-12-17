@@ -18,7 +18,7 @@ class Type(object):
         CONTACTS: 'count',
         GROUPS: 'count',
         USERS: 'count',
-        STORAGE: '1 GB',
+        STORAGE: '1 MB',
     }
 
 
