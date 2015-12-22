@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from nodeconductor.core.serializers import AugmentedSerializerMixin
+from nodeconductor.quotas.serializers import QuotaSerializer
 from nodeconductor.structure import serializers as structure_serializers
 
 from ..saltstack.backend import SaltStackBackendError
@@ -10,6 +11,7 @@ from .models import ExchangeTenant, User
 
 class TenantSerializer(structure_serializers.BaseResourceSerializer):
     MAX_TENANT_SIZE = 2 * 1024 * 1024  # 2TB
+
     service = serializers.HyperlinkedRelatedField(
         source='service_project_link.service',
         view_name='saltstack-detail',
@@ -21,6 +23,8 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         queryset=SaltStackServiceProjectLink.objects.all(),
         write_only=True)
 
+    quotas = QuotaSerializer(many=True, read_only=True)
+
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
         model = ExchangeTenant
         view_name = 'exchange-tenants-detail'
@@ -28,7 +32,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             'name', 'mailbox_size', 'max_users',
         )
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
-            'domain', 'mailbox_size', 'max_users',
+            'domain', 'mailbox_size', 'max_users', 'quotas',
         )
 
     def validate(self, attrs):
