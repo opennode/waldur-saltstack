@@ -32,9 +32,11 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         )
 
     def validate(self, attrs):
-        spl = attrs['service_project_link']
+        spl = attrs.get('service_project_link') or self.instance.service_project_link
+        mailbox_size = attrs.get('mailbox_size') or self.instance.mailbox_size
+        max_users = attrs.get('max_users') or self.instance.max_users
 
-        tenant_size = int(attrs['mailbox_size']) * int(attrs['max_users'])
+        tenant_size = int(mailbox_size) * int(max_users)
         if tenant_size * .9 > self.MAX_TENANT_SIZE:
             raise serializers.ValidationError({
                 'max_users': "Total mailbox size should be lower than 2 TB"})
@@ -45,9 +47,11 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             raise serializers.ValidationError({
                 'max_users': "Total mailbox size should be lower than %s MB" % storage_left})
 
-        backend = ExchangeTenant(service_project_link=attrs['service_project_link']).get_backend()
+        backend = ExchangeTenant(service_project_link=spl).get_backend()
+        name = attrs.get('name') or self.instance.name
+        domain = attrs.get('domain') or self.instance.domain
         try:
-            backend.tenants.check(tenant=attrs['name'], domain=attrs['domain'])
+            backend.tenants.check(tenant=name, domain=domain)
         except SaltStackBackendError as e:
             raise serializers.ValidationError({
                 'name': "This tenant name or domain is already taken: %s" % e.traceback_str})
