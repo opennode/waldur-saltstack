@@ -1,11 +1,11 @@
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
-from nodeconductor.structure import serializers as structure_serializers
-
 from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.models import SaltStackServiceProjectLink
 from .models import ExchangeTenant
+from nodeconductor.quotas import serializers as quotas_serializers
+from nodeconductor.structure import serializers as structure_serializers
 
 
 class TenantSerializer(structure_serializers.BaseResourceSerializer):
@@ -20,6 +20,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         view_name='saltstack-spl-detail',
         queryset=SaltStackServiceProjectLink.objects.all(),
         write_only=True)
+    quotas = quotas_serializers.QuotaSerializer(many=True, read_only=True)
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
         model = ExchangeTenant
@@ -28,7 +29,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             'name', 'domain',
         )
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
-            'domain', 'mailbox_size', 'max_users',
+            'domain', 'mailbox_size', 'max_users', 'quotas',
         )
 
     def validate(self, attrs):
