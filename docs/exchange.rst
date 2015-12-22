@@ -68,46 +68,36 @@ Example rendering of the tenant object:
     }
 
 
-Delete tenant
--------------
+Change tenant domain name
+-------------------------
 
-To delete tenant - issue DELETE request against **/api/exchange-tenants/<tenant_uuid>/**.
+To update tenant domain - issue PUT request against **/api/exchange-tenants/<tenant_uuid>/**.
 
-
-Create tenant user
-------------------
-
-To create new tenant user - issue POST request against **/api/exchange-tenants/<tenant_uuid>/users/**.
-
-Request parameters:
-
- - username - new user username;
- - last_name - new user last name;
- - first_name - new user first name;
- - mailbox_size - mailbox size (Mb);
-
-Example of a request:
+Example of a valid request:
 
 .. code-block:: http
 
-    POST /api/exchange-tenants/24156c367e3a41eea81e374073fa1060/users/ HTTP/1.1
+    PUT /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
     Host: example.com
 
     {
-        "username": "joe",
-        "first_name": "Joe",
-        "last_name": "Doe",
-        "mailbox_size": "5"
+        "domain": "test.io"
     }
 
 
-List tenant users
------------------
+Delete tenant
+-------------
 
-To get a list of all tenant users - issue GET request against **/api/exchange-tenants/<tenant_uuid>/users/**.
+To delete tenant - issue DELETE request against **/api/exchange-tenants/<tenant_uuid>/**.
+
+
+List users
+----------
+
+To get a list of all tenant users - issue GET request against **/api/exchange-users/**.
 Only users with view access to tenant can view tenant users.
 
 Response example:
@@ -116,20 +106,69 @@ Response example:
 
     [
         {
-            "url": "http://example.com/api/exchange-tenants/24156c367e3a41eea81e374073fa1060/users/e88471c7-fcf5-4e12-8163-2a8ad9c87f4b/",
-            "id": "e88471c7-fcf5-4e12-8163-2a8ad9c87f4b",
-            "email": "joe@test.com",
+            "url": "http://example.com/api/exchange-users/8d3f1e878b2345a7a65f28d426e85137/",
+            "uuid": "8d3f1e878b2345a7a65f28d426e85137",
+            "tenant": "http://example.com/api/exchange-tenants/9baf2ec31a624ab78e348758b668f36d/",
+            "tenant_uuid": "9baf2ec31a624ab78e348758b668f36d",
+            "tenant_domain": "test.com",
+            "name": "Joe D",
             "first_name": "Joe",
             "last_name": "Doe",
-            "password": "+!V?5T$9!61@"
+            "username": "joe.doe",
+            "password": "?lU_YmOi_vO=",
+            "mailbox_size": 5
         }
     ]
 
 
-Delete tenant user
-------------------
+Create user
+-----------
 
-To delete tenant user - issue DELETE request against **/api/exchange-tenants/<tenant_uuid>/users/<user_id>/**.
+To create new tenant user - issue POST request against **/api/exchange-users/**.
+
+Request parameters:
+
+ - link to exchange tenant object;
+ - name - user name;
+ - username - user username;
+ - last_name - user last name;
+ - first_name - user first name;
+ - mailbox_size - mailbox size (Mb);
+
+Example of a request:
+
+.. code-block:: http
+
+    POST /api/exchange-users/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "tenant": "http://example.com/api/exchange-tenants/7693d9308e0641baa95720d0046e5696/",
+        "name": "Joe D",
+        "username": "joe.d",
+        "first_name": "Joe",
+        "last_name": "Doe",
+        "mailbox_size": "5"
+    }
+
+
+Update user
+-----------
+
+To update user data - issue PUT or PATCH request against **/api/exchange-users/<user_uuid>/**.
+
+
+Delete user
+-----------
+
+To delete user - issue DELETE request against **/api/exchange-users/<user_uuid>/**.
+
+
+Endpoints to be implemented in future release
+---------------------------------------------
 
 
 Create tenant contact

@@ -1,12 +1,11 @@
-from django.shortcuts import get_object_or_404
-from rest_framework import status, exceptions, decorators
-from rest_framework.response import Response
+from rest_framework import exceptions, filters, permissions, viewsets
 
-from nodeconductor.structure.managers import filter_queryset_for_user
+from nodeconductor.core.exceptions import IncorrectStateException
+from nodeconductor.structure.filters import GenericRoleFilter
 from nodeconductor.structure import views as structure_views
 
 from ..saltstack.backend import SaltStackBackendError
-from ..saltstack.views import BasePropertyViewSet
+from .filters import UserFilter
 from . import models, serializers
 
 
@@ -19,58 +18,65 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         backend = resource.get_backend()
         backend.provision(resource)
 
+    def perform_update(self, serializer):
+        tenant = self.get_object()
+        backend = tenant.get_backend()
+        try:
+            backend.tenants.change(domain=serializer.validated_data['domain'])
+        except SaltStackBackendError as e:
+            raise exceptions.APIException(e.traceback_str)
+        else:
+            serializer.save()
 
-class TenantPropertyViewSet(BasePropertyViewSet):
 
-    def initial(self, request, tenant_uuid, *args, **kwargs):
-        super(TenantPropertyViewSet, self).initial(request, tenant_uuid, *args, **kwargs)
-        queryset = filter_queryset_for_user(models.ExchangeTenant.objects.all(), request.user)
-        self.resource = get_object_or_404(queryset, uuid=tenant_uuid)
-
-
-class UserViewSet(TenantPropertyViewSet):
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
-    api_name = 'users'
+    lookup_field = 'uuid'
+    permission_classes = (permissions.IsAuthenticated, permissions.DjangoObjectPermissions)
+    filter_backends = (GenericRoleFilter, filters.DjangoFilterBackend,)
+    filter_class = UserFilter
 
-    def create(self, request, **kwargs):
-        response = super(UserViewSet, self).create(request, **kwargs)
-        self.resource.add_quota_usage('user_count', 1)
-        self.resource.add_quota_usage('global_mailbox_size', self.resource.mailbox_size)
-        return response
+    def perform_create(self, serializer):
+        tenant = serializer.validated_data['tenant']
+        backend = tenant.get_backend()
 
-    def delete(self, request, pk=None, **kwargs):
-        response = super(UserViewSet, self).delete(request, pk=pk, **kwargs)
-        self.resource.add_quota_usage('user_count', -1)
-        self.resource.add_quota_usage('global_mailbox_size', -self.resource.mailbox_size)
-        return response
+        if tenant.state != models.ExchangeTenant.States.ONLINE:
+            raise IncorrectStateException("Tenant must be in stable state to perform user creation")
 
+        try:
+            backend_user = backend.users.create(
+                **{k: v for k, v in serializer.validated_data.items() if k not in ('tenant',)})
+        except SaltStackBackendError as e:
+            raise exceptions.APIException(e.traceback_str)
 
-class ContactViewSet(TenantPropertyViewSet):
-    serializer_class = serializers.ContactSerializer
-    api_name = 'contacts'
+        user = serializer.save()
+        user.email = backend_user.email
+        user.password = backend_user.password
+        user.backend_id = backend_user.id
+        user.save()
 
+    def perform_update(self, serializer):
+        user = self.get_object()
+        backend = user.tenant.get_backend()
+        try:
+            changed = {k: v for k, v in serializer.validated_data.items() if v and getattr(user, k) != v}
+            backend.users.change(id=user.backend_id, **changed)
+        except SaltStackBackendError as e:
+            raise exceptions.APIException(e.traceback_str)
 
-class GroupViewSet(TenantPropertyViewSet):
-    serializer_class = serializers.GroupSerializer
-    api_name = 'groups'
+        serializer.save()
 
-    @decorators.detail_route(methods=['post', 'delete'])
-    def members(self, request, pk=None, **kwargs):
-        if request.method == 'POST':
-            serializer = serializers.GroupMemberSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+        user.tenant.add_quota_usage('user_count', 1)
+        user.tenant.add_quota_usage('global_mailbox_size', user.tenant.mailbox_size)
 
-            try:
-                member = self.api.add_member(id=pk, user_id=request.data['id'])
-                member_data = serializers.GroupMemberSerializer(member).data
-            except SaltStackBackendError as e:
-                raise exceptions.APIException(e)
+    def perform_destroy(self, user):
+        backend = user.tenant.get_backend()
+        try:
+            backend.users.delete(id=user.backend_id)
+        except SaltStackBackendError as e:
+            raise exceptions.APIException(e.traceback_str)
 
-            return Response(member_data, status=status.HTTP_201_CREATED)
-
-        if request.method == 'DELETE':
-            try:
-                self.api.del_member(id=pk, user_id=request.data['id'])
-            except SaltStackBackendError as e:
-                raise exceptions.APIException(e)
-            return Response({'status': 'Deleted'}, status=status.HTTP_202_ACCEPTED)
+        user.delete()
+        user.tenant.add_quota_usage('user_count', -1)
+        user.tenant.add_quota_usage('global_mailbox_size', -user.tenant.mailbox_size)

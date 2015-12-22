@@ -26,3 +26,25 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
     def get_backend(self):
         from .backend import ExchangeBackend
         return super(ExchangeTenant, self).get_backend(backend_class=ExchangeBackend, tenant=self)
+
+
+class Group(structure_models.GeneralServiceProperty):
+    tenant = models.ForeignKey(ExchangeTenant, related_name='groups')
+    username = models.CharField(max_length=255)
+    manager_email = models.EmailField(max_length=255)
+
+
+class Contact(structure_models.GeneralServiceProperty):
+    tenant = models.ForeignKey(ExchangeTenant, related_name='contacts')
+    email = models.EmailField(max_length=255)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+
+
+class User(structure_models.GeneralServiceProperty):
+    tenant = models.ForeignKey(ExchangeTenant, related_name='users')
+    username = models.CharField(max_length=255)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    password = models.CharField(max_length=255)
+    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of mailbox, MB')

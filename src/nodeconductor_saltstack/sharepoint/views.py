@@ -1,4 +1,4 @@
-from rest_framework import decorators, exceptions, mixins, response, viewsets
+from rest_framework import decorators, exceptions, mixins, response, viewsets, status
 
 from nodeconductor.core.exceptions import IncorrectStateException
 from nodeconductor.structure import views as structure_views
@@ -27,7 +27,7 @@ class TenantViewSet(structure_views.BaseResourceViewSet):
             raise exceptions.PermissionDenied()
 
         tenant = self.get_object()
-        if tenant.state != models.SharepointTenant.States.OFFLINE:
+        if tenant.state != models.SharepointTenant.States.ONLINE:
             raise IncorrectStateException("Tenant must be in stable state to perform quotas update")
 
         serializer = serializers.TenantQuotaSerializer(data=request.data)
@@ -41,7 +41,6 @@ class TenantViewSet(structure_views.BaseResourceViewSet):
 
         return response.Response(
             {'status': 'Quota update was scheduled'}, status=status.HTTP_202_ACCEPTED)
-
 
 
 class TemplateViewSet(structure_views.BaseServicePropertyViewSet):
@@ -59,7 +58,7 @@ class UserViewSet(viewsets.ModelViewSet):
         tenant = serializer.validated_data['tenant']
         backend = tenant.get_backend()
 
-        if tenant.state != models.SharepointTenant.States.OFFLINE:
+        if tenant.state != models.SharepointTenant.States.ONLINE:
             raise IncorrectStateException("Tenant must be in stable state to perform user creation")
 
         try:
@@ -87,7 +86,7 @@ class UserViewSet(viewsets.ModelViewSet):
             if new_password and user.password != new_password:
                 backend.users.change_password(id=user.backend_id, password=new_password)
 
-            changed = {k: v for k, v in serializer.validated_data.items() if getattr(user, k) != v}
+            changed = {k: v for k, v in serializer.validated_data.items() if v and getattr(user, k) != v}
             backend.users.change(admin_id=user.admin_id, **changed)
 
         except SaltStackBackendError as e:
