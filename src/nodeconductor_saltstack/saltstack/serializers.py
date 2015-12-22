@@ -1,5 +1,6 @@
-from nodeconductor.structure import serializers as structure_serializers
 from . import models
+from nodeconductor.quotas import serializers as quotas_serializers
+from nodeconductor.structure import serializers as structure_serializers
 
 
 class ServiceSerializer(structure_serializers.BaseServiceSerializer):
@@ -21,6 +22,7 @@ class ServiceSerializer(structure_serializers.BaseServiceSerializer):
 
 
 class ServiceProjectLinkSerializer(structure_serializers.BaseServiceProjectLinkSerializer):
+    quotas = quotas_serializers.QuotaSerializer(many=True, read_only=True)
 
     class Meta(structure_serializers.BaseServiceProjectLinkSerializer.Meta):
         model = models.SaltStackServiceProjectLink
@@ -28,3 +30,4 @@ class ServiceProjectLinkSerializer(structure_serializers.BaseServiceProjectLinkS
         extra_kwargs = {
             'service': {'lookup_field': 'uuid', 'view_name': 'saltstack-detail'},
         }
+        fields = structure_serializers.BaseServiceProjectLinkSerializer.Meta.fields + ('quotas',)
