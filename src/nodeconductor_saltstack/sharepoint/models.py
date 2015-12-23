@@ -1,9 +1,8 @@
 from django.db import models
 
-from nodeconductor.core.models import DescribableMixin
 from nodeconductor.structure import models as structure_models
 
-from ..saltstack.models import SaltStackServiceProjectLink
+from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
 
 
 class SharepointTenant(structure_models.Resource, structure_models.PaidResource):
@@ -34,7 +33,14 @@ class Template(structure_models.ServiceProperty):
         return 'sharepoint-templates'
 
 
-class User(structure_models.GeneralServiceProperty):
+class SharepointProperty(SaltStackProperty):
+    tenant = models.ForeignKey(SharepointTenant, related_name='+')
+
+    class Meta(object):
+        abstract = True
+
+
+class User(SaltStackProperty):
     tenant = models.ForeignKey(SharepointTenant, related_name='users')
     email = models.EmailField(max_length=255)
     username = models.CharField(max_length=255)
@@ -44,6 +50,7 @@ class User(structure_models.GeneralServiceProperty):
     password = models.CharField(max_length=255)
 
 
-class Site(DescribableMixin, structure_models.GeneralServiceProperty):
+class Site(SaltStackProperty):
     user = models.ForeignKey(User, related_name='sites')
     site_url = models.CharField(max_length=255)
+    description = models.CharField(max_length=500)

@@ -1,5 +1,6 @@
 from django.db import models
 
+from nodeconductor.core import models as core_models
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
 
@@ -28,3 +29,10 @@ class SaltStackServiceProjectLink(QuotaModelMixin, structure_models.ServiceProje
     @classmethod
     def get_url_name(cls):
         return 'saltstack-spl'
+
+
+class SaltStackProperty(core_models.UuidMixin, core_models.NameMixin, models.Model):
+    backend_id = models.CharField(max_length=255, db_index=True)
+
+    class Meta(object):
+        abstract = True

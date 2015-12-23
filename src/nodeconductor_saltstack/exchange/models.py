@@ -3,7 +3,7 @@ from django.db import models
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
 
-from ..saltstack.models import SaltStackServiceProjectLink
+from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
 
 
 class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_models.PaidResource):
@@ -28,21 +28,25 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
         return super(ExchangeTenant, self).get_backend(backend_class=ExchangeBackend, tenant=self)
 
 
-class Group(structure_models.GeneralServiceProperty):
-    tenant = models.ForeignKey(ExchangeTenant, related_name='groups')
+class ExchangeProperty(SaltStackProperty):
+    tenant = models.ForeignKey(ExchangeTenant, related_name='+')
+
+    class Meta(object):
+        abstract = True
+
+
+class Group(ExchangeProperty):
     username = models.CharField(max_length=255)
     manager_email = models.EmailField(max_length=255)
 
 
-class Contact(structure_models.GeneralServiceProperty):
-    tenant = models.ForeignKey(ExchangeTenant, related_name='contacts')
+class Contact(ExchangeProperty):
     email = models.EmailField(max_length=255)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
 
 
-class User(structure_models.GeneralServiceProperty):
-    tenant = models.ForeignKey(ExchangeTenant, related_name='users')
+class User(ExchangeProperty):
     username = models.CharField(max_length=255)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
