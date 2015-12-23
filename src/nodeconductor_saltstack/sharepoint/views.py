@@ -7,7 +7,7 @@ from ..saltstack.backend import SaltStackBackendError
 from . import models, serializers
 
 
-class TenantViewSet(structure_views.BaseResourceViewSet):
+class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
     queryset = models.SharepointTenant.objects.all()
     serializer_class = serializers.TenantSerializer
     http_method_names = ['head', 'get', 'post', 'delete']

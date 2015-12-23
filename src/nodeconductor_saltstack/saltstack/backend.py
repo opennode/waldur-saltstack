@@ -121,16 +121,12 @@ class SaltStackAPI(object):
             name=self.MAPPING.get(cmd) or cmd,
             args=' '.join(['-%s "%s"' % (k, v) for k, v in kwargs.items()]))
 
-        print '!!!', command
-
         response = self.request('/run', {
             'client': 'local',
             'fun': 'cmd.run',
             'tgt': self.target,
             'arg': command,
         })
-
-        print '!!!', response
 
         result = response['return'][0][self.target]
         try:
