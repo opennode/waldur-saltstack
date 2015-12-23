@@ -50,7 +50,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
                 raise serializers.ValidationError({
                     'max_users': "Total mailbox size should be lower than %s MB" % storage_left})
 
-            backend = ExchangeTenant(service_project_link=attrs['service_project_link']).get_backend()
+            backend = models.ExchangeTenant(service_project_link=spl).get_backend()
             try:
                 backend.tenants.check(tenant=attrs['name'], domain=attrs['domain'])
             except SaltStackBackendError as e:
@@ -60,17 +60,14 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         return attrs
 
 
-class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
+class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
 
     class Meta(object):
-        model = models.User
-        view_name = 'exchange-users-detail'
-        fields = (
-            'url', 'uuid', 'tenant', 'tenant_uuid', 'tenant_domain', 'name',
-            'first_name', 'last_name', 'username', 'password', 'mailbox_size',
-        )
-        read_only_fields = ('uuid', 'password')
-        protected_fields = ('tenant',)
+        model = NotImplemented
+        view_name = NotImplemented
+        fields = 'url', 'uuid', 'tenant', 'tenant_uuid', 'tenant_domain',
+        read_only_fields = 'uuid',
+        protected_fields = 'tenant',
         extra_kwargs = {
             'url': {'lookup_field': 'uuid'},
             'tenant': {'lookup_field': 'uuid', 'view_name': 'exchange-tenants-detail'},
@@ -78,6 +75,17 @@ class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSeria
         related_paths = {
             'tenant': ('uuid', 'domain')
         }
+
+
+class UserSerializer(BasePropertySerializer):
+
+    class Meta(BasePropertySerializer.Meta):
+        model = models.User
+        view_name = 'exchange-users-detail'
+        fields = BasePropertySerializer.Meta.fields + (
+            'name', 'first_name', 'last_name', 'username', 'password', 'mailbox_size',
+        )
+        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password',)
 
     def validate(self, attrs):
         tenant = self.instance.tenant if self.instance else attrs['tenant']
@@ -93,21 +101,37 @@ class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSeria
         return attrs
 
 
-class ContactSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
+class ContactSerializer(BasePropertySerializer):
 
-    class Meta(object):
+    class Meta(BasePropertySerializer.Meta):
         model = models.Contact
         view_name = 'exchange-contacts-detail'
-        fields = (
-            'url', 'uuid', 'tenant', 'tenant_uuid', 'tenant_domain',
+        fields = BasePropertySerializer.Meta.fields + (
             'name', 'email', 'first_name', 'last_name',
         )
-        read_only_fields = ('uuid',)
-        protected_fields = ('tenant',)
-        extra_kwargs = {
-            'url': {'lookup_field': 'uuid'},
-            'tenant': {'lookup_field': 'uuid', 'view_name': 'exchange-tenants-detail'},
-        }
-        related_paths = {
-            'tenant': ('uuid', 'domain')
-        }
+
+
+class GroupMemberSerializer(serializers.Serializer):
+    user = serializers.HyperlinkedRelatedField(
+        queryset=models.User.objects.all(),
+        view_name='exchange-users-detail',
+        write_only=True,
+        lookup_field='uuid')
+
+
+class GroupSerializer(BasePropertySerializer):
+
+    class Meta(BasePropertySerializer.Meta):
+        model = models.Group
+        view_name = 'exchange-groups-detail'
+        fields = BasePropertySerializer.Meta.fields + (
+            'manager', 'manager_uuid', 'manager_name', 'name', 'username',
+        )
+        extra_kwargs = dict(
+            BasePropertySerializer.Meta.extra_kwargs.items() +
+            {'manager': {'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'}}.items()
+        )
+        related_paths = dict(
+            BasePropertySerializer.Meta.related_paths.items() +
+            {'manager': ('uuid', 'name')}.items()
+        )

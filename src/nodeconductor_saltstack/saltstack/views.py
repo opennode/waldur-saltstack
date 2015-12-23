@@ -14,7 +14,7 @@ def track_exceptions(view_fn):
     @wraps(view_fn)
     def wrapped(*args, **kwargs):
         try:
-            view_fn(*args, **kwargs)
+            return view_fn(*args, **kwargs)
         except SaltStackBackendError as e:
             raise exceptions.APIException(e.traceback_str)
     return wrapped

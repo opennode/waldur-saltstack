@@ -228,9 +228,13 @@ class SaltStackBaseAPI(SaltStackAPI):
                             raise NotImplementedError(
                                 "Unknown default argument '%s' for method %s.%s" % (opt, name, func))
 
+            paths = fn_opts.get('paths') or {}
             for opt, val in kwargs.items():
                 if opt in inp:
-                    opts[inp[opt]] = val
+                    if opt in paths:
+                        opts[inp[opt]] = reduce(getattr, paths[opt].split('.'), val)
+                    else:
+                        opts[inp[opt]] = val
                 else:
                     raise NotImplementedError(
                         "Unknown argument '%s' for method %s.%s" % (opt, name, func))

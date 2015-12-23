@@ -1,3 +1,7 @@
+from rest_framework.decorators import detail_route
+from rest_framework.response import Response
+from rest_framework.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
+
 from nodeconductor.structure import views as structure_views
 
 from ..saltstack.views import BasePropertyViewSet, track_exceptions
@@ -28,7 +32,6 @@ class UserViewSet(BasePropertyViewSet):
     backend_name = 'users'
 
     def post_create(self, user, backend_user):
-        user.email = backend_user.email
         user.password = backend_user.password
         user.save()
 
@@ -49,3 +52,41 @@ class ContactViewSet(BasePropertyViewSet):
     serializer_class = serializers.ContactSerializer
     filter_class = filters.ContactFilter
     backend_name = 'contacts'
+
+
+class GroupViewSet(BasePropertyViewSet):
+    queryset = models.Group.objects.all()
+    serializer_class = serializers.GroupSerializer
+    filter_class = filters.GroupFilter
+    backend_name = 'groups'
+
+    @detail_route(methods=['get', 'post', 'delete'])
+    @track_exceptions
+    def members(self, request, pk=None, **kwargs):
+        group = self.get_object()
+        backend = self.get_backend(group.tenant)
+
+        if request.method == 'POST':
+            serializer = serializers.GroupMemberSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            user = serializer.validated_data['user']
+            data = serializers.UserSerializer(instance=user, context={'request': request}).data
+
+            backend.add_member(id=group.backend_id, user_id=user.backend_id)
+            return Response(data, status=HTTP_201_CREATED)
+
+        elif request.method == 'DELETE':
+            serializer = serializers.GroupMemberSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            backend.del_member(
+                id=group.backend_id,
+                user_id=serializer.validated_data['user'].backend_id)
+            return Response(status=HTTP_204_NO_CONTENT)
+
+        else:
+            user_ids = [u.id for u in backend.list_members(id=group.backend_id)]
+            users = models.User.objects.filter(backend_id__in=user_ids)
+            data = serializers.UserSerializer(instance=users, many=True, context={'request': request}).data
+            return Response(data)
