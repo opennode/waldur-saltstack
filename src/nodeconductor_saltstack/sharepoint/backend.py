@@ -20,7 +20,7 @@ class TenantAPI(SaltStackBaseAPI):
                 'users_count': 'NumberOfUsers',
             },
             output={
-                'Subscription ID': 'id',
+                'Site Subscription ID': 'id',
                 'Tenant Database': 'db',
                 'Tenant WebApplication': 'app_name',
                 'WebAppUrl': 'app_url',
