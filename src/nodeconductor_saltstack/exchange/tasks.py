@@ -26,7 +26,7 @@ def destroy(tenant_uuid, force=False, transition_entity=None):
     tenant = transition_entity
     try:
         backend = tenant.get_backend()
-        backend.tenants.delete(tenant=tenant.name, domain=tenant.domain)
+        backend.tenants.delete()
         tenant.service_project_link.add_quota_usage('exchange_storage', -tenant.mailbox_size * tenant.max_users)
     except:
         if not force:

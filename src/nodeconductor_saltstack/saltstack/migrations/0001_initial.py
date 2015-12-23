@@ -40,6 +40,8 @@ class Migration(migrations.Migration):
             ],
             options={
                 'abstract': False,
+                'verbose_name': 'SaltStack service project link',
+                'verbose_name_plural': 'SaltStack service project links',
             },
             bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.core.models.DescendantMixin, nodeconductor.logging.log.LoggableMixin, models.Model),
         ),

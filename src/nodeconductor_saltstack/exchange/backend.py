@@ -26,6 +26,10 @@ class TenantAPI(SaltStackBaseAPI):
                 'mailbox_size': 'TenantMailboxSize',
                 'max_users': 'TenantMaxUsers',
             },
+            defaults={
+                'tenant': "{backend.tenant.name}",
+                'domain': "{backend.tenant.domain}",
+            },
             output={
                 'UPNSuffix': 'id',
                 'Accepted DomainName': 'domain',
@@ -39,6 +43,10 @@ class TenantAPI(SaltStackBaseAPI):
                 'tenant': 'TenantName',
                 'domain': 'TenantDomain',
             },
+            defaults={
+                'tenant': "{backend.tenant.name}",
+                'domain': "{backend.tenant.domain}",
+            },
         )
 
         change = dict(
@@ -46,6 +54,9 @@ class TenantAPI(SaltStackBaseAPI):
             input={
                 'tenant': 'TenantName',
                 'domain': 'TenantDomain',
+            },
+            defaults={
+                'tenant': "{backend.tenant.name}",
             },
         )
 
@@ -123,6 +134,10 @@ class UserAPI(SaltStackBaseAPI):
             input={
                 'id': 'Guid',
                 'name': 'UserLastName',
+                'username': 'UserName',
+                'first_name': 'UserFirstName',
+                'last_name': 'UserLastName',
+                'abbreviation': 'UserInitials',
                 'mailbox_size': 'UserQuota',
             },
             **_base
