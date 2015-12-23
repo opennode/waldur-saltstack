@@ -56,6 +56,9 @@ class UserViewSet(viewsets.ModelViewSet):
         user.backend_id = backend_user.id
         user.save()
 
+        user.tenant.add_quota_usage('user_count', 1)
+        user.tenant.add_quota_usage('global_mailbox_size', user.mailbox_size)
+
     def perform_update(self, serializer):
         user = self.get_object()
         backend = user.tenant.get_backend()
@@ -67,8 +70,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
         serializer.save()
 
-        user.tenant.add_quota_usage('user_count', 1)
-        user.tenant.add_quota_usage('global_mailbox_size', user.tenant.mailbox_size)
+        user.tenant.add_quota_usage(
+            'global_mailbox_size', serializer.validated_data['mailbox_size'] - user.mailbox_size)
 
     def perform_destroy(self, user):
         backend = user.tenant.get_backend()
@@ -79,4 +82,4 @@ class UserViewSet(viewsets.ModelViewSet):
 
         user.delete()
         user.tenant.add_quota_usage('user_count', -1)
-        user.tenant.add_quota_usage('global_mailbox_size', -user.tenant.mailbox_size)
+        user.tenant.add_quota_usage('global_mailbox_size', -user.mailbox_size)
