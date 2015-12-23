@@ -1,9 +1,7 @@
-from nodeconductor.core.exceptions import IncorrectStateException
 from nodeconductor.structure import views as structure_views
 
 from ..saltstack.views import BasePropertyViewSet, track_exceptions
-from .filters import UserFilter
-from . import models, serializers
+from . import filters, models, serializers
 
 
 class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
@@ -26,43 +24,28 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
 class UserViewSet(BasePropertyViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
-    filter_class = UserFilter
+    filter_class = filters.UserFilter
+    backend_name = 'users'
 
-    @track_exceptions
-    def perform_create(self, serializer):
-        tenant = serializer.validated_data['tenant']
-        backend = tenant.get_backend()
-
-        if tenant.state != models.ExchangeTenant.States.ONLINE:
-            raise IncorrectStateException("Tenant must be in stable state to perform user creation")
-
-        backend_user = backend.users.create(
-            **{k: v for k, v in serializer.validated_data.items() if k not in ('tenant',)})
-
-        user = serializer.save()
+    def post_create(self, user, backend_user):
         user.email = backend_user.email
         user.password = backend_user.password
-        user.backend_id = backend_user.id
         user.save()
 
         user.tenant.add_quota_usage('user_count', 1)
         user.tenant.add_quota_usage('global_mailbox_size', user.mailbox_size)
 
-    @track_exceptions
-    def perform_update(self, serializer):
-        user = self.get_object()
-        backend = user.tenant.get_backend()
-        changed = {k: v for k, v in serializer.validated_data.items() if v and getattr(user, k) != v}
-        backend.users.change(id=user.backend_id, **changed)
-        serializer.save()
-
+    def post_update(self, user, serializer):
         user.tenant.add_quota_usage(
             'global_mailbox_size', serializer.validated_data['mailbox_size'] - user.mailbox_size)
 
-    def perform_destroy(self, user):
-        backend = user.tenant.get_backend()
-        backend.users.delete(id=user.backend_id)
-
-        user.delete()
+    def post_destroy(self, user):
         user.tenant.add_quota_usage('user_count', -1)
         user.tenant.add_quota_usage('global_mailbox_size', -user.mailbox_size)
+
+
+class ContactViewSet(BasePropertyViewSet):
+    queryset = models.Contact.objects.all()
+    serializer_class = serializers.ContactSerializer
+    filter_class = filters.ContactFilter
+    backend_name = 'contacts'

@@ -101,8 +101,8 @@ class UserAPI(SaltStackBaseAPI):
                 'mailbox_size': 'UserMailboxSize',
             },
             defaults={
-                'tenant': lambda backend, **kw: backend.tenant.name,
-                'domain': lambda backend, **kw: backend.tenant.domain,
+                'tenant': "{backend.tenant.name}",
+                'domain': "{backend.tenant.domain}",
                 'name': "{first_name} {last_name}",
                 'abbreviation': "{first_name[0]}{last_name[0]}",
             },
@@ -115,7 +115,7 @@ class UserAPI(SaltStackBaseAPI):
                 'tenant': 'TenantName',
             },
             defaults={
-                'tenant': lambda backend, **kw: backend.tenant.name,
+                'tenant': "{backend.tenant.name}",
             },
             many=True,
             **_base
@@ -181,7 +181,7 @@ class ContactAPI(SaltStackBaseAPI):
                 'last_name': 'ContactLastName',
             },
             defaults={
-                'tenant': lambda backend, **kw: backend.tenant.name,
+                'tenant': "{backend.tenant.name}",
                 'name': "{first_name} {last_name}",
             },
             **_base
@@ -193,7 +193,7 @@ class ContactAPI(SaltStackBaseAPI):
                 'tenant': 'TenantName',
             },
             defaults={
-                'tenant': lambda backend, **kw: backend.tenant.name,
+                'tenant': "{backend.tenant.name}",
             },
             many=True,
             **_base
@@ -210,7 +210,10 @@ class ContactAPI(SaltStackBaseAPI):
             name='EditContact',
             input={
                 'id': 'Guid',
+                'name': 'ContactName',
                 'email': 'ContactEmail',
+                'first_name': 'ContactFirstName',
+                'last_name': 'ContactLastName',
             },
             **_base
         )
@@ -239,8 +242,8 @@ class DistributionGroupAPI(SaltStackBaseAPI):
                 'manager_email': 'ManagedByUser',
             },
             defaults={
-                'tenant': lambda backend, **kw: backend.tenant.name,
-                'domain': lambda backend, **kw: backend.tenant.domain,
+                'tenant': "{backend.tenant.name}",
+                'domain': "{backend.tenant.domain}",
             },
             **_base
         )
@@ -251,7 +254,7 @@ class DistributionGroupAPI(SaltStackBaseAPI):
                 'tenant': 'TenantName',
             },
             defaults={
-                'tenant': lambda backend, **kw: backend.tenant.name,
+                'tenant': "{backend.tenant.name}",
             },
             many=True,
             **_base

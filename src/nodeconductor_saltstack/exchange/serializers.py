@@ -6,7 +6,7 @@ from nodeconductor.structure import serializers as structure_serializers
 
 from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.models import SaltStackServiceProjectLink
-from .models import ExchangeTenant, User
+from . import models
 
 
 class TenantSerializer(structure_serializers.BaseResourceSerializer):
@@ -26,7 +26,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
     quotas = QuotaSerializer(many=True, read_only=True)
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
-        model = ExchangeTenant
+        model = models.ExchangeTenant
         view_name = 'exchange-tenants-detail'
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
             'name', 'mailbox_size', 'max_users',
@@ -63,7 +63,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
 class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
 
     class Meta(object):
-        model = User
+        model = models.User
         view_name = 'exchange-users-detail'
         fields = (
             'url', 'uuid', 'tenant', 'tenant_uuid', 'tenant_domain', 'name',
@@ -91,3 +91,23 @@ class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSeria
             raise serializers.ValidationError('Tenant user count quota exceeded.')
 
         return attrs
+
+
+class ContactSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
+
+    class Meta(object):
+        model = models.Contact
+        view_name = 'exchange-contacts-detail'
+        fields = (
+            'url', 'uuid', 'tenant', 'tenant_uuid', 'tenant_domain',
+            'name', 'email', 'first_name', 'last_name',
+        )
+        read_only_fields = ('uuid',)
+        protected_fields = ('tenant',)
+        extra_kwargs = {
+            'url': {'lookup_field': 'uuid'},
+            'tenant': {'lookup_field': 'uuid', 'view_name': 'exchange-tenants-detail'},
+        }
+        related_paths = {
+            'tenant': ('uuid', 'domain')
+        }

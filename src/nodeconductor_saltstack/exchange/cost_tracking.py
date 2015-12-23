@@ -5,7 +5,7 @@ from nodeconductor.cost_tracking.models import DefaultPriceListItem
 
 from ..saltstack.backend import SaltStackBackendError
 from .backend import ExchangeBackend
-from .models import ExchangeTenant
+from .models import ExchangeTenant, Contact, Group, User
 
 
 class Type(object):
@@ -32,20 +32,19 @@ class SaltStackCostTrackingBackend(CostTrackingBackend):
 
     @classmethod
     def get_used_items(cls, tenant):
-        backend = tenant.get_backend()
-        users = backend.users.list()
 
         def get_mailboxes_usage(users):
             for user in users:
                 try:
-                    stats = backend.users.stats(id=user.id)
+                    stats = user.get_stats()
                     yield stats.usage
                 except SaltStackBackendError:
                     continue
 
+        users = list(User.objects.filter(tenant=tenant))
         items = {
-            Type.CONTACTS: len(backend.contacts.list()),
-            Type.GROUPS: len(backend.groups.list()),
+            Type.CONTACTS: Contact.objects.filter(tenant=tenant).count(),
+            Type.GROUPS: Group.objects.filter(tenant=tenant).count(),
             Type.USERS: len(users),
             Type.STORAGE: ExchangeBackend.mb2gb(sum(get_mailboxes_usage(users))),
         }

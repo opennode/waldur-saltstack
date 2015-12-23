@@ -1,6 +1,22 @@
 import django_filters
 
-from .models import User
+from . import models
+
+
+class ContactFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(lookup_type='icontains')
+    email = django_filters.CharFilter(lookup_type='icontains')
+    first_name = django_filters.CharFilter(lookup_type='icontains')
+    last_name = django_filters.CharFilter(lookup_type='icontains')
+
+    class Meta(object):
+        model = models.Contact
+        fields = [
+            'name',
+            'email',
+            'first_name',
+            'last_name',
+        ]
 
 
 class UserFilter(django_filters.FilterSet):
@@ -11,7 +27,7 @@ class UserFilter(django_filters.FilterSet):
     username = django_filters.CharFilter(lookup_type='icontains')
 
     class Meta(object):
-        model = User
+        model = models.User
         fields = [
             'name',
             'email',

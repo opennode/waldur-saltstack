@@ -97,7 +97,7 @@ To delete tenant - issue DELETE request against **/api/exchange-tenants/<tenant_
 List users
 ----------
 
-To get a list of all tenant users - issue GET request against **/api/exchange-users/**.
+To get a list of all users - issue GET request against **/api/exchange-users/**.
 Only users with view access to tenant can view tenant users.
 
 Response example:
@@ -124,7 +124,7 @@ Response example:
 Create user
 -----------
 
-To create new tenant user - issue POST request against **/api/exchange-users/**.
+To create new user - issue POST request against **/api/exchange-users/**.
 
 Request parameters:
 
@@ -167,42 +167,10 @@ Delete user
 To delete user - issue DELETE request against **/api/exchange-users/<user_uuid>/**.
 
 
-Endpoints to be implemented in future release
----------------------------------------------
+List contacts
+-------------
 
-
-Create tenant contact
----------------------
-
-To create new tenant contact - issue POST request against **/api/exchange-tenants/<tenant_uuid>/contacts/**.
-
-Request parameters:
-
- - email - new contact email;
- - last_name - new contact last name;
- - first_name - new contact first name;
-
-Example of a request:
-
-.. code-block:: http
-
-    POST /api/exchange-tenants/24156c367e3a41eea81e374073fa1060/contacts/ HTTP/1.1
-    Content-Type: application/json
-    Accept: application/json
-    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
-    Host: example.com
-
-    {
-        "email": "alice@example.com",
-        "first_name": "Alice",
-        "last_name": "Lebowski"
-    }
-
-
-List tenant contacts
---------------------
-
-To get a list of all tenant contacts - issue GET request against **/api/exchange-tenants/<tenant_uuid>/contacts/**.
+To get a list of all contacts - issue GET request against **/api/exchange-contacts/**.
 Only users with view access to tenant can view tenant contacts.
 
 Response example:
@@ -211,18 +179,67 @@ Response example:
 
     [
         {
-            "url": "http://example.com/api/exchange-tenants/24156c367e3a41eea81e374073fa1060/contacts/5b6d80ea-bb3e-4321-8722-fe8ab17ec649/",
-            "id": "5b6d80ea-bb3e-4321-8722-fe8ab17ec649",
-            "email": "alice@example.com",
-            "name": "Alice Lebowski"
+            "url": "http://example.com/api/exchange-contacts/b6086d0ff2ec4357bc5f34ec22e82b84/",
+            "uuid": "b6086d0ff2ec4357bc5f34ec22e82b84",
+            "tenant": "http://example.com/api/exchange-tenants/7f1d21d48b9c46228c2991c02a070121/",
+            "tenant_uuid": "7f1d21d48b9c46228c2991c02a070121",
+            "tenant_domain": "test.io",
+            "name": "Joe",
+            "email": "joe@me.com",
+            "first_name": "Joe",
+            "last_name": "Doe"
         }
     ]
 
 
-Delete tenant contact
----------------------
+Create contact
+--------------
 
-To delete tenant contact - issue DELETE request against **/api/exchange-tenants/<tenant_uuid>/contacts/<contact_id>/**.
+To create new contact - issue POST request against **/api/exchange-contacts/**.
+
+Request parameters:
+
+ - link to exchange tenant object;
+ - name - contact name;
+ - email - contact email;
+ - last_name - contact last name;
+ - first_name - contact first name;
+
+Example of a request:
+
+.. code-block:: http
+
+    POST /api/exchange-contacts/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "tenant": "http://example.com/api/exchange-tenants/7693d9308e0641baa95720d0046e5696/",
+        "name": "Joe",
+        "email": "joe@example.com",
+        "first_name": "Joe",
+        "last_name": "Doe"
+    }
+
+
+Update contact
+--------------
+
+To update contact data - issue PUT or PATCH request against **/api/exchange-contacts/<contact_uuid>/**.
+
+
+Delete contact
+--------------
+
+To delete contact - issue DELETE request against **/api/exchange-contacts/<contact_uuid>/**.
+
+
+
+Endpoints to be implemented in future release
+---------------------------------------------
+
 
 
 Create tenant distribution group
