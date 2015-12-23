@@ -1,10 +1,11 @@
 from celery import shared_task, chain
 from django.utils import timezone
 
-from ..saltstack.models import SaltStackServiceProjectLink
-from .models import ExchangeTenant
 from nodeconductor.core.tasks import save_error_message, transition
 from nodeconductor.structure.tasks import sync_service_project_links
+
+from ..saltstack.models import SaltStackServiceProjectLink
+from .models import ExchangeTenant, User
 
 
 @shared_task(name='nodeconductor.exchange.provision')
@@ -72,9 +73,9 @@ def set_erred(tenant_uuid, transition_entity=None):
 @shared_task
 def sync_tenant_quotas(tenant_uuid):
     tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
-    backend = tenant.get_backend()
-    backend.sync_user_count_quota(tenant)
-    backend.sync_mailbox_global_size_quotas(tenant)
+    users = list(User.objects.filter(tenant=tenant))
+    tenant.set_quota_usage('user_count', len(users))
+    tenant.set_quota_usage('global_mailbox_size', sum(user.mailbox_size for user in users))
 
 
 @shared_task

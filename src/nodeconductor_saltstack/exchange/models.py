@@ -52,3 +52,7 @@ class User(ExchangeProperty):
     last_name = models.CharField(max_length=255)
     password = models.CharField(max_length=255)
     mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of mailbox, MB')
+
+    def get_stats(self):
+        backend = self.tenant.get_backend()
+        return backend.users.stats(id=self.backend_id)
