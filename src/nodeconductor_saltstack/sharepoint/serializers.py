@@ -9,6 +9,8 @@ from .models import SharepointTenant, Template, User, Site
 
 
 class TenantSerializer(structure_serializers.BaseResourceSerializer):
+    description = serializers.CharField(allow_blank=False)
+
     service = serializers.HyperlinkedRelatedField(
         source='service_project_link.service',
         view_name='saltstack-detail',
