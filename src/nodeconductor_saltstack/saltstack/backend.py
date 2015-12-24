@@ -160,6 +160,11 @@ class SaltStackBaseAPI(SaltStackAPI):
                         'domain': 'TenantDomain',
                         'mailbox_size': 'TenantMailboxSize',
                         'max_users': 'TenantMaxUsers',
+                        'manager': 'ManagerEmail',
+                    },
+                    # extracts input argumets from supplied objects
+                    paths={
+                        'manager': 'user.email',  # manager --> manager.user.email --> ManagerEmail
                     },
                     defaults={  # default parameters for input data
                         # if default is a function - it will receive backend and method kwargs as parameters
