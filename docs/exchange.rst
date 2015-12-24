@@ -128,7 +128,7 @@ To create new user - issue POST request against **/api/exchange-users/**.
 
 Request parameters:
 
- - link to exchange tenant object;
+ - tenant - link to exchange tenant object;
  - name - user name;
  - username - user username;
  - last_name - user last name;
@@ -199,7 +199,7 @@ To create new contact - issue POST request against **/api/exchange-contacts/**.
 
 Request parameters:
 
- - link to exchange tenant object;
+ - tenant - link to exchange tenant object;
  - name - contact name;
  - email - contact email;
  - last_name - contact last name;
@@ -236,45 +236,10 @@ Delete contact
 To delete contact - issue DELETE request against **/api/exchange-contacts/<contact_uuid>/**.
 
 
+List distribution groups
+------------------------
 
-Endpoints to be implemented in future release
----------------------------------------------
-
-
-
-Create tenant distribution group
---------------------------------
-
-To create new tenant distribution group - issue POST request against **/api/exchange-tenants/<tenant_uuid>/groups/**.
-
-Request parameters:
-
- - name - distribution group name;
- - alias - username;
- - email - manager email;
-
-Example of a request:
-
-.. code-block:: http
-
-    POST /api/exchange-tenants/24156c367e3a41eea81e374073fa1060/groups/ HTTP/1.1
-    Content-Type: application/json
-    Accept: application/json
-    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
-    Host: example.com
-
-    {
-        "name": "My Group",
-        "alias": "my_grp",
-        "email": "joe@test.com"
-    }
-
-
-List tenant distribution groups
--------------------------------
-
-To get a list of all tenant distribution groups - issue GET request against
-**/api/exchange-tenants/<tenant_uuid>/groups/**.
+To get a list of all distribution groups - issue GET request against **/api/exchange-groups/**.
 Only users with view access to tenant can view tenant distribution groups.
 
 Response example:
@@ -283,73 +248,131 @@ Response example:
 
     [
         {
-            "url": "http://example.com/api/exchange-tenants/24156c367e3a41eea81e374073fa1060/groups/99b7febb-4efb-4a2e-b183-6a0624e2e2b0/",
-            "id": "99b7febb-4efb-4a2e-b183-6a0624e2e2b0",
-            "email": "my_grp@test.com",
+            "url": "http://example.com/api/exchange-groups/c39cc7f57fab499786609298019cf844/",
+            "uuid": "c39cc7f57fab499786609298019cf844",
+            "tenant": "http://example.com/api/exchange-tenants/7f1d21d48b9c46228c2991c02a070121/",
+            "tenant_uuid": "7f1d21d48b9c46228c2991c02a070121",
+            "tenant_domain": "test.io",
+            "manager": "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/",
+            "manager_uuid": "faf0ed086efd42c08e477797364a78f3",
+            "manager_name": "Big Joe",
             "name": "My Group",
-            "members": [
-                {
-                    "id": "99b7febb-4efb-4a2e-b183-6a0624e2e2b0",
-                    "email": "zak@somewhere.com",
-                    "name": "Zak Son"
-                }
-            ],
+            "username": "grp"
         }
     ]
 
 
-Delete tenant distribution group
---------------------------------
+Create distribution group
+-------------------------
 
-To delete tenant distribution group - issue DELETE request against
-**/api/exchange-tenants/<tenant_uuid>/groups/<group_id>/**.
-
-
-Add member to distribution group
---------------------------------
-
-To add new member to distribution group - issue POST request against
-**/api/exchange-tenants/<tenant_uuid>/groups/<group_id>/members/**.
+To create distribution group - issue POST request against **/api/exchange-groups/**.
 
 Request parameters:
 
- - id - new member ID
+ - tenant - link to exchange tenant object;
+ - manager - link to exchange user object;
+ - name - distribution group name;
+ - username - group username;
 
 Example of a request:
 
 .. code-block:: http
 
-    POST /api/exchange-tenants/24156c367e3a41eea81e374073fa1060/groups/99b7febb-4efb-4a2e-b183-6a0624e2e2b0/members/ HTTP/1.1
+    POST /api/exchange-groups/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
     Host: example.com
 
     {
-        "id": "e941ccc0-75cd-46ab-9c03-a4cda0b62b99"
+        "tenant": "http://example.com/api/exchange-tenants/7f1d21d48b9c46228c2991c02a070121/",
+        "manager": "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/",
+        "name": "My Group",
+        "username": "grp"
     }
 
 
-Delete member from distribution group
--------------------------------------
+Update distribution group
+-------------------------
 
-To remove member from distribution group - issue DELETE request against
-**/api/exchange-tenants/<tenant_uuid>/groups/<group_id>/members/**.
+To update distribution group data - issue PUT or PATCH request against **/api/exchange-groups/<group_uuid>/**.
+
+
+Delete distribution group
+-------------------------
+
+To delete distribution group - issue DELETE request against **/api/exchange-groups/<group_uuid>/**.
+
+
+List group members
+------------------
+
+To get a list of all distribution group memberss - issue GET request against **/api/exchange-groups/<group_uuid>/members**.
+
+Response example:
+
+.. code-block:: javascript
+
+    [
+        {
+            "url": "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
+            "uuid": "db82a52368ba4957ac2cdb6a37d22dee",
+            "tenant": "http://example.com/api/exchange-tenants/9baf2ec31a624ab78e348758b668f36d/",
+            "tenant_uuid": "9baf2ec31a624ab78e348758b668f36d",
+            "tenant_domain": "test.com",
+            "name": "Alice",
+            "first_name": "Alice",
+            "last_name": "L",
+            "username": "alice",
+            "password": "eD0YQpc076cR",
+            "mailbox_size": 3
+        }
+    ]
+
+
+Add member to group
+-------------------
+
+To add new member to distribution group - issue POST request against **/api/exchange-groups/<group_uuid>/members/**.
 
 Request parameters:
 
- - id - member ID
+ - user - link to exchange user object;
 
 Example of a request:
 
 .. code-block:: http
 
-    DELETE /api/exchange-tenants/24156c367e3a41eea81e374073fa1060/groups/99b7febb-4efb-4a2e-b183-6a0624e2e2b0/members/ HTTP/1.1
+    POST /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
     Host: example.com
 
     {
-        "id": "e941ccc0-75cd-46ab-9c03-a4cda0b62b99"
+        "user": "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/"
+    }
+
+
+Delete member from group
+------------------------
+
+To remove member from distribution group - issue DELETE request against **/api/exchange-groups/<group_uuid>/members/**.
+
+Request parameters:
+
+ - user - link to exchange user object;
+
+Example of a request:
+
+.. code-block:: http
+
+    DELETE /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "user": "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/"
     }

@@ -239,7 +239,10 @@ class DistributionGroupAPI(SaltStackBaseAPI):
                 'domain': 'TenantDomain',
                 'name': 'DisplayName',
                 'username': 'Alias',
-                'manager_email': 'ManagedByUser',
+                'manager': 'ManagedByUser',
+            },
+            paths={
+                'manager': 'email',
             },
             defaults={
                 'tenant': "{backend.tenant.name}",
@@ -264,6 +267,7 @@ class DistributionGroupAPI(SaltStackBaseAPI):
             name='DelDistGrp',
             input={
                 'id': 'Id',
+                'email': 'Id',
             },
         )
 
@@ -271,9 +275,16 @@ class DistributionGroupAPI(SaltStackBaseAPI):
             name='EditDg',
             input={
                 'id': 'Guid',
+                'domain': 'TenantDomain',
                 'name': 'DisplayName',
-                'username': 'EmailAddress',
-                'manager_email': 'ManagedByUser',
+                'username': 'Alias',
+                'manager': 'ManagedByUser',
+            },
+            paths={
+                'manager': 'email',
+            },
+            defaults={
+                'domain': "{backend.tenant.domain}",
             },
             **_base
         )

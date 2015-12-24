@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
 from nodeconductor.core import models as core_models
 from nodeconductor.quotas.models import QuotaModelMixin
@@ -31,8 +32,12 @@ class SaltStackServiceProjectLink(QuotaModelMixin, structure_models.ServiceProje
         return 'saltstack-spl'
 
 
+@python_2_unicode_compatible
 class SaltStackProperty(core_models.UuidMixin, core_models.NameMixin, models.Model):
     backend_id = models.CharField(max_length=255, db_index=True)
 
     class Meta(object):
         abstract = True
+
+    def __str__(self):
+        return self.name

@@ -19,6 +19,18 @@ class ContactFilter(django_filters.FilterSet):
         ]
 
 
+class GroupFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(lookup_type='icontains')
+    username = django_filters.CharFilter(lookup_type='icontains')
+
+    class Meta(object):
+        model = models.Group
+        fields = [
+            'name',
+            'username',
+        ]
+
+
 class UserFilter(django_filters.FilterSet):
     name = django_filters.CharFilter(lookup_type='icontains')
     email = django_filters.CharFilter(lookup_type='icontains')

@@ -160,6 +160,11 @@ class SaltStackBaseAPI(SaltStackAPI):
                         'domain': 'TenantDomain',
                         'mailbox_size': 'TenantMailboxSize',
                         'max_users': 'TenantMaxUsers',
+                        'manager': 'ManagerEmail',
+                    },
+                    # extracts input argumets from supplied objects
+                    paths={
+                        'manager': 'user.email',  # manager --> manager.user.email --> ManagerEmail
                     },
                     defaults={  # default parameters for input data
                         # if default is a function - it will receive backend and method kwargs as parameters
@@ -228,9 +233,13 @@ class SaltStackBaseAPI(SaltStackAPI):
                             raise NotImplementedError(
                                 "Unknown default argument '%s' for method %s.%s" % (opt, name, func))
 
+            paths = fn_opts.get('paths') or {}
             for opt, val in kwargs.items():
                 if opt in inp:
-                    opts[inp[opt]] = val
+                    if opt in paths:
+                        opts[inp[opt]] = reduce(getattr, paths[opt].split('.'), val)
+                    else:
+                        opts[inp[opt]] = val
                 else:
                     raise NotImplementedError(
                         "Unknown argument '%s' for method %s.%s" % (opt, name, func))

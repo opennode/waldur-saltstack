@@ -35,9 +35,20 @@ class ExchangeProperty(SaltStackProperty):
         abstract = True
 
 
-class Group(ExchangeProperty):
+class User(ExchangeProperty):
     username = models.CharField(max_length=255)
-    manager_email = models.EmailField(max_length=255)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    password = models.CharField(max_length=255)
+    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of mailbox, MB')
+
+    @property
+    def email(self):
+        return '{}@{}'.format(self.username, self.tenant.domain)
+
+    def get_stats(self):
+        backend = self.tenant.get_backend()
+        return backend.users.stats(id=self.backend_id)
 
 
 class Contact(ExchangeProperty):
@@ -46,13 +57,6 @@ class Contact(ExchangeProperty):
     last_name = models.CharField(max_length=255)
 
 
-class User(ExchangeProperty):
+class Group(ExchangeProperty):
+    manager = models.ForeignKey(User, related_name='groups')
     username = models.CharField(max_length=255)
-    first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
-    password = models.CharField(max_length=255)
-    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of mailbox, MB')
-
-    def get_stats(self):
-        backend = self.tenant.get_backend()
-        return backend.users.stats(id=self.backend_id)
