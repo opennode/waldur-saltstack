@@ -129,6 +129,14 @@ class UserAPI(SaltStackBaseAPI):
             },
         )
 
+        change_password = dict(
+            name='ResetUserPassword',
+            input={
+                'id': 'Id',
+                'password': 'Pwd',
+            },
+        )
+
         change = dict(
             name='EditUser',
             input={
