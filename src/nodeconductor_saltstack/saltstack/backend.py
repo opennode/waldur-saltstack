@@ -31,7 +31,8 @@ class SaltStackBackend(object):
     def __init__(self, settings, backend_class=None, **kwargs):
         if not backend_class:
             backend_class = SaltStackBaseBackend
-        if backend_class not in self.backends:
+        backends = list(self.backends) + [SaltStackBaseBackend]
+        if backend_class not in backends:
             raise SaltStackBackendError("Unknown SaltStack backend class: %s" % backend_class)
 
         self.backend = backend_class(settings, **kwargs)
@@ -48,7 +49,8 @@ class SaltStackMetaclass(type):
 
     def __new__(cls, name, bases, args):
         new_class = super(SaltStackMetaclass, cls).__new__(cls, name, bases, args)
-        SaltStackBackend.register(new_class)
+        if args['API']:
+            SaltStackBackend.register(new_class)
         return new_class
 
 
@@ -62,14 +64,18 @@ class SaltStackBaseBackend(six.with_metaclass(SaltStackMetaclass, ServiceBackend
         self.settings = settings
 
         options = settings.options or {}
-        for name, api_cls in self.API.items():
-            api = api_cls(
-                settings.backend_url, settings.username, settings.password,
-                options.get(self.TARGET_OPTION_NAME, ''),
-                options.get(self.MAPPING_OPTION_NAME))
-
-            setattr(api, 'backend', self)
-            setattr(self, name, api)
+        apis = dict(base=SaltStackBaseAPI, **self.API)
+        for name, api_cls in apis.items():
+            try:
+                api = api_cls(
+                    settings.backend_url, settings.username, settings.password,
+                    options.get(self.TARGET_OPTION_NAME, ''),
+                    options.get(self.MAPPING_OPTION_NAME))
+            except SaltStackBackendError:
+                continue
+            else:
+                setattr(api, 'backend', self)
+                setattr(self, name, api)
 
     def sync_backend(self):
         pass
@@ -77,6 +83,9 @@ class SaltStackBaseBackend(six.with_metaclass(SaltStackMetaclass, ServiceBackend
     def sync(self):
         for cls in SaltStackBackend.backends:
             cls(self.settings).sync_backend()
+
+    def ping(self):
+        return all(cls(self.settings).base.ping() for cls in SaltStackBackend.backends)
 
 
 class SaltStackAPI(object):
@@ -115,6 +124,15 @@ class SaltStackAPI(object):
         else:
             raise SaltStackBackendError(
                 "Request to salt API %s failed: %s %s" % (url, response.status_code, response.text))
+
+    def ping(self):
+        response = self.request('/run', {
+            'client': 'local',
+            'fun': 'test.ping',
+            'tgt': self.target,
+        })
+
+        return response['return'][0][self.target]
 
     def run_cmd(self, cmd, **kwargs):
         command = self.COMMAND.format(
