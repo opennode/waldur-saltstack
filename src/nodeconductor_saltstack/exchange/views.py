@@ -19,6 +19,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
 
     @track_exceptions
     def perform_update(self, serializer):
+        super(TenantViewSet, self).perform_update(serializer)
         tenant = self.get_object()
         backend = tenant.get_backend()
         backend.tenants.change(domain=serializer.validated_data['domain'])
