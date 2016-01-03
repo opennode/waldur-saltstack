@@ -41,7 +41,7 @@ def destroy(tenant_uuid, force=False, transition_entity=None):
 def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
     tenant = transition_entity
     backend = tenant.get_backend()
-    backent_tenant = backend.tenants.create(
+    backend_tenant = backend.tenants.create(
         tenant=tenant.name,
         domain=tenant.domain,
         name=tenant.site_name,
@@ -50,11 +50,11 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
         users_count=kwargs['users_count'],
         template_code=kwargs['template_code'])
 
-    tenant.backend_id = backent_tenant.id
-    tenant.site_url = backent_tenant.site_url
-    tenant.admin_url = backent_tenant.admin_url
-    tenant.admin_login = backent_tenant.admin_login
-    tenant.admin_password = backent_tenant.admin_password
+    tenant.backend_id = backend_tenant.id
+    tenant.site_url = backend_tenant.base_url
+    tenant.admin_url = backend_tenant.admin_url
+    tenant.admin_login = backend_tenant.admin_login
+    tenant.admin_password = backend_tenant.admin_password
     tenant.save()
 
 
