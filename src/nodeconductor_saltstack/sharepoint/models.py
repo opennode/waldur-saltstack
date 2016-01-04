@@ -15,6 +15,7 @@ class SharepointTenant(structure_models.Resource, structure_models.PaidResource)
     admin_url = models.URLField(blank=True)
     admin_login = models.CharField(max_length=255, blank=True)
     admin_password = models.CharField(max_length=255, blank=True)
+    storage_size = models.PositiveIntegerField(help_text='Maximum size of tenants, MB')
 
     @classmethod
     def get_url_name(cls):

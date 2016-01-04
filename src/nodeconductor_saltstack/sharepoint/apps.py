@@ -1,4 +1,5 @@
 from django.apps import AppConfig
+from django.db.models import signals
 
 from nodeconductor.cost_tracking import CostTrackingRegister
 from nodeconductor.template import TemplateRegistry
@@ -19,3 +20,11 @@ class SaltStackConfig(AppConfig):
 
         # import it here in order to register as SaltStack backend
         from .backend import SharepointBackend
+
+        from . import handlers
+        from ..saltstack.models import SaltStackServiceProjectLink
+        signals.post_save.connect(
+            handlers.init_sharepoint_storage_limit,
+            sender=SaltStackServiceProjectLink,
+            dispatch_uid='nodeconductor_saltstack.sharepoint.handlers.init_sharepoint_storage_limit',
+        )

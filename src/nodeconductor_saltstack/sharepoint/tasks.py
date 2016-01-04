@@ -33,6 +33,7 @@ def destroy(tenant_uuid, force=False, transition_entity=None):
             raise
 
     tenant.delete()
+    tenant.service_project_link.add_quota_usage('sharepoint_storage', -tenant.storage_size)
 
 
 @shared_task(is_heavy_task=True)
@@ -46,7 +47,7 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
         domain=tenant.domain,
         name=tenant.site_name,
         description=tenant.description,
-        storage_size=kwargs['storage_size'],
+        storage_size=tenant.storage_size,
         users_count=kwargs['users_count'],
         template_code=kwargs['template_code'])
 
@@ -56,6 +57,7 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
     tenant.admin_login = backent_tenant.admin_login
     tenant.admin_password = backent_tenant.admin_password
     tenant.save()
+    tenant.service_project_link.add_quota_usage('sharepoint_storage', tenant.storage_size)
 
 
 @shared_task
