@@ -28,7 +28,6 @@ def destroy(tenant_uuid, force=False, transition_entity=None):
     try:
         backend = tenant.get_backend()
         backend.tenants.delete()
-        tenant.service_project_link.add_quota_usage('exchange_storage', -tenant.mailbox_size * tenant.max_users)
     except:
         if not force:
             set_erred(tenant_uuid)
@@ -51,9 +50,6 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
 
     tenant.backend_id = backent_tenant.id
     tenant.save()
-    tenant.quotas.create(name='user_count', limit=tenant.max_users, usage=0)
-    tenant.quotas.create(name='global_mailbox_size', limit=tenant.mailbox_size * tenant.max_users, usage=0)
-    tenant.service_project_link.add_quota_usage('exchange_storage', tenant.mailbox_size * tenant.max_users)
 
 
 @shared_task
