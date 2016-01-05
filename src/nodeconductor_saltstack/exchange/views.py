@@ -23,7 +23,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         backend = tenant.get_backend()
         new_domain = serializer.validated_data['domain']
         if new_domain != tenant.domain:
-            backend.tenants.change(domain=serializer.validated_data['domain'])
+            backend.tenants.change(domain=new_domain)
         serializer.save()
 
 
