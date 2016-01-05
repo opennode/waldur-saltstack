@@ -84,7 +84,8 @@ Example of a valid request:
     Host: example.com
 
     {
-        "domain": "test.io"
+        "domain": "test.io",
+        "description": "my domain"
     }
 
 

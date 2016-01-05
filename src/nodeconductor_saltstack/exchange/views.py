@@ -21,7 +21,9 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
     def perform_update(self, serializer):
         tenant = self.get_object()
         backend = tenant.get_backend()
-        backend.tenants.change(domain=serializer.validated_data['domain'])
+        new_domain = serializer.validated_data['domain']
+        if new_domain != tenant.domain:
+            backend.tenants.change(domain=serializer.validated_data['domain'])
         serializer.save()
 
 
