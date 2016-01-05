@@ -23,8 +23,23 @@ class SaltStackConfig(AppConfig):
 
         from . import handlers
         from ..saltstack.models import SaltStackServiceProjectLink
+
+        SharepointTenant = self.get_model('SharepointTenant')
+
         signals.post_save.connect(
-            handlers.init_sharepoint_storage_limit,
+            handlers.init_sharepoint_quotas,
             sender=SaltStackServiceProjectLink,
-            dispatch_uid='nodeconductor_saltstack.sharepoint.handlers.init_sharepoint_storage_limit',
+            dispatch_uid='nodeconductor_saltstack.sharepoint.handlers.init_sharepoint_quotas',
+        )
+
+        signals.post_save.connect(
+            handlers.increase_quotas_usage_on_tenant_creation,
+            sender=SharepointTenant,
+            dispatch_uid='nodeconductor.saltstack.sharepoint.handlers.increase_quotas_usage_on_tenant_creation',
+        )
+
+        signals.post_delete.connect(
+            handlers.decrease_quotas_usage_on_tenant_deletion,
+            sender=SharepointTenant,
+            dispatch_uid='nodeconductor.saltstack.sharepoint.handlers.decrease_quotas_usage_on_tenant_deletion',
         )

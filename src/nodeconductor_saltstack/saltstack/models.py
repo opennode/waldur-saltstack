@@ -24,10 +24,12 @@ class SaltStackServiceProjectLink(QuotaModelMixin, structure_models.ServiceProje
 
     DEFAULT_EXCHANGE_STORAGE_LIMIT = 50 * 1024  # 50 GB
     DEFAULT_SHAREPOINT_STORAGE_LIMIT = 10 * 1024 # 10 GB
+    DEFAULT_SHAREPOINT_TENANT_NUMBER = 2
 
     QUOTAS_NAMES = [
         'exchange_storage',
         'sharepoint_storage',
+        'sharepoint_tenant_number',
     ]
 
     @classmethod
