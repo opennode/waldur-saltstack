@@ -41,10 +41,6 @@ class UserViewSet(BasePropertyViewSet):
         if new_password and user.password != new_password:
             backend.change_password(id=user.backend_id, password=new_password)
 
-        # TODO: move to handlers
-        user.tenant.add_quota_usage(
-            'global_mailbox_size', serializer.validated_data['mailbox_size'] - user.mailbox_size)
-
 
 class ContactViewSet(BasePropertyViewSet):
     queryset = models.Contact.objects.all()
