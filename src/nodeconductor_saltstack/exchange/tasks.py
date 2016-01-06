@@ -79,13 +79,3 @@ def sync_spl_quotas(spl_id):
     spl = SaltStackServiceProjectLink.objects.get(id=spl_id)
     tenants = ExchangeTenant.objects.filter(service_project_link=spl)
     spl.set_quota_usage('exchange_storage', sum([t.max_users * t.mailbox_size for t in tenants]))
-
-
-# celerybeat tasks
-@shared_task(name='nodeconductor.exchange.sync_quotas')
-def sync_quotas():
-    for tenant in ExchangeTenant.objects.filter(state=ExchangeTenant.States.ONLINE):
-        sync_tenant_quotas.delay(tenant.uuid.hex)
-
-    for spl in SaltStackServiceProjectLink.objects.all():
-        sync_spl_quotas.delay(spl.id)
