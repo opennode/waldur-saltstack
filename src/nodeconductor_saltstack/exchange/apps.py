@@ -40,6 +40,12 @@ class SaltStackConfig(AppConfig):
             dispatch_uid='nodeconductor.saltstack.exchange.handlers.increase_quotas_usage_on_tenant_creation',
         )
 
+        signals.post_save.connect(
+            handlers.init_quotas_on_tenant_creation,
+            sender=ExchangeTenant,
+            dispatch_uid='nodeconductor.saltstack.exchange.handlers.init_quotas_on_tenant_creation',
+        )
+
         signals.post_delete.connect(
             handlers.decrease_quotas_usage_on_tenant_deletion,
             sender=ExchangeTenant,
