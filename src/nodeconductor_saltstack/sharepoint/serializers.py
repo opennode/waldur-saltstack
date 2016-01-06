@@ -28,7 +28,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         write_only=True,
         lookup_field='uuid')
 
-    storage_size = serializers.FloatField(min_value=1, write_only=True, help_text='Maximum storage size, GB')
+    storage_size = serializers.IntegerField(write_only=True)
     users_count = serializers.IntegerField(min_value=1, write_only=True, help_text='Maximum users count')
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
@@ -43,7 +43,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             'site_url', 'admin_url', 'admin_login', 'admin_password',
         )
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
-            'template', 'name', 'description', 'domain', 'site_name',
+            'template', 'name', 'description', 'domain', 'site_name', 'storage_size'
         )
 
     def validate(self, attrs):
@@ -51,6 +51,17 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         if spl.service.settings != attrs['template'].settings:
             raise serializers.ValidationError({
                 'template': "Template must be within the same service settings"})
+
+        sharepoint_tenant_number_quota = spl.quotas.get(name='sharepoint_tenant_number')
+        if sharepoint_tenant_number_quota.is_exceeded(delta=1):
+            raise serializers.ValidationError({
+                'storage_size': "You have reached the maximum number of allowed tenants."})
+
+        sharepoint_storage_quota = spl.quotas.get(name='sharepoint_storage')
+        if sharepoint_storage_quota.is_exceeded(delta=int(attrs['storage_size'])):
+            storage_left = sharepoint_storage_quota.limit - sharepoint_storage_quota.usage
+            raise serializers.ValidationError({
+                'storage_size': "Total tenant size should be lower than %s MB" % storage_left})
 
         backend = SharepointTenant(service_project_link=spl).get_backend()
         try:

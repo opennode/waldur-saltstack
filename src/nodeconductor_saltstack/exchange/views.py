@@ -38,21 +38,11 @@ class UserViewSet(BasePropertyViewSet):
         user.password = backend_user.password
         user.save()
 
-        user.tenant.add_quota_usage('user_count', 1)
-        user.tenant.add_quota_usage('global_mailbox_size', user.mailbox_size)
-
     def post_update(self, user, serializer):
         backend = self.get_backend(user.tenant)
         new_password = serializer.validated_data.pop('password', None)
         if new_password and user.password != new_password:
             backend.change_password(id=user.backend_id, password=new_password)
-
-        user.tenant.add_quota_usage(
-            'global_mailbox_size', serializer.validated_data['mailbox_size'] - user.mailbox_size)
-
-    def post_destroy(self, user):
-        user.tenant.add_quota_usage('user_count', -1)
-        user.tenant.add_quota_usage('global_mailbox_size', -user.mailbox_size)
 
 
 class ContactViewSet(BasePropertyViewSet):

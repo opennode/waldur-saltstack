@@ -1,4 +1,5 @@
 from django.db import models
+from model_utils import FieldTracker
 
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
@@ -41,6 +42,8 @@ class User(ExchangeProperty):
     last_name = models.CharField(max_length=255)
     password = models.CharField(max_length=255)
     mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of mailbox, MB')
+
+    tracker = FieldTracker()
 
     @property
     def email(self):

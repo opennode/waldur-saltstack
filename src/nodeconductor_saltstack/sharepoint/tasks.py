@@ -6,6 +6,7 @@ from nodeconductor.core.tasks import save_error_message, transition
 from nodeconductor.structure.tasks import sync_service_project_links
 
 from .models import SharepointTenant
+from nodeconductor_saltstack.saltstack.models import SaltStackServiceProjectLink
 
 
 @shared_task(name='nodeconductor.sharepoint.provision')
@@ -46,7 +47,7 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
         domain=tenant.domain,
         name=tenant.site_name,
         description=tenant.description,
-        storage_size=kwargs['storage_size'],
+        storage_size=tenant.storage_size,
         users_count=kwargs['users_count'],
         template_code=kwargs['template_code'])
 
@@ -70,3 +71,11 @@ def set_online(tenant_uuid, transition_entity=None):
 @transition(SharepointTenant, 'set_erred')
 def set_erred(tenant_uuid, transition_entity=None):
     pass
+
+
+@shared_task
+def sync_spl_quotas(spl_id):
+    spl = SaltStackServiceProjectLink.objects.get(id=spl_id)
+    tenants = SharepointTenant.objects.filter(service_project_link=spl)
+    spl.set_quota_usage('sharepoint_storage', sum([t.storage_size for t in tenants]))
+    spl.set_quota_usage('sharepoint_tenant_number', tenants.count())

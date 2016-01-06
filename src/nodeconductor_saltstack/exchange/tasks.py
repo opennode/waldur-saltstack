@@ -28,7 +28,6 @@ def destroy(tenant_uuid, force=False, transition_entity=None):
     try:
         backend = tenant.get_backend()
         backend.tenants.delete()
-        tenant.service_project_link.add_quota_usage('exchange_storage', -tenant.mailbox_size * tenant.max_users)
     except:
         if not force:
             set_erred(tenant_uuid)
@@ -51,9 +50,6 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
 
     tenant.backend_id = backent_tenant.id
     tenant.save()
-    tenant.quotas.create(name='user_count', limit=tenant.max_users, usage=0)
-    tenant.quotas.create(name='global_mailbox_size', limit=tenant.mailbox_size * tenant.max_users, usage=0)
-    tenant.service_project_link.add_quota_usage('exchange_storage', tenant.mailbox_size * tenant.max_users)
 
 
 @shared_task
@@ -83,13 +79,3 @@ def sync_spl_quotas(spl_id):
     spl = SaltStackServiceProjectLink.objects.get(id=spl_id)
     tenants = ExchangeTenant.objects.filter(service_project_link=spl)
     spl.set_quota_usage('exchange_storage', sum([t.max_users * t.mailbox_size for t in tenants]))
-
-
-# celerybeat tasks
-@shared_task(name='nodeconductor.exchange.sync_quotas')
-def sync_quotas():
-    for tenant in ExchangeTenant.objects.filter(state=ExchangeTenant.States.ONLINE):
-        sync_tenant_quotas.delay(tenant.uuid.hex)
-
-    for spl in SaltStackServiceProjectLink.objects.all():
-        sync_spl_quotas.delay(spl.id)

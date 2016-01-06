@@ -111,7 +111,7 @@ class SiteAPI(SaltStackBaseAPI):
         )
 
         list = dict(
-            name='ListAllTenantSItes',
+            name='ListAllTenantSites',
             input={
                 'tenant': 'TenantName',
                 'domain': 'TenantDomain',
