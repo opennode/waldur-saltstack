@@ -79,7 +79,7 @@ class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedMo
 
 class UserPasswordSerializer(serializers.ModelSerializer):
 
-    class Meta():
+    class Meta(object):
         model = models.User
         fields = ('password',)
 
