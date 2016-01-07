@@ -1,3 +1,4 @@
+from nodeconductor_saltstack.exchange.serializers import UserPasswordSerializer
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
@@ -40,9 +41,15 @@ class UserViewSet(BasePropertyViewSet):
 
     def post_update(self, user, serializer):
         backend = self.get_backend(user.tenant)
-        new_password = serializer.validated_data.pop('password', None)
+        password_serializer = UserPasswordSerializer(data=self.request.data)
+        password_serializer.is_valid(raise_exception=True)
+        new_password = password_serializer.validated_data.pop('password', None)
         if new_password and user.password != new_password:
             backend.change_password(id=user.backend_id, password=new_password)
+            user.password = new_password
+            user.save()
+            # TODO: change to serializer.instance.refresh_from_db() after migration to django 1.8
+            serializer.instance = models.User.objects.get(pk=user.pk)
 
 
 class ContactViewSet(BasePropertyViewSet):
