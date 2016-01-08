@@ -7,6 +7,15 @@ dev_requires = [
     'Sphinx==1.2.2',
 ]
 
+tests_requires = [
+    'ddt>=1.0.0',
+    'factory_boy==2.4.1',
+    'mock==1.0.1',
+    'mock-django==0.6.6',
+    'six>=1.9.0',
+    'django-celery==3.1.16',
+]
+
 install_requires = [
     'nodeconductor>=0.80.0',
      # transitive dependency from nodeconductor core requires Pillow version <3.0.0
@@ -52,7 +61,7 @@ setup(
             'sharepoint = nodeconductor_saltstack.sharepoint.extension:SharepointExtension',
         ),
     },
-    # tests_require=tests_requires,
+    tests_require=tests_requires,
     include_package_data=True,
     classifiers=[
         'Framework :: Django',
