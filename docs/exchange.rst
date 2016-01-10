@@ -68,24 +68,44 @@ Example rendering of the tenant object:
     }
 
 
-Change tenant domain name
--------------------------
+Update tenant details
+---------------------
 
-To update tenant domain - issue PUT request against **/api/exchange-tenants/<tenant_uuid>/**.
+To update details of a MS Exchange tenant, issue PUT request against **/api/exchange-tenants/<tenant_uuid>/**.
 
 Example of a valid request:
 
 .. code-block:: http
 
-    PUT /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/ HTTP/1.1
+    PUT /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/domain/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
     Host: example.com
 
     {
-        "domain": "test.io",
-        "description": "my domain"
+        "name": "test.io",
+        "description": "My new domain"
+    }
+
+
+Change tenant domain name
+-------------------------
+
+To update tenant domain - issue PUT request against **/api/exchange-tenants/<tenant_uuid>/domain/**.
+
+Example of a valid request:
+
+.. code-block:: http
+
+    PUT /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/domain/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "domain": "test.io"
     }
 
 

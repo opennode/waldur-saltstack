@@ -9,6 +9,13 @@ from ..saltstack.models import SaltStackServiceProjectLink
 from . import models
 
 
+class ExchangeDomainSerializer(serializers.ModelSerializer):
+
+    class Meta():
+        model = models.ExchangeTenant
+        fields = ('domain',)
+
+
 class TenantSerializer(structure_serializers.BaseResourceSerializer):
     MAX_TENANT_SIZE = 2 * 1024 * 1024  # 2TB
 
@@ -29,7 +36,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         model = models.ExchangeTenant
         view_name = 'exchange-tenants-detail'
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
-            'mailbox_size', 'max_users',
+            'mailbox_size', 'max_users', 'domain',
         )
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
             'domain', 'mailbox_size', 'max_users', 'quotas',

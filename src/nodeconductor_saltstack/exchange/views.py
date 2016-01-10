@@ -1,7 +1,7 @@
-from nodeconductor_saltstack.exchange.serializers import UserPasswordSerializer
+from nodeconductor_saltstack.exchange.serializers import UserPasswordSerializer, ExchangeDomainSerializer
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
+from rest_framework.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_200_OK
 
 from nodeconductor.structure import views as structure_views
 
@@ -18,15 +18,33 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         backend = resource.get_backend()
         backend.provision(resource)
 
+    def get_serializer_class(self):
+        serializer = super(TenantViewSet, self).get_serializer_class()
+        if self.action == 'domain':
+            serializer = ExchangeDomainSerializer
+        return serializer
+
+    @detail_route(methods=['get', 'post'])
     @track_exceptions
-    def perform_update(self, serializer):
-        super(TenantViewSet, self).perform_update(serializer)
+    def domain(self, request, pk=None, **kwargs):
         tenant = self.get_object()
         backend = tenant.get_backend()
-        new_domain = serializer.validated_data['domain']
-        if new_domain != tenant.domain:
-            backend.tenants.change(domain=new_domain)
-        serializer.save()
+
+        if request.method == 'POST':
+            domain_serializer = ExchangeDomainSerializer(data=self.request.data)
+            domain_serializer.is_valid(raise_exception=True)
+            new_domain = domain_serializer.validated_data['domain']
+            if new_domain != tenant.domain:
+                backend.tenants.change(domain=new_domain)
+                tenant.domain = new_domain
+                tenant.save()
+            data = ExchangeDomainSerializer(instance=tenant, context={'request': self.request}).data
+            return Response(data, status=HTTP_200_OK)
+        elif request.method == 'GET':
+            data = ExchangeDomainSerializer(instance=tenant, context={'request': request}).data
+            return Response(data)
+        else:
+            pass
 
 
 class UserViewSet(BasePropertyViewSet):
@@ -39,6 +57,7 @@ class UserViewSet(BasePropertyViewSet):
         user.password = backend_user.password
         user.save()
 
+    @track_exceptions
     def post_update(self, user, serializer):
         backend = self.get_backend(user.tenant)
         password_serializer = UserPasswordSerializer(data=self.request.data)
