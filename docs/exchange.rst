@@ -243,6 +243,12 @@ List distribution groups
 To get a list of all distribution groups - issue GET request against **/api/exchange-groups/**.
 Only users with view access to tenant can view tenant distribution groups.
 
+Filtering is possible by:
+
+- ?name=XXX
+- ?tenant_domain=XXX
+- ?username=XXX
+
 Response example:
 
 .. code-block:: javascript

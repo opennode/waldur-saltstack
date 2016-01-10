@@ -22,12 +22,14 @@ class ContactFilter(django_filters.FilterSet):
 class GroupFilter(django_filters.FilterSet):
     name = django_filters.CharFilter(lookup_type='icontains')
     username = django_filters.CharFilter(lookup_type='icontains')
+    tenant_domain = django_filters.CharFilter(name='tenant__domain')
 
     class Meta(object):
         model = models.Group
         fields = [
             'name',
             'username',
+            'tenant_domain'
         ]
 
 
