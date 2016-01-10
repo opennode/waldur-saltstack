@@ -21,7 +21,7 @@ Request parameters:
 
 The following rules for generation of the service settings are used:
 
- - backend_url - URL for slat master API (required, e.g.: http://salt-master.example.com:8080);
+ - backend_url - URL for SaltStack master API (required, e.g.: http://salt-master.example.com:8080);
  - password - Secret key;
 
 Example of a request:
@@ -67,7 +67,7 @@ To remove a link, issue DELETE to url of the corresponding connection as staff u
 
 Project-service connection list
 -------------------------------
-To get a list of connections between a project and an oracle service, run GET against
+To get a list of connections between a project and an SaltStack service, run GET against
 **/api/saltstack-service-project-link/** as authenticated user. Note that a user can only see connections of a project
 where a user has a role.
 

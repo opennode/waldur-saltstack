@@ -9,6 +9,13 @@ from ..saltstack.models import SaltStackServiceProjectLink
 from . import models
 
 
+class ExchangeDomainSerializer(serializers.ModelSerializer):
+
+    class Meta():
+        model = models.ExchangeTenant
+        fields = ('domain',)
+
+
 class TenantSerializer(structure_serializers.BaseResourceSerializer):
     MAX_TENANT_SIZE = 2 * 1024 * 1024  # 2TB
 
@@ -29,7 +36,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         model = models.ExchangeTenant
         view_name = 'exchange-tenants-detail'
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
-            'name', 'mailbox_size', 'max_users',
+            'mailbox_size', 'max_users', 'domain',
         )
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
             'domain', 'mailbox_size', 'max_users', 'quotas',
@@ -77,6 +84,13 @@ class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedMo
         }
 
 
+class UserPasswordSerializer(serializers.ModelSerializer):
+
+    class Meta(object):
+        model = models.User
+        fields = ('password',)
+
+
 class UserSerializer(BasePropertySerializer):
 
     class Meta(BasePropertySerializer.Meta):
@@ -85,18 +99,24 @@ class UserSerializer(BasePropertySerializer):
         fields = BasePropertySerializer.Meta.fields + (
             'name', 'first_name', 'last_name', 'username', 'password', 'mailbox_size',
         )
+        # password update is handled separately in views.py
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password',)
+        protected_fields = BasePropertySerializer.Meta.protected_fields + (
+            'name', 'first_name', 'last_name', 'username', 'mailbox_size',
+        )
 
     def validate(self, attrs):
         tenant = self.instance.tenant if self.instance else attrs['tenant']
 
-        if attrs['mailbox_size'] > tenant.mailbox_size:
-            raise serializers.ValidationError(
-                {'mailbox_size': "Mailbox size should be lower than %s MB" % tenant.mailbox_size})
+        # validation for user creation
+        if not self.instance:
+            if attrs['mailbox_size'] > tenant.mailbox_size:
+                raise serializers.ValidationError(
+                    {'mailbox_size': "Mailbox size should be lower than %s MB" % tenant.mailbox_size})
 
-        user_count_quota = tenant.quotas.get(name='user_count')
-        if user_count_quota.is_exceeded(delta=1):
-            raise serializers.ValidationError('Tenant user count quota exceeded.')
+            user_count_quota = tenant.quotas.get(name='user_count')
+            if user_count_quota.is_exceeded(delta=1):
+                raise serializers.ValidationError('Tenant user count quota exceeded.')
 
         return attrs
 
