@@ -77,7 +77,7 @@ Example of a valid request:
 
 .. code-block:: http
 
-    PUT /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/domain/ HTTP/1.1
+    POST /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/domain/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
