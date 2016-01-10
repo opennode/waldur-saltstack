@@ -47,10 +47,11 @@ class ExchangeTenantFactory(factory.DjangoModelFactory):
     state = ExchangeTenant.States.ONLINE
 
     @classmethod
-    def get_url(cls, tenant=None):
+    def get_url(cls, tenant=None, action=None):
         if tenant is None:
             tenant = ExchangeTenantFactory()
-        return reverse('exchange-tenants-detail', kwargs={'uuid': tenant.uuid})
+        url = reverse('exchange-tenants-detail', kwargs={'uuid': tenant.uuid})
+        return url if action is None else url + action + '/'
 
 
 class ExchangeUserFactory(factory.DjangoModelFactory):

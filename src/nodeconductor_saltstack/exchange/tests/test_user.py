@@ -14,8 +14,8 @@ class UserCrudTest(test.APITransactionTestCase):
 
     def test_user_can_update_tenant_domain(self, get_backend):
         tenant = ExchangeTenantFactory(domain='domain1')
-        tenant_url = ExchangeTenantFactory.get_url(tenant)
-        response = self.client.patch(tenant_url, data={'domain': 'domain2'})
+        tenant_url = ExchangeTenantFactory.get_url(tenant, action='domain')
+        response = self.client.post(tenant_url, data={'domain': 'domain2'})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
         self.assertEqual('domain2', response.data['domain'])
