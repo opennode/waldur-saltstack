@@ -24,13 +24,14 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             serializer = ExchangeDomainSerializer
         return serializer
 
-    @detail_route(methods=['get', 'post'])
+    # XXX: put was added as portal has a temporary bug with widget update
+    @detail_route(methods=['get', 'post', 'put'])
     @track_exceptions
     def domain(self, request, pk=None, **kwargs):
         tenant = self.get_object()
         backend = tenant.get_backend()
 
-        if request.method == 'POST':
+        if request.method in ('POST', 'PUT'):
             domain_serializer = ExchangeDomainSerializer(instance=tenant, data=request.data)
             domain_serializer.is_valid(raise_exception=True)
             new_domain = domain_serializer.validated_data['domain']
@@ -55,12 +56,13 @@ class UserViewSet(BasePropertyViewSet):
         user.password = backend_user.password
         user.save()
 
-    @detail_route(methods=['get', 'post'])
+    # XXX: put was added as portal has a temporary bug with widget update
+    @detail_route(methods=['get', 'post', 'put'])
     @track_exceptions
     def password(self, request, pk=None, **kwargs):
         user = self.get_object()
         backend = self.get_backend(user.tenant)
-        if request.method == 'POST':
+        if request.method in ('POST', 'PUT'):
             serializer = UserPasswordSerializer(instance=user, data=request.data)
             serializer.is_valid(raise_exception=True)
             new_password = serializer.validated_data['password']
