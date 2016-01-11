@@ -67,7 +67,8 @@ class ExchangeUserFactory(factory.DjangoModelFactory):
     mailbox_size = 100
 
     @classmethod
-    def get_url(cls, user=None):
+    def get_url(cls, user=None, action=None):
         if user is None:
             user = ExchangeUserFactory()
-        return reverse('exchange-users-detail', kwargs={'uuid': user.uuid})
+        url = reverse('exchange-users-detail', kwargs={'uuid': user.uuid})
+        return url if action is None else url + action + '/'

@@ -31,20 +31,18 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         backend = tenant.get_backend()
 
         if request.method == 'POST':
-            domain_serializer = ExchangeDomainSerializer(data=self.request.data)
+            domain_serializer = ExchangeDomainSerializer(instance=tenant, data=self.request.data)
             domain_serializer.is_valid(raise_exception=True)
             new_domain = domain_serializer.validated_data['domain']
             if new_domain != tenant.domain:
                 backend.tenants.change(domain=new_domain)
                 tenant.domain = new_domain
                 tenant.save()
-            data = ExchangeDomainSerializer(instance=tenant, context={'request': self.request}).data
+            data = ExchangeDomainSerializer(instance=tenant, context={'request': request}).data
             return Response(data, status=HTTP_200_OK)
         elif request.method == 'GET':
             data = ExchangeDomainSerializer(instance=tenant, context={'request': request}).data
             return Response(data)
-        else:
-            pass
 
 
 class UserViewSet(BasePropertyViewSet):
@@ -57,18 +55,29 @@ class UserViewSet(BasePropertyViewSet):
         user.password = backend_user.password
         user.save()
 
+    def get_serializer_class(self):
+        serializer = super(UserViewSet, self).get_serializer_class()
+        if self.action == 'domain':
+            serializer = UserPasswordSerializer
+        return serializer
+
+    @detail_route(methods=['get', 'post'])
     @track_exceptions
-    def post_update(self, user, serializer):
+    def password(self, request, pk=None, **kwargs):
+        user = self.get_object()
         backend = self.get_backend(user.tenant)
-        password_serializer = UserPasswordSerializer(data=self.request.data)
-        password_serializer.is_valid(raise_exception=True)
-        new_password = password_serializer.validated_data.pop('password', None)
-        if new_password and user.password != new_password:
-            backend.change_password(id=user.backend_id, password=new_password)
-            user.password = new_password
-            user.save()
-            # TODO: change to serializer.instance.refresh_from_db() after migration to django 1.8
-            serializer.instance = models.User.objects.get(pk=user.pk)
+        if request.method == 'POST':
+            serializer = UserPasswordSerializer(instance=user, data=self.request.data)
+            serializer.is_valid(raise_exception=True)
+            new_password = serializer.validated_data['password']
+            if user.password != new_password:
+                backend.change_password(id=user.backend_id, password=new_password)
+                serializer.save()
+            data = UserPasswordSerializer(instance=user, context={'request': request}).data
+            return Response(data, status=HTTP_200_OK)
+        elif request.method == 'GET':
+            data = UserPasswordSerializer(instance=user, context={'request': request}).data
+            return Response(data)
 
 
 class ContactViewSet(BasePropertyViewSet):
