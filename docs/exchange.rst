@@ -191,7 +191,7 @@ Example of a valid request:
 
 .. code-block:: http
 
-    PUT /api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/password/ HTTP/1.1
+    POST /api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/password/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
