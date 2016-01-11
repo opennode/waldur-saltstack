@@ -31,7 +31,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         backend = tenant.get_backend()
 
         if request.method == 'POST':
-            domain_serializer = ExchangeDomainSerializer(instance=tenant, data=self.request.data)
+            domain_serializer = ExchangeDomainSerializer(instance=tenant, data=request.data)
             domain_serializer.is_valid(raise_exception=True)
             new_domain = domain_serializer.validated_data['domain']
             if new_domain != tenant.domain:
@@ -67,7 +67,7 @@ class UserViewSet(BasePropertyViewSet):
         user = self.get_object()
         backend = self.get_backend(user.tenant)
         if request.method == 'POST':
-            serializer = UserPasswordSerializer(instance=user, data=self.request.data)
+            serializer = UserPasswordSerializer(instance=user, data=request.data)
             serializer.is_valid(raise_exception=True)
             new_password = serializer.validated_data['password']
             if user.password != new_password:
