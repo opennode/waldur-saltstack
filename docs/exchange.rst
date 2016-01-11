@@ -182,6 +182,26 @@ Update user
 To update user data - issue PUT or PATCH request against **/api/exchange-users/<user_uuid>/**.
 
 
+Update user password
+--------------------
+
+To update user password - issue POST request against **/api/exchange-users/<user_uuid>/password/**.
+
+Example of a valid request:
+
+.. code-block:: http
+
+    PUT /api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/password/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "password": "eD0YQpc076cR"
+    }
+
+
 Delete user
 -----------
 
