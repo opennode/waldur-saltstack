@@ -101,9 +101,6 @@ class UserSerializer(BasePropertySerializer):
         )
         # password update is handled separately in views.py
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password',)
-        protected_fields = BasePropertySerializer.Meta.protected_fields + (
-            'name', 'first_name', 'last_name', 'username', 'mailbox_size',
-        )
 
     def validate(self, attrs):
         tenant = self.instance.tenant if self.instance else attrs['tenant']
