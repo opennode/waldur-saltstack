@@ -55,12 +55,6 @@ class UserViewSet(BasePropertyViewSet):
         user.password = backend_user.password
         user.save()
 
-    def get_serializer_class(self):
-        serializer = super(UserViewSet, self).get_serializer_class()
-        if self.action == 'domain':
-            serializer = UserPasswordSerializer
-        return serializer
-
     @detail_route(methods=['get', 'post'])
     @track_exceptions
     def password(self, request, pk=None, **kwargs):
