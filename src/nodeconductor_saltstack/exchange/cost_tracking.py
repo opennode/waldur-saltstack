@@ -46,7 +46,7 @@ class SaltStackCostTrackingBackend(CostTrackingBackend):
             Type.CONTACTS: Contact.objects.filter(tenant=tenant).count(),
             Type.GROUPS: Group.objects.filter(tenant=tenant).count(),
             Type.USERS: len(users),
-            Type.STORAGE: sum(get_mailboxes_usage(users)),
+            Type.STORAGE: sum(get_mailboxes_usage(users)) if users else 0,
         }
 
         return [(item, key, items[item]) for item, key in Type.CHOICES.iteritems()]
