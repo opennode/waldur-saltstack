@@ -158,7 +158,8 @@ class SaltStackAPI(object):
         else:
             logger.error("Output from a failed call of command %s: %s" % (command, result.get('Output')))
             raise SaltStackBackendError(
-                "Cannot run command %s on %s: %s" % (cmd, self.target, result['Output']),
+                "Cannot run command %s on %s: %s" % (
+                    cmd, self.target, result.get('Message') or result.get('Output')),
                 result.get('Message'))
 
         return json.loads(result)
