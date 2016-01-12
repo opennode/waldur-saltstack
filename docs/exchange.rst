@@ -64,7 +64,9 @@ Example rendering of the tenant object:
         "created": "2015-10-20T10:35:19.146Z",
         "domain": "test.com",
         "max_users": "500",
-        "mailbox_size": "3"
+        "mailbox_size": "3",
+        "owa_url": "https://owa.example.com",
+        "ecp_url": "https://ecp.example.com"
     }
 
 

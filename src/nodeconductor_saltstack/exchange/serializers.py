@@ -32,6 +32,18 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
 
     quotas = QuotaSerializer(many=True, read_only=True)
 
+    # Link to Outlook Web Access
+    owa_url = serializers.SerializerMethodField()
+
+    # Link to Exchange Control Panel
+    ecp_url = serializers.SerializerMethodField()
+
+    def get_owa_url(self, tenant):
+        return tenant.service_project_link.service.settings.options.get('owa_url', 'Unknown')
+
+    def get_ecp_url(self, tenant):
+        return tenant.service_project_link.service.settings.options.get('ecp_url', 'Unknown')
+
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
         model = models.ExchangeTenant
         view_name = 'exchange-tenants-detail'
@@ -39,7 +51,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             'mailbox_size', 'max_users', 'domain',
         )
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
-            'domain', 'mailbox_size', 'max_users', 'quotas',
+            'domain', 'mailbox_size', 'max_users', 'quotas', 'owa_url', 'ecp_url',
         )
 
     def validate(self, attrs):

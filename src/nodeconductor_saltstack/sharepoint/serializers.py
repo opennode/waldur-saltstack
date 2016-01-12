@@ -31,13 +31,20 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
     storage_size = serializers.IntegerField(write_only=True)
     users_count = serializers.IntegerField(min_value=1, write_only=True, help_text='Maximum users count')
 
+    # IP of the Sharepoint management server. admin_url/site_url should be resolving to it.
+    management_ip = serializers.SerializerMethodField()
+
+    def get_management_ip(self, tenant):
+        return tenant.service_project_link.service.settings.options.get('sharepoint_management_ip', 'Unknown')
+
+
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
         model = SharepointTenant
         view_name = 'sharepoint-tenants-detail'
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
             'template', 'domain', 'site_name', 'site_url',
             'admin_url', 'admin_login', 'admin_password',
-            'storage_size', 'users_count',
+            'storage_size', 'users_count', 'management_ip',
         )
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
             'site_url', 'admin_url', 'admin_login', 'admin_password',
