@@ -108,6 +108,7 @@ Example rendering of the tenant object:
         "admin_url": "http://blog.com/admin",
         "admin_login": "tenantadmin@blog.com",
         "admin_password": "k?6y#3$+0=@a",
+        "management_ip": "10.7.7.0"
     }
 
 

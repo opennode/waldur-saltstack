@@ -12,8 +12,13 @@ class ServiceSerializer(structure_serializers.BaseServiceSerializer):
     }
 
     SERVICE_ACCOUNT_EXTRA_FIELDS = {
+        # Exchange
         'exchange_target': 'Salt minion target with MS Exchange Domains',
+        'owa_url': 'URL for Outlook Web Access',
+        'ecp_url': 'Exchange Control Panel',
+        # Sharepoint
         'sharepoint_target': 'Salt minion target with MS Sharepoint Sites',
+        'sharepoint_management_ip': 'IP of the Sharepoint server. Used for setting up host resolution.'
     }
 
     class Meta(structure_serializers.BaseServiceSerializer.Meta):
