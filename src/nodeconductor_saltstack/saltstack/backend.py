@@ -1,3 +1,4 @@
+import re
 import json
 import types
 import logging
@@ -132,7 +133,7 @@ class SaltStackAPI(object):
             'tgt': self.target,
         })
 
-        return response['return'][0][self.target]
+        return all(response['return'][0].values())
 
     def run_cmd(self, cmd, **kwargs):
         command = self.COMMAND.format(
@@ -146,12 +147,17 @@ class SaltStackAPI(object):
             'arg': command,
         })
 
-        result = response['return'][0][self.target]
-        try:
-            result = json.loads(result)
-        except ValueError:
-            raise SaltStackBackendError(
-                "Error during execution of %s on %s: %s" % (cmd, self.target, result))
+        target = self.target.replace('.', '\.').replace('*', '.+')
+        for tgt, res in response['return'][0].items():
+            if re.match(target, tgt):
+                try:
+                    result = json.loads(res)
+                except ValueError:
+                    raise SaltStackBackendError(
+                        "Error during execution of %s on %s: %s" % (cmd, tgt, result))
+
+                if result['Status'] != 'Inactive':
+                    break
 
         if result['Status'] == 'OK':
             return result['Output']
@@ -161,8 +167,6 @@ class SaltStackAPI(object):
                 "Cannot run command %s on %s: %s" % (
                     cmd, self.target, result.get('Message') or result.get('Output')),
                 result.get('Message'))
-
-        return json.loads(result)
 
 
 class SaltStackBaseAPI(SaltStackAPI):
