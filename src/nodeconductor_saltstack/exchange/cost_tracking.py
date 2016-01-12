@@ -23,6 +23,7 @@ class Type(object):
 
 
 class SaltStackCostTrackingBackend(CostTrackingBackend):
+    NUMERICAL = [Type.STORAGE, Type.USERS, Type.CONTACTS, Type.GROUPS]
 
     @classmethod
     def get_default_price_list_items(cls):

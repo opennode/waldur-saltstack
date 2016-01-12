@@ -7,8 +7,8 @@ from nodeconductor.structure import ServiceBackend
 from .models import SharepointTenant
 
 
-class PriceItemTypes(object):
-    USAGE = 'users'
+class Type(object):
+    USAGE = 'usage'
     STORAGE = 'storage'
 
     STORAGE_KEY = '1 GB'
@@ -21,10 +21,12 @@ class PriceItemTypes(object):
 
 
 class SaltStackCostTrackingBackend(CostTrackingBackend):
+    NUMERICAL = [Type.STORAGE]
+
     @classmethod
     def get_default_price_list_items(cls):
         content_type = ContentType.objects.get_for_model(SharepointTenant)
-        for item, key in PriceItemTypes.CHOICES.iteritems():
+        for item, key in Type.CHOICES.iteritems():
             yield DefaultPriceListItem(item_type=item, key=key, resource_content_type=content_type)
 
     @classmethod
@@ -32,6 +34,6 @@ class SaltStackCostTrackingBackend(CostTrackingBackend):
         backend = resource.get_backend()
         storage = sum(s.usage for s in backend.sites.list())
         return [
-            (PriceItemTypes.USAGE, PriceItemTypes.CHOICES[PriceItemTypes.USAGE], 1),
-            (PriceItemTypes.STORAGE, PriceItemTypes.CHOICES[PriceItemTypes.STORAGE], ServiceBackend.mb2gb(storage)),
+            (Type.USAGE, Type.CHOICES[Type.USAGE], 1),
+            (Type.STORAGE, Type.CHOICES[Type.STORAGE], ServiceBackend.mb2gb(storage)),
         ]
