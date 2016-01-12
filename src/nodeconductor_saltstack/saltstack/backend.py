@@ -1,4 +1,3 @@
-import re
 import json
 import types
 import logging
@@ -147,17 +146,15 @@ class SaltStackAPI(object):
             'arg': command,
         })
 
-        target = self.target.replace('.', '\.').replace('*', '.+')
         for tgt, res in response['return'][0].items():
-            if re.match(target, tgt):
-                try:
-                    result = json.loads(res)
-                except ValueError:
-                    raise SaltStackBackendError(
-                        "Error during execution of %s on %s: %s" % (cmd, tgt, result))
+            try:
+                result = json.loads(res)
+            except ValueError:
+                raise SaltStackBackendError(
+                    "Error during execution of %s on %s: %s" % (cmd, tgt, result))
 
-                if result['Status'] != 'Inactive':
-                    break
+            if result['Status'] != 'Inactive':
+                break
 
         if result['Status'] == 'OK':
             return result['Output']
