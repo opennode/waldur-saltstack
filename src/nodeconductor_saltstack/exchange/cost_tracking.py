@@ -4,7 +4,6 @@ from nodeconductor.cost_tracking import CostTrackingBackend
 from nodeconductor.cost_tracking.models import DefaultPriceListItem
 
 from ..saltstack.backend import SaltStackBackendError
-from .backend import ExchangeBackend
 from .models import ExchangeTenant, Contact, Group, User
 
 
@@ -47,7 +46,7 @@ class SaltStackCostTrackingBackend(CostTrackingBackend):
             Type.CONTACTS: Contact.objects.filter(tenant=tenant).count(),
             Type.GROUPS: Group.objects.filter(tenant=tenant).count(),
             Type.USERS: len(users),
-            Type.STORAGE: ExchangeBackend.mb2gb(sum(get_mailboxes_usage(users))),
+            Type.STORAGE: sum(get_mailboxes_usage(users)),
         }
 
         return [(item, key, items[item]) for item, key in Type.CHOICES.iteritems()]

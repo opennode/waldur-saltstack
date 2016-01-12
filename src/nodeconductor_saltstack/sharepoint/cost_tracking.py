@@ -2,7 +2,6 @@ from django.contrib.contenttypes.models import ContentType
 
 from nodeconductor.cost_tracking import CostTrackingBackend
 from nodeconductor.cost_tracking.models import DefaultPriceListItem
-from nodeconductor.structure import ServiceBackend
 
 from .models import SharepointTenant
 
@@ -11,7 +10,7 @@ class Type(object):
     USAGE = 'usage'
     STORAGE = 'storage'
 
-    STORAGE_KEY = '1 GB'
+    STORAGE_KEY = '1 MB'
     USAGE_KEY = 'basic'
 
     CHOICES = {
@@ -35,5 +34,5 @@ class SaltStackCostTrackingBackend(CostTrackingBackend):
         storage = sum(s.usage for s in backend.sites.list())
         return [
             (Type.USAGE, Type.CHOICES[Type.USAGE], 1),
-            (Type.STORAGE, Type.CHOICES[Type.STORAGE], ServiceBackend.mb2gb(storage)),
+            (Type.STORAGE, Type.CHOICES[Type.STORAGE], storage),
         ]
