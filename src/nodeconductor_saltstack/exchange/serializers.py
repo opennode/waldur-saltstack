@@ -141,11 +141,13 @@ class ContactSerializer(BasePropertySerializer):
 
 
 class GroupMemberSerializer(serializers.Serializer):
-    user = serializers.HyperlinkedRelatedField(
+
+    users = serializers.HyperlinkedRelatedField(
         queryset=models.User.objects.all(),
         view_name='exchange-users-detail',
+        lookup_field='uuid',
         write_only=True,
-        lookup_field='uuid')
+        many=True)
 
 
 class GroupSerializer(BasePropertySerializer):

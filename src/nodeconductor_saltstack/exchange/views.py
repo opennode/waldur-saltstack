@@ -99,19 +99,25 @@ class GroupViewSet(BasePropertyViewSet):
             serializer = serializers.GroupMemberSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 
-            user = serializer.validated_data['user']
-            data = serializers.UserSerializer(instance=user, context={'request': request}).data
+            user = serializer.validated_data['users']
+            data = serializers.UserSerializer(
+                instance=user, context={'request': request}, many=True).data
 
-            backend.add_member(id=group.backend_id, user_id=user.backend_id)
+            backend.add_member(
+                id=group.backend_id,
+                user_id=','.join([u.backend_id for u in user]))
+
             return Response(data, status=HTTP_201_CREATED)
 
         elif request.method == 'DELETE':
             serializer = serializers.GroupMemberSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 
-            backend.del_member(
-                id=group.backend_id,
-                user_id=serializer.validated_data['user'].backend_id)
+            for user in serializer.validated_data['users']:
+                backend.del_member(
+                    id=group.backend_id,
+                    user_id=user.backend_id)
+
             return Response(status=HTTP_204_NO_CONTENT)
 
         else:

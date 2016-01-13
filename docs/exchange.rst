@@ -386,7 +386,7 @@ To add new member to distribution group - issue POST request against **/api/exch
 
 Request parameters:
 
- - user - link to exchange user object;
+ - users - a list links to exchange user object;
 
 Example of a request:
 
@@ -399,7 +399,10 @@ Example of a request:
     Host: example.com
 
     {
-        "user": "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/"
+        "users": [
+            "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
+            "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/"
+        ]
     }
 
 
@@ -410,7 +413,7 @@ To remove member from distribution group - issue DELETE request against **/api/e
 
 Request parameters:
 
- - user - link to exchange user object;
+ - users - a list of links to exchange user object;
 
 Example of a request:
 
@@ -423,5 +426,5 @@ Example of a request:
     Host: example.com
 
     {
-        "user": "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/"
+        "users": ["http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/"]
     }
