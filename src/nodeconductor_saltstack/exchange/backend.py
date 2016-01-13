@@ -27,13 +27,16 @@ class TenantAPI(SaltStackBaseAPI):
                 'max_users': 'TenantMaxUsers',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'tenant': "{backend.tenant.backend_id}",
                 'domain': "{backend.tenant.domain}",
             },
             output={
-                'UPNSuffix': 'id',
+                'Mailbox Database': 'id',
                 'Accepted DomainName': 'domain',
                 'DistinguishedName': 'dn',
+            },
+            clean={
+                'Mailbox Database': lambda db: db.replace('_DB', ''),
             },
         )
 
@@ -44,7 +47,7 @@ class TenantAPI(SaltStackBaseAPI):
                 'domain': 'TenantDomain',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'tenant': "{backend.tenant.backend_id}",
                 'domain': "{backend.tenant.domain}",
             },
         )
@@ -56,7 +59,7 @@ class TenantAPI(SaltStackBaseAPI):
                 'domain': 'TenantDomain',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'tenant': "{backend.tenant.backend_id}",
             },
         )
 
@@ -101,7 +104,7 @@ class UserAPI(SaltStackBaseAPI):
                 'mailbox_size': 'UserMailboxSize',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'tenant': "{backend.tenant.backend_id}",
                 'domain': "{backend.tenant.domain}",
                 'name': "{first_name} {last_name}",
                 'abbreviation': "{first_name[0]}{last_name[0]}",
@@ -115,7 +118,7 @@ class UserAPI(SaltStackBaseAPI):
                 'tenant': 'TenantName',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'tenant': "{backend.tenant.backend_id}",
             },
             many=True,
             **_base
@@ -189,7 +192,7 @@ class ContactAPI(SaltStackBaseAPI):
                 'last_name': 'ContactLastName',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'tenant': "{backend.tenant.backend_id}",
                 'name': "{first_name} {last_name}",
             },
             **_base
@@ -201,7 +204,7 @@ class ContactAPI(SaltStackBaseAPI):
                 'tenant': 'TenantName',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'tenant': "{backend.tenant.backend_id}",
             },
             many=True,
             **_base
@@ -253,7 +256,7 @@ class DistributionGroupAPI(SaltStackBaseAPI):
                 'manager': 'email',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'tenant': "{backend.tenant.backend_id}",
                 'domain': "{backend.tenant.domain}",
             },
             **_base
@@ -265,7 +268,7 @@ class DistributionGroupAPI(SaltStackBaseAPI):
                 'tenant': 'TenantName',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'tenant': "{backend.tenant.backend_id}",
             },
             many=True,
             **_base

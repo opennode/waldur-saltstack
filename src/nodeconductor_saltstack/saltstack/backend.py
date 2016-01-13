@@ -155,6 +155,9 @@ class SaltStackAPI(object):
 
             if result['Status'] != 'Inactive':
                 break
+        else:
+            raise SaltStackBackendError(
+                "Empty response from SaltStack during execution of %s on %s" % (cmd, self.target))
 
         if result['Status'] == 'OK':
             return result['Output']

@@ -1,3 +1,5 @@
+import binascii
+
 from rest_framework import serializers
 
 from nodeconductor.core.serializers import AugmentedSerializerMixin
@@ -69,9 +71,11 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
                 raise serializers.ValidationError({
                     'max_users': "Total mailbox size should be lower than %s MB" % storage_left})
 
+            attrs['backend_id'] = 'NC_%X' % (binascii.crc32(attrs['domain']) % (1 << 32))
+
             backend = models.ExchangeTenant(service_project_link=spl).get_backend()
             try:
-                backend.tenants.check(tenant=attrs['name'], domain=attrs['domain'])
+                backend.tenants.check(tenant=attrs['backend_id'], domain=attrs['domain'])
             except SaltStackBackendError as e:
                 raise serializers.ValidationError({
                     'name': "This tenant name or domain is already taken: %s" % e.traceback_str})
