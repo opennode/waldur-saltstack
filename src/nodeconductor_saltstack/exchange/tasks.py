@@ -43,8 +43,6 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
     tenant = transition_entity
     backend = tenant.get_backend()
     backent_tenant = backend.tenants.create(
-        tenant=tenant.name,
-        domain=tenant.domain,
         mailbox_size=tenant.mailbox_size,
         max_users=tenant.max_users)
 
