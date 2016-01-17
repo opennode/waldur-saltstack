@@ -114,9 +114,19 @@ class UserSerializer(BasePropertySerializer):
         view_name = 'exchange-users-detail'
         fields = BasePropertySerializer.Meta.fields + (
             'name', 'first_name', 'last_name', 'username', 'password', 'mailbox_size',
+            'office', 'phone', 'department', 'company', 'title', 'manager',
         )
         # password update is handled separately in views.py
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password',)
+        extra_kwargs = dict(
+            manager={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
+            **BasePropertySerializer.Meta.extra_kwargs
+        )
+
+    def validate_name(self, value):
+        if models.User.objects.filter(name=value).exclude(pk=getattr(self.instance, 'pk', None)).exists():
+            raise serializers.ValidationError('This field must be unique.')
+        return value
 
     def validate(self, attrs):
         tenant = self.instance.tenant if self.instance else attrs['tenant']

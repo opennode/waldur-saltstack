@@ -6,13 +6,14 @@ from nodeconductor.quotas.fields import QuotaField, CounterQuotaField
 from nodeconductor.structure import models as structure_models
 
 from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
+from .validators import domain_validator
 
 
 class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_models.PaidResource):
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='exchange_tenants', on_delete=models.PROTECT)
 
-    domain = models.CharField(max_length=255)
+    domain = models.CharField(max_length=255, validators=[domain_validator])
     max_users = models.PositiveSmallIntegerField(help_text='Maximum number of mailboxes')
     mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of single mailbox, MB')
 
@@ -43,11 +44,17 @@ class ExchangeProperty(SaltStackProperty):
 
 
 class User(ExchangeProperty):
-    username = models.CharField(max_length=255)
+    username = models.CharField(max_length=255, unique=True)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     password = models.CharField(max_length=255)
     mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of mailbox, MB')
+    office = models.CharField(max_length=255, blank=True)
+    phone = models.CharField(max_length=255, blank=True)
+    department = models.CharField(max_length=255, blank=True)
+    company = models.CharField(max_length=255, blank=True)
+    manager = models.ForeignKey('User', blank=True, null=True)
+    title = models.CharField(max_length=255, blank=True)
 
     tracker = FieldTracker()
 

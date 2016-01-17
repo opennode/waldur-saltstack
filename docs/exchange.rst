@@ -123,6 +123,16 @@ List users
 To get a list of all users - issue GET request against **/api/exchange-users/**.
 Only users with view access to tenant can view tenant users.
 
+Filtering and ordering is possible by:
+
+- ?name=XXX
+- ?email=XXX
+- ?username=XXX
+- ?first_name=XXX
+- ?last_name=XXX
+- ?mailbox_size=XXX
+- ?tenant_uuid=XXX
+
 Response example:
 
 .. code-block:: javascript
@@ -216,6 +226,14 @@ List contacts
 To get a list of all contacts - issue GET request against **/api/exchange-contacts/**.
 Only users with view access to tenant can view tenant contacts.
 
+Filtering is possible by:
+
+- ?name=XXX
+- ?email=XXX
+- ?first_name=XXX
+- ?last_name=XXX
+- ?tenant_uuid=XXX
+
 Response example:
 
 .. code-block:: javascript
@@ -288,8 +306,9 @@ Only users with view access to tenant can view tenant distribution groups.
 Filtering is possible by:
 
 - ?name=XXX
-- ?tenant_domain=XXX
 - ?username=XXX
+- ?tenant_domain=XXX
+- ?tenant_uuid=XXX
 
 Response example:
 
