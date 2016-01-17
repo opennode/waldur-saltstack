@@ -89,13 +89,14 @@ class GroupViewSet(BasePropertyViewSet):
     filter_class = filters.GroupFilter
     backend_name = 'groups'
 
-    @detail_route(methods=['get', 'post', 'delete'])
+    # XXX: put was added as portal has a temporary bug with widget update
+    @detail_route(methods=['get', 'post', 'put', 'delete'])
     @track_exceptions
     def members(self, request, pk=None, **kwargs):
         group = self.get_object()
         backend = self.get_backend(group.tenant)
 
-        if request.method == 'POST':
+        if request.method in ('POST', 'PUT'):
             serializer = serializers.GroupMemberSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 

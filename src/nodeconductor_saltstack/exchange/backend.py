@@ -35,9 +35,6 @@ class TenantAPI(SaltStackBaseAPI):
                 'Accepted DomainName': 'domain',
                 'DistinguishedName': 'dn',
             },
-            clean={
-                'Mailbox Database': lambda db: db.replace('_DB', ''),
-            },
         )
 
         delete = dict(
