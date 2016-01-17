@@ -35,6 +35,9 @@ class TenantAPI(SaltStackBaseAPI):
                 'Accepted DomainName': 'domain',
                 'DistinguishedName': 'dn',
             },
+            clean={
+                'Mailbox Database': lambda db: db.replace('_DB', ''),
+            },
         )
 
         delete = dict(
@@ -82,6 +85,12 @@ class UserAPI(SaltStackBaseAPI):
                 'LastName': 'last_name',
                 'MailboxQuota': 'mailbox_size',
                 'DistinguishedName': 'dn',
+                "Office":  "office",
+                "Phone":  "phone",
+                "Department":  "department",
+                "Company":  "company",
+                "Manager":  "manager",
+                "Title":  "title",
             },
             clean={
                 'MailboxQuota': parse_size,
@@ -99,6 +108,15 @@ class UserAPI(SaltStackBaseAPI):
                 'last_name': 'UserLastName',
                 'abbreviation': 'UserInitials',
                 'mailbox_size': 'UserMailboxSize',
+                'office': 'UserOffice',
+                'phone': 'UserPhone',
+                'department': 'UserDepartment',
+                'company': 'UserCompany',
+                'manager': 'UserManager',
+                'title': 'UserTitle',
+            },
+            paths={
+                'manager': 'backend_id',  # manager --> manager.backend_id --> UserManager
             },
             defaults={
                 'tenant': "{backend.tenant.backend_id}",
@@ -146,7 +164,16 @@ class UserAPI(SaltStackBaseAPI):
                 'first_name': 'UserFirstName',
                 'last_name': 'UserLastName',
                 'abbreviation': 'UserInitials',
-                'mailbox_size': 'UserQuota',
+                'mailbox_size': 'UserMailboxSize',
+                'office': 'UserOffice',
+                'phone': 'UserPhone',
+                'department': 'UserDepartment',
+                'company': 'UserCompany',
+                'manager': 'UserManager',
+                'title': 'UserTitle',
+            },
+            paths={
+                'manager': 'backend_id',  # manager --> manager.backend_id --> UserManager
             },
             **_base
         )
