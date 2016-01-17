@@ -8,8 +8,8 @@ dev_requires = [
 ]
 
 install_requires = [
-    'nodeconductor>=0.80.0',
-     # transitive dependency from nodeconductor core requires Pillow version <3.0.0
+    'nodeconductor>0.84.0',
+    # transitive dependency from nodeconductor core requires Pillow version <3.0.0
     'Pillow>=2.0.0,<3.0.0',
 ]
 

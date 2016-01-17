@@ -37,7 +37,6 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
     def get_management_ip(self, tenant):
         return tenant.service_project_link.service.settings.options.get('sharepoint_management_ip', 'Unknown')
 
-
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
         model = SharepointTenant
         view_name = 'sharepoint-tenants-detail'
@@ -59,12 +58,12 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             raise serializers.ValidationError({
                 'template': "Template must be within the same service settings"})
 
-        sharepoint_tenant_number_quota = spl.quotas.get(name='sharepoint_tenant_number')
+        sharepoint_tenant_number_quota = spl.quotas.get(name=spl.Quotas.sharepoint_tenant_number)
         if sharepoint_tenant_number_quota.is_exceeded(delta=1):
             raise serializers.ValidationError({
                 'storage_size': "You have reached the maximum number of allowed tenants."})
 
-        sharepoint_storage_quota = spl.quotas.get(name='sharepoint_storage')
+        sharepoint_storage_quota = spl.quotas.get(name=spl.Quotas.sharepoint_storage)
         if sharepoint_storage_quota.is_exceeded(delta=int(attrs['storage_size'])):
             storage_left = sharepoint_storage_quota.limit - sharepoint_storage_quota.usage
             raise serializers.ValidationError({
