@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
 from nodeconductor.core import models as core_models
+from nodeconductor.quotas.fields import QuotaField, CounterQuotaField
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
 
@@ -15,6 +16,12 @@ class SaltStackService(structure_models.Service):
         return 'saltstack'
 
 
+# to avoid circular imports
+def _get_sharepoint_tenant_model():
+    from ..sharepoint.models import SharepointTenant
+    return [SharepointTenant]
+
+
 class SaltStackServiceProjectLink(QuotaModelMixin, structure_models.ServiceProjectLink):
     service = models.ForeignKey(SaltStackService)
 
@@ -22,15 +29,14 @@ class SaltStackServiceProjectLink(QuotaModelMixin, structure_models.ServiceProje
         verbose_name = 'SaltStack service project link'
         verbose_name_plural = 'SaltStack service project links'
 
-    DEFAULT_EXCHANGE_STORAGE_LIMIT = 50 * 1024  # 50 GB
-    DEFAULT_SHAREPOINT_STORAGE_LIMIT = 10 * 1024 # 10 GB
-    DEFAULT_SHAREPOINT_TENANT_NUMBER = 2
-
-    QUOTAS_NAMES = [
-        'exchange_storage',
-        'sharepoint_storage',
-        'sharepoint_tenant_number',
-    ]
+    class Quotas(QuotaModelMixin.Quotas):
+        exchange_storage = QuotaField(default_limit=50 * 1024)
+        sharepoint_storage = QuotaField(default_limit=10 * 1024)
+        sharepoint_tenant_number = CounterQuotaField(
+            target_models=_get_sharepoint_tenant_model,
+            path_to_scope='service_project_link',
+            default_limit=2,
+        )
 
     @classmethod
     def get_url_name(cls):

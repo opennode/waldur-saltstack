@@ -22,15 +22,7 @@ class SaltStackConfig(AppConfig):
         from .backend import SharepointBackend
 
         from . import handlers
-        from ..saltstack.models import SaltStackServiceProjectLink
-
         SharepointTenant = self.get_model('SharepointTenant')
-
-        signals.post_save.connect(
-            handlers.init_sharepoint_quotas,
-            sender=SaltStackServiceProjectLink,
-            dispatch_uid='nodeconductor_saltstack.sharepoint.handlers.init_sharepoint_quotas',
-        )
 
         signals.post_save.connect(
             handlers.increase_quotas_usage_on_tenant_creation,

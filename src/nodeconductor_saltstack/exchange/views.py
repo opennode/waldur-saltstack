@@ -1,12 +1,11 @@
-from nodeconductor_saltstack.exchange.serializers import UserPasswordSerializer, ExchangeDomainSerializer
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_200_OK
 
 from nodeconductor.structure import views as structure_views
 
-from ..saltstack.views import BasePropertyViewSet, track_exceptions
 from . import filters, models, serializers
+from ..saltstack.views import BasePropertyViewSet, track_exceptions
 
 
 class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
@@ -21,7 +20,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
     def get_serializer_class(self):
         serializer = super(TenantViewSet, self).get_serializer_class()
         if self.action == 'domain':
-            serializer = ExchangeDomainSerializer
+            serializer = serializers.ExchangeDomainSerializer
         return serializer
 
     # XXX: put was added as portal has a temporary bug with widget update
@@ -32,17 +31,17 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         backend = tenant.get_backend()
 
         if request.method in ('POST', 'PUT'):
-            domain_serializer = ExchangeDomainSerializer(instance=tenant, data=request.data)
+            domain_serializer = serializers.ExchangeDomainSerializer(instance=tenant, data=request.data)
             domain_serializer.is_valid(raise_exception=True)
             new_domain = domain_serializer.validated_data['domain']
             if new_domain != tenant.domain:
                 backend.tenants.change(domain=new_domain)
                 tenant.domain = new_domain
                 tenant.save()
-            data = ExchangeDomainSerializer(instance=tenant, context={'request': request}).data
+            data = serializers.ExchangeDomainSerializer(instance=tenant, context={'request': request}).data
             return Response(data, status=HTTP_200_OK)
         elif request.method == 'GET':
-            data = ExchangeDomainSerializer(instance=tenant, context={'request': request}).data
+            data = serializers.ExchangeDomainSerializer(instance=tenant, context={'request': request}).data
             return Response(data)
 
 
@@ -63,16 +62,16 @@ class UserViewSet(BasePropertyViewSet):
         user = self.get_object()
         backend = self.get_backend(user.tenant)
         if request.method in ('POST', 'PUT'):
-            serializer = UserPasswordSerializer(instance=user, data=request.data)
+            serializer = serializers.UserPasswordSerializer(instance=user, data=request.data)
             serializer.is_valid(raise_exception=True)
             new_password = serializer.validated_data['password']
             if user.password != new_password:
                 backend.change_password(id=user.backend_id, password=new_password)
                 serializer.save()
-            data = UserPasswordSerializer(instance=user, context={'request': request}).data
+            data = serializers.UserPasswordSerializer(instance=user, context={'request': request}).data
             return Response(data, status=HTTP_200_OK)
         elif request.method == 'GET':
-            data = UserPasswordSerializer(instance=user, context={'request': request}).data
+            data = serializers.UserPasswordSerializer(instance=user, context={'request': request}).data
             return Response(data)
 
 
