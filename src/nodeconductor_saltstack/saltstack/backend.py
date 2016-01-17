@@ -151,7 +151,7 @@ class SaltStackAPI(object):
                 result = json.loads(res)
             except ValueError:
                 raise SaltStackBackendError(
-                    "Error during execution of %s on %s: %s" % (cmd, tgt, result))
+                    "Error during execution of %s on %s: %s" % (cmd, tgt, res))
 
             if result['Status'] != 'Inactive':
                 break
