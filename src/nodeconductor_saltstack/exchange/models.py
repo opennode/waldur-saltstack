@@ -2,6 +2,7 @@ from django.db import models
 from model_utils import FieldTracker
 
 from nodeconductor.quotas.models import QuotaModelMixin
+from nodeconductor.quotas.fields import QuotaField, CounterQuotaField
 from nodeconductor.structure import models as structure_models
 
 from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
@@ -16,10 +17,15 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
     max_users = models.PositiveSmallIntegerField(help_text='Maximum number of mailboxes')
     mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of single mailbox, MB')
 
-    QUOTAS_NAMES = [
-        'user_count',  # tenant users count
-        'global_mailbox_size',  # size of all tenant mailboxes together
-    ]
+    class Quotas(QuotaModelMixin.Quotas):
+        user_count = CounterQuotaField(
+            target_models=lambda: [User],
+            path_to_scope='tenant',
+            default_limit=lambda scope: scope.max_users,
+        )
+        global_mailbox_size = QuotaField(
+            default_limit=lambda scope: scope.mailbox_size * scope.max_users
+        )
 
     @classmethod
     def get_url_name(cls):

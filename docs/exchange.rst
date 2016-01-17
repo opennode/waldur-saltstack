@@ -167,6 +167,12 @@ Request parameters:
  - last_name - user last name;
  - first_name - user first name;
  - mailbox_size - mailbox size (Mb);
+ - manager - user manager (optional);
+ - office - user office name (optional);
+ - phone - user phone (optional);
+ - department - user department (optional);
+ - company - user company name (optional);
+ - title - user title (optional);
 
 Example of a request:
 
@@ -185,6 +191,12 @@ Example of a request:
         "first_name": "Joe",
         "last_name": "Doe",
         "mailbox_size": "5"
+        "office": "office",
+        "phone": "21323211,
+        "department": "test department",
+        "company": "test company",
+        "title": "Joe",
+        "manager": "http://example.com/api/exchange-users/b5b164ffbc434bbaaad15d4ae8f6a979/"
     }
 
 
