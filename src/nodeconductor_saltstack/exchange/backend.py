@@ -85,6 +85,12 @@ class UserAPI(SaltStackBaseAPI):
                 'LastName': 'last_name',
                 'MailboxQuota': 'mailbox_size',
                 'DistinguishedName': 'dn',
+                "Office":  "office",
+                "Phone":  "phone",
+                "Department":  "department",
+                "Company":  "company",
+                "Manager":  "manager",
+                "Title":  "title",
             },
             clean={
                 'MailboxQuota': parse_size,
@@ -102,6 +108,12 @@ class UserAPI(SaltStackBaseAPI):
                 'last_name': 'UserLastName',
                 'abbreviation': 'UserInitials',
                 'mailbox_size': 'UserMailboxSize',
+                'office': 'UserOffice',
+                'phone': 'UserPhone',
+                'department': 'UserDepartment',
+                'company': 'UserCompany',
+                'manager': 'UserManager',
+                'title': 'UserTitle',
             },
             defaults={
                 'tenant': "{backend.tenant.backend_id}",
@@ -150,6 +162,12 @@ class UserAPI(SaltStackBaseAPI):
                 'last_name': 'UserLastName',
                 'abbreviation': 'UserInitials',
                 'mailbox_size': 'UserQuota',
+                'office': 'UserOffice',
+                'phone': 'UserPhone',
+                'department': 'UserDepartment',
+                'company': 'UserCompany',
+                'manager': 'UserManager',
+                'title': 'UserTitle',
             },
             **_base
         )
