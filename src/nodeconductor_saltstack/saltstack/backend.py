@@ -146,8 +146,6 @@ class SaltStackAPI(object):
             'arg': command,
         })
 
-        print 'response', response
-
         for tgt, res in response['return'][0].items():
             try:
                 result = json.loads(res)
