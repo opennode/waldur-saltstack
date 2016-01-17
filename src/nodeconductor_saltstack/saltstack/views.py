@@ -61,7 +61,7 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
                 "Tenant must be in stable state to perform this operation")
 
         backend_obj = backend.create(
-            **{k: v for k, v in serializer.validated_data.items() if k not in ('tenant',)})
+            **{k: v for k, v in serializer.validated_data.items() if k not in ('tenant',) and v is not None})
 
         obj = serializer.save(backend_id=backend_obj.id)
         self.post_create(obj, backend_obj)
