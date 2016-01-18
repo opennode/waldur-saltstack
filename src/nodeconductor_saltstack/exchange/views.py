@@ -56,23 +56,16 @@ class UserViewSet(BasePropertyViewSet):
         user.save()
 
     # XXX: put was added as portal has a temporary bug with widget update
-    @detail_route(methods=['get', 'post', 'put'])
+    @detail_route(methods=['post', 'put'])
     @track_exceptions
     def password(self, request, pk=None, **kwargs):
         user = self.get_object()
         backend = self.get_backend(user.tenant)
-        if request.method in ('POST', 'PUT'):
-            serializer = serializers.UserPasswordSerializer(instance=user, data=request.data)
-            serializer.is_valid(raise_exception=True)
-            new_password = serializer.validated_data['password']
-            if user.password != new_password:
-                backend.change_password(id=user.backend_id, password=new_password)
-                serializer.save()
-            data = serializers.UserPasswordSerializer(instance=user, context={'request': request}).data
-            return Response(data, status=HTTP_200_OK)
-        elif request.method == 'GET':
-            data = serializers.UserPasswordSerializer(instance=user, context={'request': request}).data
-            return Response(data)
+        response = backend.reset_password(id=user.backend_id)
+        user.password = response.password
+        user.save()
+        data = serializers.UserPasswordSerializer(instance=user, context={'request': request}).data
+        return Response(data, status=HTTP_200_OK)
 
 
 class ContactViewSet(BasePropertyViewSet):

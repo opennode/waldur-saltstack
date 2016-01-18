@@ -206,10 +206,10 @@ Update user
 To update user data - issue PUT or PATCH request against **/api/exchange-users/<user_uuid>/**.
 
 
-Update user password
---------------------
+Reset user password
+-------------------
 
-To update user password - issue POST request against **/api/exchange-users/<user_uuid>/password/**.
+To reset user password - issue POST request against **/api/exchange-users/<user_uuid>/password/**.
 
 Example of a valid request:
 
