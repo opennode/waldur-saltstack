@@ -82,6 +82,20 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
 
         return attrs
 
+    def get_fields(self):
+        fields = super(TenantSerializer, self).get_fields()
+
+        try:
+            request = self.context['view'].request
+            user = request.user
+        except (KeyError, AttributeError):
+            return fields
+
+        if not user.is_staff:
+            del fields['ecp_url']
+
+        return fields
+
 
 class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
 
