@@ -21,6 +21,12 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             storage_size=serializer.validated_data['storage_size'],
             users_count=serializer.validated_data['users_count'])
 
+    def get_serializer_class(self):
+        serializer_class = super(TenantViewSet, self).get_serializer_class()
+        if self.action == 'set_quotas':
+            serializer_class = serializers.TenantQuotaSerializer
+        return serializer_class
+
     @decorators.detail_route(methods=['post'])
     def set_quotas(self, request, **kwargs):
         if not request.user.is_staff:
@@ -28,9 +34,10 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
 
         tenant = self.get_object()
         if tenant.state != models.SharepointTenant.States.ONLINE:
-            raise IncorrectStateException("Tenant must be in stable state to perform quotas update")
+            raise IncorrectStateException("Tenant must be in online to perform quotas update")
 
-        serializer = serializers.TenantQuotaSerializer(data=request.data)
+        serializer_class = self.get_serializer_class()
+        serializer = serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         try:
@@ -39,8 +46,16 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         except SaltStackBackendError as e:
             raise exceptions.APIException(e.traceback_str)
 
-        return response.Response(
-            {'status': 'Quota update was scheduled'}, status=status.HTTP_202_ACCEPTED)
+        if 'storage_size' in serializer.validated_data:
+            tenant.storage_size = serializer.validated_data['storage_size']
+            tenant.save()
+            tenant.set_quota_limit(tenant.Quotas.storage_size, tenant.storage_size)
+        if 'users_count' in serializer.validated_data:
+            tenant.users_count = serializer.validated_data['users_count']
+            tenant.save()
+            tenant.set_quota_limit(tenant.Quotas.user_count, tenant.users_count)
+
+        return response.Response({'status': 'Quota was changed successfully'}, status=status.HTTP_200_OK)
 
 
 class TemplateViewSet(structure_views.BaseServicePropertyViewSet):

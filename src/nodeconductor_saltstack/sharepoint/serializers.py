@@ -60,8 +60,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
 
         sharepoint_tenant_number_quota = spl.quotas.get(name=spl.Quotas.sharepoint_tenant_number)
         if sharepoint_tenant_number_quota.is_exceeded(delta=1):
-            raise serializers.ValidationError({
-                'storage_size': "You have reached the maximum number of allowed tenants."})
+            raise serializers.ValidationError("You have reached the maximum number of allowed tenants.")
 
         sharepoint_storage_quota = spl.quotas.get(name=spl.Quotas.sharepoint_storage)
         if sharepoint_storage_quota.is_exceeded(delta=int(attrs['storage_size'])):
