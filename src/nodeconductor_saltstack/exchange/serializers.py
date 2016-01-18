@@ -3,6 +3,7 @@ import binascii
 from rest_framework import serializers
 
 from nodeconductor.core.serializers import AugmentedSerializerMixin
+from nodeconductor.quotas.exceptions import QuotaExceededException
 from nodeconductor.quotas.serializers import QuotaSerializer
 from nodeconductor.structure import serializers as structure_serializers
 
@@ -123,23 +124,23 @@ class UserSerializer(BasePropertySerializer):
             **BasePropertySerializer.Meta.extra_kwargs
         )
 
-    def validate_name(self, value):
-        if models.User.objects.filter(name=value).exclude(pk=getattr(self.instance, 'pk', None)).exists():
-            raise serializers.ValidationError('This field must be unique.')
-        return value
-
     def validate(self, attrs):
         tenant = self.instance.tenant if self.instance else attrs['tenant']
 
-        # validation for user creation
         if not self.instance:
-            if attrs['mailbox_size'] > tenant.mailbox_size:
-                raise serializers.ValidationError(
-                    {'mailbox_size': "Mailbox size should be lower than %s MB" % tenant.mailbox_size})
+            deltas = {
+                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'],
+                tenant.Quotas.user_count: 1,
+            }
+        else:
+            deltas = {
+                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'] - self.instance.mailbox_size,
+            }
 
-            user_count_quota = tenant.quotas.get(name='user_count')
-            if user_count_quota.is_exceeded(delta=1):
-                raise serializers.ValidationError('Tenant user count quota exceeded.')
+        try:
+            tenant.validate_quota_change(deltas, raise_exception=True)
+        except QuotaExceededException as e:
+            raise serializers.ValidationError(str(e))
 
         return attrs
 

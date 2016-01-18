@@ -44,7 +44,7 @@ class ExchangeProperty(SaltStackProperty):
 
 
 class User(ExchangeProperty):
-    username = models.CharField(max_length=255, unique=True)
+    username = models.CharField(max_length=255)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     password = models.CharField(max_length=255)
@@ -57,6 +57,9 @@ class User(ExchangeProperty):
     title = models.CharField(max_length=255, blank=True)
 
     tracker = FieldTracker()
+
+    class Meta(object):
+        unique_together = (('username', 'tenant'), ('name', 'tenant'))
 
     @property
     def email(self):
