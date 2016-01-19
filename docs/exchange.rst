@@ -149,7 +149,8 @@ Response example:
             "last_name": "Doe",
             "username": "joe.doe",
             "password": "?lU_YmOi_vO=",
-            "mailbox_size": 5
+            "mailbox_size": 5,
+            "email": "joe.doe@test.com"
         }
     ]
 
