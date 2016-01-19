@@ -21,19 +21,28 @@ def provision(tenant_uuid, **kwargs):
 
 
 @shared_task(name='nodeconductor.sharepoint.destroy')
-@transition(SharepointTenant, 'begin_deleting')
-@save_error_message
-def destroy(tenant_uuid, force=False, transition_entity=None):
-    tenant = transition_entity
-    try:
-        backend = tenant.get_backend()
-        backend.tenants.delete()
-    except:
-        if not force:
-            set_erred(tenant_uuid)
-            raise
+def destroy(tenant_uuid, force=False):
+    if force:
+        error_callback = delete.si(tenant_uuid)
+    else:
+        error_callback = set_erred.si(tenant_uuid)
+        tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
+        tenant.begin_deleting()
+        tenant.save()
 
-    tenant.delete()
+    schedule_deletion.apply_async(
+        args=(tenant_uuid,),
+        link=delete.si(tenant_uuid),
+        link_error=error_callback,
+    )
+
+
+@shared_task
+@save_error_message
+def schedule_deletion(tenant_uuid):
+    tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
+    backend = tenant.get_backend()
+    backend.tenants.delete()
 
 
 @shared_task(is_heavy_task=True)
@@ -71,6 +80,11 @@ def set_online(tenant_uuid, transition_entity=None):
 @transition(SharepointTenant, 'set_erred')
 def set_erred(tenant_uuid, transition_entity=None):
     pass
+
+
+@shared_task
+def delete(tenant_uuid):
+    SharepointTenant.objects.get(uuid=tenant_uuid).delete()
 
 
 @shared_task

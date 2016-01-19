@@ -376,6 +376,7 @@ class ExchangeBackend(SaltStackBaseBackend):
         send_task('exchange', 'provision')(tenant.uuid.hex)
 
     def destroy(self, tenant, force=False):
-        tenant.schedule_deletion()
-        tenant.save()
+        if tenant.state != tenant.States.ERRED:
+            tenant.schedule_deletion()
+            tenant.save()
         send_task('exchange', 'destroy')(tenant.uuid.hex, force=force)
