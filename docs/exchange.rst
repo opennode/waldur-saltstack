@@ -333,12 +333,13 @@ Response example:
             "uuid": "c39cc7f57fab499786609298019cf844",
             "tenant": "http://example.com/api/exchange-tenants/7f1d21d48b9c46228c2991c02a070121/",
             "tenant_uuid": "7f1d21d48b9c46228c2991c02a070121",
-            "tenant_domain": "test.io",
+            "tenant_domain": "test.com",
             "manager": "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/",
             "manager_uuid": "faf0ed086efd42c08e477797364a78f3",
             "manager_name": "Big Joe",
             "name": "My Group",
-            "username": "grp"
+            "username": "grp",
+            "email": "grp@test.com"
         }
     ]
 

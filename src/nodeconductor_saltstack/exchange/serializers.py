@@ -132,7 +132,7 @@ class UserSerializer(BasePropertySerializer):
             'office', 'phone', 'department', 'company', 'title', 'manager', 'email'
         )
         # password update is handled separately in views.py
-        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password',)
+        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password', 'email')
         extra_kwargs = dict(
             manager={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
             **BasePropertySerializer.Meta.extra_kwargs
@@ -185,8 +185,9 @@ class GroupSerializer(BasePropertySerializer):
         model = models.Group
         view_name = 'exchange-groups-detail'
         fields = BasePropertySerializer.Meta.fields + (
-            'manager', 'manager_uuid', 'manager_name', 'name', 'username',
+            'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email'
         )
+        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
         extra_kwargs = dict(
             BasePropertySerializer.Meta.extra_kwargs.items() +
             {'manager': {'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'}}.items()
