@@ -79,3 +79,7 @@ class Contact(ExchangeProperty):
 class Group(ExchangeProperty):
     manager = models.ForeignKey(User, related_name='groups')
     username = models.CharField(max_length=255)
+
+    @property
+    def email(self):
+        return '{}@{}'.format(self.username, self.tenant.domain)
