@@ -42,7 +42,6 @@ def destroy(tenant_uuid, force=False):
 def schedule_deletion(tenant_uuid):
     tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
     backend = tenant.get_backend()
-    raise Exception('test')
     backend.tenants.delete()
 
 
