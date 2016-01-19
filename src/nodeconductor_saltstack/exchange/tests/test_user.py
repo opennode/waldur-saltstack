@@ -21,17 +21,3 @@ class UserCrudTest(test.APITransactionTestCase):
         self.assertEqual('domain2', response.data['domain'])
 
         get_backend().tenants.change.assert_called_with(domain='domain2')
-
-    def test_user_can_update_password(self, get_backend):
-        exchange_user = ExchangeUserFactory(password='password1')
-        user_url = ExchangeUserFactory.get_url(exchange_user, action='password')
-        response = self.client.post(user_url, data={'password': 'password2'})
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
-        self.assertEqual('password2', response.data['password'])
-
-        self.assertTrue(get_backend().users.change_password.called)
-        get_backend().users.change_password.assert_called_once_with(
-            id=exchange_user.backend_id,
-            password='password2'
-        )
