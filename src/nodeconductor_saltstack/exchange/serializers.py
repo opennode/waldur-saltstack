@@ -1,3 +1,4 @@
+import os
 import binascii
 
 from rest_framework import serializers
@@ -72,7 +73,9 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
                 raise serializers.ValidationError({
                     'max_users': "Total mailbox size should be lower than %s MB" % storage_left})
 
-            attrs['backend_id'] = 'NC_%X' % (binascii.crc32(attrs['domain']) % (1 << 32))
+            # generate a random name to be used as unique tenant id in MS Exchange
+            # Example of formt: NC_28052BF28A
+            attrs['backend_id'] = 'NC_%s' % binascii.b2a_hex(os.urandom(5)).upper()
 
             backend = models.ExchangeTenant(service_project_link=spl).get_backend()
             try:
