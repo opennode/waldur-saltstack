@@ -187,7 +187,7 @@ class GroupSerializer(BasePropertySerializer):
         fields = BasePropertySerializer.Meta.fields + (
             'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email'
         )
-        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password', 'email')
+        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
         extra_kwargs = dict(
             BasePropertySerializer.Meta.extra_kwargs.items() +
             {'manager': {'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'}}.items()
