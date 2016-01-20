@@ -143,7 +143,7 @@ class UserSerializer(BasePropertySerializer):
         )
 
     def validate_username(self, value):
-        if value and not re.match(r'[a-zA-Z0-9-]+$', value):
+        if value and not re.match(r'[a-zA-Z0-9_-]+$', value):
             raise serializers.ValidationError(
                 "The username can contain only letters, numbers, and hyphens.")
         return value
@@ -156,6 +156,11 @@ class UserSerializer(BasePropertySerializer):
                 tenant.Quotas.global_mailbox_size: attrs['mailbox_size'],
                 tenant.Quotas.user_count: 1,
             }
+
+            if not tenant.is_username_available(attrs['username']):
+                raise serializers.ValidationError(
+                    {'username': "This username is already taken."})
+
         else:
             deltas = {
                 tenant.Quotas.global_mailbox_size: attrs['mailbox_size'] - self.instance.mailbox_size,
@@ -206,3 +211,11 @@ class GroupSerializer(BasePropertySerializer):
             BasePropertySerializer.Meta.related_paths.items() +
             {'manager': ('uuid', 'name')}.items()
         )
+
+    def validate(self, attrs):
+        if not self.instance:
+            tenant = attrs['tenant']
+            if not tenant.is_username_available(attrs['username']):
+                raise serializers.ValidationError(
+                    {'username': "This username is already taken."})
+        return attrs
