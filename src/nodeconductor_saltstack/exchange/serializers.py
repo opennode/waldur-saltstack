@@ -145,7 +145,7 @@ class UserSerializer(BasePropertySerializer):
     def validate_username(self, value):
         if value and not re.match(r'[a-zA-Z0-9-]+$', value):
             raise serializers.ValidationError(
-                "The name can contain only letters, numbers, and hyphens.")
+                "The username can contain only letters, numbers, and hyphens.")
         return value
 
     def validate(self, attrs):
