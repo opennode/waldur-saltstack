@@ -35,6 +35,12 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
         from .backend import ExchangeBackend
         return super(ExchangeTenant, self).get_backend(backend_class=ExchangeBackend, tenant=self)
 
+    def is_username_available(self, username):
+        for model in (User, Group):
+            if username in model.objects.filter(tenant=self).values_list('username', flat=True):
+                return False
+        return True
+
 
 class ExchangeProperty(SaltStackProperty):
     tenant = models.ForeignKey(ExchangeTenant, related_name='+')
