@@ -1,4 +1,5 @@
 import os
+import re
 import binascii
 
 from rest_framework import serializers
@@ -140,6 +141,12 @@ class UserSerializer(BasePropertySerializer):
             manager={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
             **BasePropertySerializer.Meta.extra_kwargs
         )
+
+    def validate_username(self, value):
+        if value and not re.match(r'[a-zA-Z0-9-]+$', value):
+            raise serializers.ValidationError(
+                "The name can contain only letters, numbers, and hyphens.")
+        return value
 
     def validate(self, attrs):
         tenant = self.instance.tenant if self.instance else attrs['tenant']
