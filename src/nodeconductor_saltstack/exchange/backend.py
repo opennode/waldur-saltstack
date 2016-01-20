@@ -8,7 +8,7 @@ def parse_size(size_str):
     MAPPING = {
         'KB': lambda s: float(s) / 1024,
         'MB': lambda s: float(s),
-        'GB': lambda s: ExchangeBackend.gb2mb(int(s)),
+        'GB': lambda s: int(ExchangeBackend.gb2mb(float(s))),
     }
 
     size, unit = size_str.split()
