@@ -411,16 +411,18 @@ Response example:
     ]
 
 
-Add member to group
--------------------
+Change group members
+--------------------
 
-To add new member to distribution group - issue POST request against **/api/exchange-groups/<group_uuid>/members/**.
+To change distribution group members - issue POST request against **/api/exchange-groups/<group_uuid>/members/**.
 
 Request parameters:
 
- - users - a list links to exchange user object;
+ - users - a list links to exchange user object, that should be in group;
 
-Example of a request:
+Example of a requests:
+
+1. Add 2 users to group:
 
 .. code-block:: http
 
@@ -437,26 +439,34 @@ Example of a request:
         ]
     }
 
-
-Delete member from group
-------------------------
-
-To remove member from distribution group - issue DELETE request against **/api/exchange-groups/<group_uuid>/members/**.
-
-Request parameters:
-
- - users - a list of links to exchange user object;
-
-Example of a request:
+2. Add another one user:
 
 .. code-block:: http
 
-    DELETE /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
+    POST /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
     Host: example.com
 
     {
-        "users": ["http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/"]
+        "users": [
+            "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
+            "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/",
+            "http://example.com/api/exchange-users/9baf2ec31a624ab78e348758b668f36d/"
+        ]
+    }
+
+3. Remove all users:
+
+.. code-block:: http
+
+    POST /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "users": []
     }

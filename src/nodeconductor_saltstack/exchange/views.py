@@ -1,6 +1,6 @@
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_200_OK
+from rest_framework.status import HTTP_200_OK
 
 from nodeconductor.structure import views as structure_views
 
@@ -88,26 +88,26 @@ class GroupViewSet(BasePropertyViewSet):
         group = self.get_object()
         backend = self.get_backend(group.tenant)
         user_ids = [u.id for u in backend.list_members(id=group.backend_id)]
-        exist_users = models.User.objects.filter(backend_id__in=user_ids)
+        existing_users = models.User.objects.filter(backend_id__in=user_ids)
 
         if request.method in ('POST', 'PUT'):
             serializer = serializers.GroupMemberSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 
             users = serializer.validated_data['users']
-            for exist_user in exist_users:
-                if exist_user not in users:
-                    backend.del_member(id=group.backend_id, user_id=exist_user.backend_id)
+            for existing_user in existing_users:
+                if existing_user not in users:
+                    backend.del_member(id=group.backend_id, user_id=existing_user.backend_id)
 
-            new_users = [user for user in users if user not in exist_users]
+            new_users = [user for user in users if user not in existing_users]
             if new_users:
                 backend.add_member(id=group.backend_id, user_id=','.join([u.backend_id for u in new_users]))
 
             data = serializers.UserSerializer(
                 instance=users, context={'request': request}, many=True).data
 
-            return Response(data, status=HTTP_201_CREATED)
+            return Response(data)
 
         else:
-            data = serializers.UserSerializer(instance=exist_users, many=True, context={'request': request}).data
+            data = serializers.UserSerializer(instance=existing_users, many=True, context={'request': request}).data
             return Response(data)
