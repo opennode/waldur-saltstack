@@ -1,6 +1,6 @@
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_200_OK
+from rest_framework.status import HTTP_200_OK
 
 from nodeconductor.structure import views as structure_views
 
@@ -82,39 +82,32 @@ class GroupViewSet(BasePropertyViewSet):
     backend_name = 'groups'
 
     # XXX: put was added as portal has a temporary bug with widget update
-    @detail_route(methods=['get', 'post', 'put', 'delete'])
+    @detail_route(methods=['get', 'post', 'put'])
     @track_exceptions
     def members(self, request, pk=None, **kwargs):
         group = self.get_object()
         backend = self.get_backend(group.tenant)
+        user_ids = [u.id for u in backend.list_members(id=group.backend_id)]
+        existing_users = models.User.objects.filter(backend_id__in=user_ids)
 
         if request.method in ('POST', 'PUT'):
             serializer = serializers.GroupMemberSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 
-            user = serializer.validated_data['users']
+            users = serializer.validated_data['users']
+            for existing_user in existing_users:
+                if existing_user not in users:
+                    backend.del_member(id=group.backend_id, user_id=existing_user.backend_id)
+
+            new_users = [user for user in users if user not in existing_users]
+            if new_users:
+                backend.add_member(id=group.backend_id, user_id=','.join([u.backend_id for u in new_users]))
+
             data = serializers.UserSerializer(
-                instance=user, context={'request': request}, many=True).data
+                instance=users, context={'request': request}, many=True).data
 
-            backend.add_member(
-                id=group.backend_id,
-                user_id=','.join([u.backend_id for u in user]))
-
-            return Response(data, status=HTTP_201_CREATED)
-
-        elif request.method == 'DELETE':
-            serializer = serializers.GroupMemberSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-
-            for user in serializer.validated_data['users']:
-                backend.del_member(
-                    id=group.backend_id,
-                    user_id=user.backend_id)
-
-            return Response(status=HTTP_204_NO_CONTENT)
+            return Response(data)
 
         else:
-            user_ids = [u.id for u in backend.list_members(id=group.backend_id)]
-            users = models.User.objects.filter(backend_id__in=user_ids)
-            data = serializers.UserSerializer(instance=users, many=True, context={'request': request}).data
+            data = serializers.UserSerializer(instance=existing_users, many=True, context={'request': request}).data
             return Response(data)

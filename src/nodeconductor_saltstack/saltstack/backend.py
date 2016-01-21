@@ -150,6 +150,7 @@ class SaltStackAPI(object):
             try:
                 result = json.loads(res)
             except ValueError:
+                logger.error("Cannot parse output of command %s: %s", command, res)
                 raise SaltStackBackendError(
                     "Error during execution of %s on %s: %s" % (cmd, tgt, res))
 
