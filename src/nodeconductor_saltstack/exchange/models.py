@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 from model_utils import FieldTracker
 
 from nodeconductor.quotas.models import QuotaModelMixin
@@ -49,6 +50,7 @@ class ExchangeProperty(SaltStackProperty):
         abstract = True
 
 
+@python_2_unicode_compatible
 class User(ExchangeProperty):
     username = models.CharField(max_length=255, validators=[username_validator])
     first_name = models.CharField(max_length=255)
@@ -75,6 +77,9 @@ class User(ExchangeProperty):
         backend = self.tenant.get_backend()
         return backend.users.stats(id=self.backend_id)
 
+    def __str__(self):
+        return '%s (%s)' % (self.name, self.tenant)
+
 
 class Contact(ExchangeProperty):
     email = models.EmailField(max_length=255)
@@ -85,6 +90,7 @@ class Contact(ExchangeProperty):
 class Group(ExchangeProperty):
     manager = models.ForeignKey(User, related_name='groups')
     username = models.CharField(max_length=255)
+    members = models.ManyToManyField(User)
 
     @property
     def email(self):

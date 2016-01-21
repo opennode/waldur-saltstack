@@ -187,8 +187,7 @@ class SaltStackBaseAPI(SaltStackAPI):
                         'max_users': 'TenantMaxUsers',
                         'manager': 'ManagerEmail',
                     },
-                    # extracts input argumets from supplied objects
-                    paths={
+                    paths={  # extracts input argumets from supplied objects
                         'manager': 'user.email',  # manager --> manager.user.email --> ManagerEmail
                     },
                     defaults={  # default parameters for input data

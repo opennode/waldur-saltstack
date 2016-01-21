@@ -80,34 +80,22 @@ class GroupViewSet(BasePropertyViewSet):
     serializer_class = serializers.GroupSerializer
     filter_class = filters.GroupFilter
     backend_name = 'groups'
+    ignore_backend_fields = ['members']
 
-    # XXX: put was added as portal has a temporary bug with widget update
-    @detail_route(methods=['get', 'post', 'put'])
-    @track_exceptions
-    def members(self, request, pk=None, **kwargs):
-        group = self.get_object()
+    def post_create(self, group, backend_group):
         backend = self.get_backend(group.tenant)
-        user_ids = [u.id for u in backend.list_members(id=group.backend_id)]
-        existing_users = models.User.objects.filter(backend_id__in=user_ids)
+        members = group.members.values_list('backend_id', flat=True)
+        if members:
+            backend.add_member(id=group.backend_id, user_id=','.join(members))
 
-        if request.method in ('POST', 'PUT'):
-            serializer = serializers.GroupMemberSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+    def post_update(self, group, serializer):
+        backend = self.get_backend(group.tenant)
+        nc_members = set(group.members.values_list('backend_id', flat=True))
+        ms_members = set(u.id for u in backend.list_members(id=group.backend_id))
 
-            users = serializer.validated_data['users']
-            for existing_user in existing_users:
-                if existing_user not in users:
-                    backend.del_member(id=group.backend_id, user_id=existing_user.backend_id)
+        new_users = nc_members - ms_members
+        if new_users:
+            backend.add_member(id=group.backend_id, user_id=','.join(new_users))
 
-            new_users = [user for user in users if user not in existing_users]
-            if new_users:
-                backend.add_member(id=group.backend_id, user_id=','.join([u.backend_id for u in new_users]))
-
-            data = serializers.UserSerializer(
-                instance=users, context={'request': request}, many=True).data
-
-            return Response(data)
-
-        else:
-            data = serializers.UserSerializer(instance=existing_users, many=True, context={'request': request}).data
-            return Response(data)
+        for old_user in ms_members - nc_members:
+            backend.del_member(id=group.backend_id, user_id=old_user)
