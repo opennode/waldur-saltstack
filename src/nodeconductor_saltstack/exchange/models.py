@@ -6,7 +6,7 @@ from nodeconductor.quotas.fields import QuotaField, CounterQuotaField
 from nodeconductor.structure import models as structure_models
 
 from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
-from .validators import domain_validator
+from .validators import domain_validator, username_validator
 
 
 class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_models.PaidResource):
@@ -44,7 +44,7 @@ class ExchangeProperty(SaltStackProperty):
 
 
 class User(ExchangeProperty):
-    username = models.CharField(max_length=255)
+    username = models.CharField(max_length=255, validators=[username_validator])
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     password = models.CharField(max_length=255)
