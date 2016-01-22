@@ -143,9 +143,10 @@ class UserSerializer(BasePropertySerializer):
         )
 
     def validate_username(self, value):
-        if value and not re.match(r'[a-zA-Z0-9_-]+$', value):
-            raise serializers.ValidationError(
-                "The username can contain only letters, numbers, and hyphens.")
+        if value:
+            if not re.match(r'[a-zA-Z0-9_.-]+$', value) or re.search(r'^\.|\.$', value):
+                raise serializers.ValidationError(
+                    "The username can contain only letters, numbers, hyphens, underscores and period.")
         return value
 
     def validate(self, attrs):
@@ -184,38 +185,53 @@ class ContactSerializer(BasePropertySerializer):
         )
 
 
-class GroupMemberSerializer(serializers.Serializer):
-
-    users = serializers.HyperlinkedRelatedField(
-        queryset=models.User.objects.all(),
-        view_name='exchange-users-detail',
-        lookup_field='uuid',
-        write_only=True,
-        many=True)
-
-
 class GroupSerializer(BasePropertySerializer):
 
     class Meta(BasePropertySerializer.Meta):
         model = models.Group
         view_name = 'exchange-groups-detail'
         fields = BasePropertySerializer.Meta.fields + (
-            'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email'
+            'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email', 'members'
         )
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
         extra_kwargs = dict(
             BasePropertySerializer.Meta.extra_kwargs.items() +
-            {'manager': {'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'}}.items()
+            {
+                'manager': {'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
+                'members': {'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
+            }.items()
         )
         related_paths = dict(
             BasePropertySerializer.Meta.related_paths.items() +
             {'manager': ('uuid', 'name')}.items()
         )
 
+    def get_fields(self):
+        fields = super(GroupSerializer, self).get_fields()
+        try:
+            method = self.context['view'].request.method
+        except (KeyError, AttributeError):
+            pass
+        else:
+            if method == 'GET':
+                fields['members'] = UserSerializer(many=True, read_only=True)
+        return fields
+
     def validate(self, attrs):
+        tenant = self.instance.tenant if self.instance else attrs['tenant']
+
         if not self.instance:
-            tenant = attrs['tenant']
             if not tenant.is_username_available(attrs['username']):
                 raise serializers.ValidationError(
                     {'username': "This username is already taken."})
+
+            if attrs['manager'].tenant != tenant:
+                raise serializers.ValidationError(
+                    {'manager': "Manager user must be form the same tenant as group."})
+
+        for user in attrs['members']:
+            if user.tenant != tenant:
+                raise serializers.ValidationError(
+                    "Users must be from the same tenat as group, can't add %s." % user)
+
         return attrs
