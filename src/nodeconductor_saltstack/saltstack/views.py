@@ -37,7 +37,6 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated, permissions.DjangoObjectPermissions)
     filter_backends = (GenericRoleFilter, filters.DjangoFilterBackend,)
     backend_name = NotImplemented
-    ignore_backend_fields = []
 
     def get_backend(self, tenant):
         backend = tenant.get_backend()
@@ -71,9 +70,7 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         obj = self.get_object()
         backend = self.get_backend(obj.tenant)
-        changed = {
-            k: v for k, v in serializer.validated_data.items()
-            if v and k not in self.ignore_backend_fields and getattr(obj, k) != v}
+        changed = {k: v for k, v in serializer.validated_data.items() if v and getattr(obj, k) != v}
         if changed:
             backend.change(id=obj.backend_id, **changed)
         serializer.save()

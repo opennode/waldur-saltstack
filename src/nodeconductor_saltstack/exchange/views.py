@@ -80,7 +80,6 @@ class GroupViewSet(BasePropertyViewSet):
     serializer_class = serializers.GroupSerializer
     filter_class = filters.GroupFilter
     backend_name = 'groups'
-    ignore_backend_fields = ['members']
 
     def post_create(self, group, backend_group):
         backend = self.get_backend(group.tenant)
@@ -88,14 +87,24 @@ class GroupViewSet(BasePropertyViewSet):
         if members:
             backend.add_member(id=group.backend_id, user_id=','.join(members))
 
-    def post_update(self, group, serializer):
+    @track_exceptions
+    def perform_update(self, serializer):
+        group = self.get_object()
         backend = self.get_backend(group.tenant)
-        nc_members = set(group.members.values_list('backend_id', flat=True))
-        ms_members = set(u.id for u in backend.list_members(id=group.backend_id))
+        changed = {
+            k: v for k, v in serializer.validated_data.items()
+            if v and k != 'members' and getattr(group, k) != v}
+        if changed:
+            backend.change(id=group.backend_id, **changed)
 
-        new_users = nc_members - ms_members
+        new_members = set(u.backend_id for u in serializer.validated_data['members'])
+        cur_members = set(group.members.values_list('backend_id', flat=True))
+
+        new_users = new_members - cur_members
         if new_users:
             backend.add_member(id=group.backend_id, user_id=','.join(new_users))
 
-        for old_user in ms_members - nc_members:
+        for old_user in cur_members - new_members:
             backend.del_member(id=group.backend_id, user_id=old_user)
+
+        serializer.save()
