@@ -141,8 +141,8 @@ class SiteViewSet(mixins.CreateModelMixin,
         template = serializer.validated_data.pop('template')
         backend = user.tenant.get_backend()
 
-        if user.tenant.state != models.SharepointTenant.States.OFFLINE:
-            raise IncorrectStateException("Tenant must be in stable state to perform user creation")
+        if user.tenant.state != models.SharepointTenant.States.ONLINE:
+            raise IncorrectStateException("Tenant must be in stable state to perform site creation")
 
         try:
             backend_site = backend.sites.create(
