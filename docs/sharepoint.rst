@@ -39,7 +39,7 @@ parameters:
  - site_name - Site name;
  - description - Site description;
  - storage_size - Site storage size (GB);
- - users_count - Number of users;
+ - user_count - Number of users;
 
 
  Example of a valid request:
@@ -60,7 +60,7 @@ parameters:
         "site_name": "Blog",
         "description": "My blog",
         "storage_size": 2.5,
-        "users_count": 10
+        "user_count": 10
     }
 
 

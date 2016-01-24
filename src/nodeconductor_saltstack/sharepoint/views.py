@@ -19,7 +19,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             resource,
             template=serializer.validated_data['template'],
             storage_size=serializer.validated_data['storage_size'],
-            users_count=serializer.validated_data['users_count'])
+            user_count=serializer.validated_data['user_count'])
 
     def get_serializer_class(self):
         serializer_class = super(TenantViewSet, self).get_serializer_class()
@@ -44,7 +44,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         user_count_quota = tenant.quotas.get(name=tenant.Quotas.user_count)
         new_quotas_limits = {
             'storage_size': serializer.validated_data.get('storage_size', storage_size_quota.limit),
-            'users_count': serializer.validated_data.get('user_count', user_count_quota.limit),
+            'user_count': serializer.validated_data.get('user_count', user_count_quota.limit),
         }
 
         try:
@@ -57,10 +57,10 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             tenant.storage_size = serializer.validated_data['storage_size']
             tenant.save()
             tenant.set_quota_limit(tenant.Quotas.storage_size, tenant.storage_size)
-        if 'users_count' in serializer.validated_data:
-            tenant.users_count = serializer.validated_data['users_count']
+        if 'user_count' in serializer.validated_data:
+            tenant.user_count = serializer.validated_data['user_count']
             tenant.save()
-            tenant.set_quota_limit(tenant.Quotas.user_count, tenant.users_count)
+            tenant.set_quota_limit(tenant.Quotas.user_count, tenant.user_count)
 
         return response.Response({'status': 'Quota was changed successfully'}, status=status.HTTP_200_OK)
 
@@ -81,7 +81,7 @@ class UserViewSet(viewsets.ModelViewSet):
         backend = tenant.get_backend()
 
         if tenant.state != models.SharepointTenant.States.ONLINE:
-            raise IncorrectStateException("Tenant must be in stable state to perform user creation")
+            raise IncorrectStateException("Tenant must be online to perform user creation")
 
         try:
             backend_user = backend.users.create(

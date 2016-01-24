@@ -57,7 +57,7 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
         name=tenant.site_name,
         description=tenant.description,
         storage_size=tenant.storage_size,
-        users_count=kwargs['users_count'],
+        user_count=kwargs['user_count'],
         template_code=kwargs['template_code'])
 
     tenant.backend_id = backend_tenant.id

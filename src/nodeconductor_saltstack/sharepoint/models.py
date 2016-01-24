@@ -18,7 +18,7 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
     admin_login = models.CharField(max_length=255, blank=True)
     admin_password = models.CharField(max_length=255, blank=True)
     storage_size = models.PositiveIntegerField(help_text='Maximum size of tenants, MB')
-    users_count = models.PositiveIntegerField(help_text='Maximum number of users in tenant')
+    user_count = models.PositiveIntegerField(help_text='Maximum number of users in tenant')
 
     class Quotas(QuotaModelMixin.Quotas):
         storage_size = QuotaField(
@@ -28,7 +28,7 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
         user_count = CounterQuotaField(
             target_models=lambda: [User],
             path_to_scope='tenant',
-            default_limit=lambda t: t.users_count,
+            default_limit=lambda t: t.user_count,
             is_backend=True
         )
 

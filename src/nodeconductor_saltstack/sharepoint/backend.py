@@ -17,7 +17,7 @@ class TenantAPI(SaltStackBaseAPI):
                 'template_code': 'TenantSiteTemplate',
                 'admin_id': 'TenantSiteAdmin',
                 'storage_size': 'MainSiteSizeQuota',
-                'users_count': 'NumberOfUsers',
+                'user_count': 'NumberOfUsers',
             },
             output={
                 'Site Subscription ID': 'id',
@@ -51,7 +51,7 @@ class TenantAPI(SaltStackBaseAPI):
             input={
                 'domain': 'TenantDomain',
                 'storage_size': 'MainSiteSizeQuota',
-                'users_count': 'NumberOfUsers',
+                'user_count': 'NumberOfUsers',
             },
             defaults={
                 'domain': "{backend.tenant.domain}",
