@@ -79,3 +79,12 @@ def sync_spl_quotas(spl_id):
     tenants = SharepointTenant.objects.filter(service_project_link=spl)
     spl.set_quota_usage('sharepoint_storage', sum([t.storage_size for t in tenants]))
     spl.set_quota_usage('sharepoint_tenant_number', tenants.count())
+
+
+@shared_task
+def sync_tenant_storage_size_quota(tenant_uuid):
+    tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
+    backend = tenant.get_backend()
+    storage_quotas = backend.tenants.storage_size_usage()
+    storage_size_usage = sum([backend.gb2mb(v) for v in storage_quotas.values()])
+    tenant.set_quota_usage(tenant.Quotas.storage_size, storage_size_usage)

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from nodeconductor.core.serializers import AugmentedSerializerMixin
+from nodeconductor.quotas.serializers import QuotaSerializer
 from nodeconductor.structure import serializers as structure_serializers
 
 from ..saltstack.backend import SaltStackBackendError
@@ -33,6 +34,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
 
     # IP of the Sharepoint management server. admin_url/site_url should be resolving to it.
     management_ip = serializers.SerializerMethodField()
+    quotas = QuotaSerializer(many=True, read_only=True)
 
     def get_management_ip(self, tenant):
         return tenant.service_project_link.service.settings.options.get('sharepoint_management_ip', 'Unknown')
@@ -44,9 +46,10 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             'template', 'domain', 'site_name', 'site_url',
             'admin_url', 'admin_login', 'admin_password',
             'storage_size', 'users_count', 'management_ip',
+            'quotas',
         )
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
-            'site_url', 'admin_url', 'admin_login', 'admin_password',
+            'site_url', 'admin_url', 'admin_login', 'admin_password', 'quotas',
         )
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
             'template', 'name', 'description', 'domain', 'site_name', 'storage_size'
@@ -79,8 +82,10 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
 
 
 class TenantQuotaSerializer(serializers.Serializer):
-    storage_size = serializers.FloatField(min_value=1, write_only=True, help_text='Maximum storage size, GB')
-    users_count = serializers.IntegerField(min_value=1, write_only=True, help_text='Maximum users count')
+    storage_size = serializers.FloatField(
+        min_value=1, write_only=True, help_text='Maximum storage size, MB', required=False)
+    users_count = serializers.IntegerField(
+        min_value=1, write_only=True, help_text='Maximum users count', required=False)
 
 
 class TemplateSerializer(structure_serializers.BasePropertySerializer):
@@ -125,6 +130,14 @@ class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSeria
                 fields['password'].read_only = True
 
         return fields
+
+    def validate(self, attrs):
+        if not self.instance:
+            tenant = attrs['tenant']
+            user_count_quota = tenant.quotas.get(name=tenant.Quotas.user_count)
+            if user_count_quota.is_exceeded(delta=1):
+                raise serializers.ValidationError('Cannot add new users to tenant. Its user_count quota is over limit.')
+        return attrs
 
 
 class SiteSerializer(serializers.HyperlinkedModelSerializer):

@@ -37,12 +37,20 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             raise IncorrectStateException("Tenant must be in online to perform quotas update")
 
         serializer_class = self.get_serializer_class()
+        print 'request.data', request.data
         serializer = serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        storage_size_quota = tenant.quotas.get(name=tenant.Quotas.storage_size)
+        user_count_quota = tenant.quotas.get(name=tenant.Quotas.user_count)
+        new_quotas_limits = {
+            'storage_size': serializer.validated_data.get('storage_size', storage_size_quota.limit),
+            'users_count': serializer.validated_data.get('user_count', user_count_quota.limit),
+        }
+
         try:
             backend = tenant.get_backend()
-            backend.tenants.change_quota(**serializer.validated_data)
+            backend.tenants.change_quota(**new_quotas_limits)
         except SaltStackBackendError as e:
             raise exceptions.APIException(e.traceback_str)
 

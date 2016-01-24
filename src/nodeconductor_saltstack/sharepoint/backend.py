@@ -66,6 +66,17 @@ class TenantAPI(SaltStackBaseAPI):
             },
         )
 
+        storage_size_usage = dict(
+            name='StorageUsage',
+            input={
+                'domain': 'TenantDomain',
+            },
+            output='all_data',
+            defaults={
+                'domain': '{backend.tenant.domain}'
+            },
+        )
+
 
 class TemplateAPI(SaltStackBaseAPI):
 
@@ -177,7 +188,7 @@ class UserAPI(SaltStackBaseAPI):
             defaults={
                 'tenant': "{backend.tenant.name}",
                 'domain': "{backend.tenant.domain}",
-                'name': "{first_name} {last_name}",
+                'name': "{username}",
             },
             **_base
         )

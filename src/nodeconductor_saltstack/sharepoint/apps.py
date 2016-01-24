@@ -23,6 +23,8 @@ class SaltStackConfig(AppConfig):
 
         from . import handlers
         SharepointTenant = self.get_model('SharepointTenant')
+        User = self.get_model('User')
+        Site = self.get_model('Site')
 
         signals.post_save.connect(
             handlers.increase_quotas_usage_on_tenant_creation,
@@ -34,4 +36,28 @@ class SaltStackConfig(AppConfig):
             handlers.decrease_quotas_usage_on_tenant_deletion,
             sender=SharepointTenant,
             dispatch_uid='nodeconductor.saltstack.sharepoint.handlers.decrease_quotas_usage_on_tenant_deletion',
+        )
+
+        signals.post_save.connect(
+            handlers.update_tenant_storage_size_quotas_on_user_update,
+            sender=User,
+            dispatch_uid='nodeconductor.saltstack.sharepoint.handlers.update_tenant_storage_size_quotas_on_user_save',
+        )
+
+        signals.post_delete.connect(
+            handlers.update_tenant_storage_size_quotas_on_user_update,
+            sender=User,
+            dispatch_uid='nodeconductor.saltstack.sharepoint.handlers.update_tenant_storage_size_quotas_on_user_delete',
+        )
+
+        signals.post_save.connect(
+            handlers.update_tenant_storage_size_quotas_on_user_update,
+            sender=Site,
+            dispatch_uid='nodeconductor.saltstack.sharepoint.handlers.update_tenant_storage_size_quotas_on_site_save',
+        )
+
+        signals.post_delete.connect(
+            handlers.update_tenant_storage_size_quotas_on_user_update,
+            sender=Site,
+            dispatch_uid='nodeconductor.saltstack.sharepoint.handlers.update_tenant_storage_size_quotas_on_site_delete',
         )

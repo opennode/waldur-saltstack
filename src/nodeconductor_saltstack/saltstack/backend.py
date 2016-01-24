@@ -219,6 +219,9 @@ class SaltStackBaseAPI(SaltStackAPI):
             if not entity or not out:
                 return None
 
+            # XXX: I need to get all returned fields and I do not know their names.
+            if fn_opts.get('output') == 'all_data':
+                return entity
             opts = {}
             for key, val in entity.items():
                 if key in out:
