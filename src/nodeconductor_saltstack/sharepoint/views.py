@@ -37,7 +37,6 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             raise IncorrectStateException("Tenant must be in online to perform quotas update")
 
         serializer_class = self.get_serializer_class()
-        print 'request.data', request.data
         serializer = serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
