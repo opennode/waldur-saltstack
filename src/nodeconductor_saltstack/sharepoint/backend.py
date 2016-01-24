@@ -17,7 +17,7 @@ class TenantAPI(SaltStackBaseAPI):
                 'template_code': 'TenantSiteTemplate',
                 'admin_id': 'TenantSiteAdmin',
                 'storage_size': 'MainSiteSizeQuota',
-                'users_count': 'NumberOfUsers',
+                'user_count': 'NumberOfUsers',
             },
             output={
                 'Site Subscription ID': 'id',
@@ -51,7 +51,7 @@ class TenantAPI(SaltStackBaseAPI):
             input={
                 'domain': 'TenantDomain',
                 'storage_size': 'MainSiteSizeQuota',
-                'users_count': 'NumberOfUsers',
+                'user_count': 'NumberOfUsers',
             },
             defaults={
                 'domain': "{backend.tenant.domain}",
@@ -63,6 +63,17 @@ class TenantAPI(SaltStackBaseAPI):
             input={
                 'tenant': 'TenantName',
                 'domain': 'TenantDomain',
+            },
+        )
+
+        storage_size_usage = dict(
+            name='StorageUsage',
+            input={
+                'domain': 'TenantDomain',
+            },
+            output='all_data',
+            defaults={
+                'domain': '{backend.tenant.domain}'
             },
         )
 
@@ -177,7 +188,7 @@ class UserAPI(SaltStackBaseAPI):
             defaults={
                 'tenant': "{backend.tenant.name}",
                 'domain': "{backend.tenant.domain}",
-                'name': "{first_name} {last_name}",
+                'name': "{username}",
             },
             **_base
         )

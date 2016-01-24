@@ -19,7 +19,13 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             resource,
             template=serializer.validated_data['template'],
             storage_size=serializer.validated_data['storage_size'],
-            users_count=serializer.validated_data['users_count'])
+            user_count=serializer.validated_data['user_count'])
+
+    def get_serializer_class(self):
+        serializer_class = super(TenantViewSet, self).get_serializer_class()
+        if self.action == 'set_quotas':
+            serializer_class = serializers.TenantQuotaSerializer
+        return serializer_class
 
     @decorators.detail_route(methods=['post'])
     def set_quotas(self, request, **kwargs):
@@ -28,19 +34,35 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
 
         tenant = self.get_object()
         if tenant.state != models.SharepointTenant.States.ONLINE:
-            raise IncorrectStateException("Tenant must be in stable state to perform quotas update")
+            raise IncorrectStateException("Tenant must be in online to perform quotas update")
 
-        serializer = serializers.TenantQuotaSerializer(data=request.data)
+        serializer_class = self.get_serializer_class()
+        serializer = serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        storage_size_quota = tenant.quotas.get(name=tenant.Quotas.storage_size)
+        user_count_quota = tenant.quotas.get(name=tenant.Quotas.user_count)
+        new_quotas_limits = {
+            'storage_size': serializer.validated_data.get('storage_size', storage_size_quota.limit),
+            'user_count': serializer.validated_data.get('user_count', user_count_quota.limit),
+        }
 
         try:
             backend = tenant.get_backend()
-            backend.tenants.change_quota(**serializer.validated_data)
+            backend.tenants.change_quota(**new_quotas_limits)
         except SaltStackBackendError as e:
             raise exceptions.APIException(e.traceback_str)
 
-        return response.Response(
-            {'status': 'Quota update was scheduled'}, status=status.HTTP_202_ACCEPTED)
+        if 'storage_size' in serializer.validated_data:
+            tenant.storage_size = serializer.validated_data['storage_size']
+            tenant.save()
+            tenant.set_quota_limit(tenant.Quotas.storage_size, tenant.storage_size)
+        if 'user_count' in serializer.validated_data:
+            tenant.user_count = serializer.validated_data['user_count']
+            tenant.save()
+            tenant.set_quota_limit(tenant.Quotas.user_count, tenant.user_count)
+
+        return response.Response({'status': 'Quota was changed successfully'}, status=status.HTTP_200_OK)
 
 
 class TemplateViewSet(structure_views.BaseServicePropertyViewSet):
@@ -59,7 +81,7 @@ class UserViewSet(viewsets.ModelViewSet):
         backend = tenant.get_backend()
 
         if tenant.state != models.SharepointTenant.States.ONLINE:
-            raise IncorrectStateException("Tenant must be in stable state to perform user creation")
+            raise IncorrectStateException("Tenant must be online to perform user creation")
 
         try:
             backend_user = backend.users.create(
@@ -119,8 +141,8 @@ class SiteViewSet(mixins.CreateModelMixin,
         template = serializer.validated_data.pop('template')
         backend = user.tenant.get_backend()
 
-        if user.tenant.state != models.SharepointTenant.States.OFFLINE:
-            raise IncorrectStateException("Tenant must be in stable state to perform user creation")
+        if user.tenant.state != models.SharepointTenant.States.ONLINE:
+            raise IncorrectStateException("Tenant must be in stable state to perform site creation")
 
         try:
             backend_site = backend.sites.create(
