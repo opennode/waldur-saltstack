@@ -150,6 +150,7 @@ class SaltStackAPI(object):
             try:
                 result = json.loads(res)
             except ValueError:
+                logger.error("Cannot parse output of command %s: %s", command, res)
                 raise SaltStackBackendError(
                     "Error during execution of %s on %s: %s" % (cmd, tgt, res))
 
@@ -186,8 +187,7 @@ class SaltStackBaseAPI(SaltStackAPI):
                         'max_users': 'TenantMaxUsers',
                         'manager': 'ManagerEmail',
                     },
-                    # extracts input argumets from supplied objects
-                    paths={
+                    paths={  # extracts input argumets from supplied objects
                         'manager': 'user.email',  # manager --> manager.user.email --> ManagerEmail
                     },
                     defaults={  # default parameters for input data

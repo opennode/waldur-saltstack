@@ -8,7 +8,7 @@ def parse_size(size_str):
     MAPPING = {
         'KB': lambda s: float(s) / 1024,
         'MB': lambda s: float(s),
-        'GB': lambda s: ExchangeBackend.gb2mb(int(s)),
+        'GB': lambda s: int(ExchangeBackend.gb2mb(float(s))),
     }
 
     size, unit = size_str.split()
@@ -147,11 +147,13 @@ class UserAPI(SaltStackBaseAPI):
             },
         )
 
-        change_password = dict(
+        reset_password = dict(
             name='ResetUserPassword',
             input={
                 'id': 'Id',
-                'password': 'Pwd',
+            },
+            output={
+                'TempPassword': 'password',
             },
         )
 
@@ -374,6 +376,7 @@ class ExchangeBackend(SaltStackBaseBackend):
         send_task('exchange', 'provision')(tenant.uuid.hex)
 
     def destroy(self, tenant, force=False):
-        tenant.schedule_deletion()
-        tenant.save()
+        if tenant.state != tenant.States.ERRED:
+            tenant.schedule_deletion()
+            tenant.save()
         send_task('exchange', 'destroy')(tenant.uuid.hex, force=force)

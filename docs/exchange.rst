@@ -149,7 +149,8 @@ Response example:
             "last_name": "Doe",
             "username": "joe.doe",
             "password": "?lU_YmOi_vO=",
-            "mailbox_size": 5
+            "mailbox_size": 5,
+            "email": "joe.doe@test.com"
         }
     ]
 
@@ -206,10 +207,10 @@ Update user
 To update user data - issue PUT or PATCH request against **/api/exchange-users/<user_uuid>/**.
 
 
-Update user password
---------------------
+Reset user password
+-------------------
 
-To update user password - issue POST request against **/api/exchange-users/<user_uuid>/password/**.
+To reset user password - issue POST request against **/api/exchange-users/<user_uuid>/password/**.
 
 Example of a valid request:
 
@@ -332,12 +333,55 @@ Response example:
             "uuid": "c39cc7f57fab499786609298019cf844",
             "tenant": "http://example.com/api/exchange-tenants/7f1d21d48b9c46228c2991c02a070121/",
             "tenant_uuid": "7f1d21d48b9c46228c2991c02a070121",
-            "tenant_domain": "test.io",
+            "tenant_domain": "test.com",
             "manager": "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/",
             "manager_uuid": "faf0ed086efd42c08e477797364a78f3",
             "manager_name": "Big Joe",
             "name": "My Group",
-            "username": "grp"
+            "username": "grp",
+            "email": "grp@test.com",
+            "members": [
+                {
+                    "url": "http://example.com/api/exchange-users/77a5451549854258820ae211b473ce9b/",
+                    "uuid": "77a5451549854258820ae211b473ce9b",
+                    "tenant": "http://example.com/api/exchange-tenants/9760d685cbad4fa4b3255d6ffd917393/",
+                    "tenant_uuid": "9760d685cbad4fa4b3255d6ffd917393",
+                    "tenant_domain": "test.com",
+                    "name": "Ivan P",
+                    "first_name": "Ivan",
+                    "last_name": "Petrov",
+                    "username": "ivan.p",
+                    "password": "Y16j$Keub@G",
+                    "mailbox_size": 2,
+                    "office": "",
+                    "phone": "",
+                    "department": "",
+                    "company": "",
+                    "title": "",
+                    "manager": null,
+                    "email": "ivan.p@test.com"
+                },
+                {
+                    "url": "http://example.com/api/exchange-users/ee6ca4b2929c46cb85bedb276a937ac2/",
+                    "uuid": "ee6ca4b2929c46cb85bedb276a937ac2",
+                    "tenant": "http://example.com/api/exchange-tenants/9760d685cbad4fa4b3255d6ffd917393/",
+                    "tenant_uuid": "9760d685cbad4fa4b3255d6ffd917393",
+                    "tenant_domain": "test.com",
+                    "name": "Zoe",
+                    "first_name": "Zoe",
+                    "last_name": "Chloe",
+                    "username": "zoe",
+                    "password": "pBo07@WZ-te",
+                    "mailbox_size": 2,
+                    "office": "",
+                    "phone": "",
+                    "department": "",
+                    "company": "",
+                    "title": "",
+                    "manager": null,
+                    "email": "zoe@test.com"
+                }
+            ]
         }
     ]
 
@@ -353,6 +397,7 @@ Request parameters:
  - manager - link to exchange user object;
  - name - distribution group name;
  - username - group username;
+ - members - a list of group members' links;
 
 Example of a request:
 
@@ -368,7 +413,10 @@ Example of a request:
         "tenant": "http://example.com/api/exchange-tenants/7f1d21d48b9c46228c2991c02a070121/",
         "manager": "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/",
         "name": "My Group",
-        "username": "grp"
+        "username": "grp",
+        "members": [
+            "http://example.com/api/exchange-users/ee6ca4b2929c46cb85bedb276a937ac2/"
+        ]
     }
 
 
@@ -384,78 +432,62 @@ Delete distribution group
 To delete distribution group - issue DELETE request against **/api/exchange-groups/<group_uuid>/**.
 
 
-List group members
-------------------
+Change group members
+--------------------
 
-To get a list of all distribution group memberss - issue GET request against **/api/exchange-groups/<group_uuid>/members**.
-
-Response example:
-
-.. code-block:: javascript
-
-    [
-        {
-            "url": "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
-            "uuid": "db82a52368ba4957ac2cdb6a37d22dee",
-            "tenant": "http://example.com/api/exchange-tenants/9baf2ec31a624ab78e348758b668f36d/",
-            "tenant_uuid": "9baf2ec31a624ab78e348758b668f36d",
-            "tenant_domain": "test.com",
-            "name": "Alice",
-            "first_name": "Alice",
-            "last_name": "L",
-            "username": "alice",
-            "password": "eD0YQpc076cR",
-            "mailbox_size": 3
-        }
-    ]
-
-
-Add member to group
--------------------
-
-To add new member to distribution group - issue POST request against **/api/exchange-groups/<group_uuid>/members/**.
+To change distribution group members - issue PUT or PATCH request against **/api/exchange-groups/<group_uuid>/**.
 
 Request parameters:
 
- - users - a list links to exchange user object;
+ - members - a list of links to exchange user objects, that should be in group;
 
-Example of a request:
+Example of a requests:
+
+1. Add 2 users to group:
 
 .. code-block:: http
 
-    POST /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
+    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
     Host: example.com
 
     {
-        "users": [
+        "members": [
             "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
             "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/"
         ]
     }
 
-
-Delete member from group
-------------------------
-
-To remove member from distribution group - issue DELETE request against **/api/exchange-groups/<group_uuid>/members/**.
-
-Request parameters:
-
- - users - a list of links to exchange user object;
-
-Example of a request:
+2. Add another one user:
 
 .. code-block:: http
 
-    DELETE /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
+    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
     Host: example.com
 
     {
-        "users": ["http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/"]
+        "members": [
+            "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
+            "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/",
+            "http://example.com/api/exchange-users/9baf2ec31a624ab78e348758b668f36d/"
+        ]
+    }
+
+3. Remove all users:
+
+.. code-block:: http
+
+    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "members": []
     }

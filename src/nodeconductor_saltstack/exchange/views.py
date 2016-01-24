@@ -1,6 +1,6 @@
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_200_OK
+from rest_framework.status import HTTP_200_OK
 
 from nodeconductor.structure import views as structure_views
 
@@ -56,23 +56,16 @@ class UserViewSet(BasePropertyViewSet):
         user.save()
 
     # XXX: put was added as portal has a temporary bug with widget update
-    @detail_route(methods=['get', 'post', 'put'])
+    @detail_route(methods=['post', 'put'])
     @track_exceptions
     def password(self, request, pk=None, **kwargs):
         user = self.get_object()
         backend = self.get_backend(user.tenant)
-        if request.method in ('POST', 'PUT'):
-            serializer = serializers.UserPasswordSerializer(instance=user, data=request.data)
-            serializer.is_valid(raise_exception=True)
-            new_password = serializer.validated_data['password']
-            if user.password != new_password:
-                backend.change_password(id=user.backend_id, password=new_password)
-                serializer.save()
-            data = serializers.UserPasswordSerializer(instance=user, context={'request': request}).data
-            return Response(data, status=HTTP_200_OK)
-        elif request.method == 'GET':
-            data = serializers.UserPasswordSerializer(instance=user, context={'request': request}).data
-            return Response(data)
+        response = backend.reset_password(id=user.backend_id)
+        user.password = response.password
+        user.save()
+        data = serializers.UserPasswordSerializer(instance=user, context={'request': request}).data
+        return Response(data, status=HTTP_200_OK)
 
 
 class ContactViewSet(BasePropertyViewSet):
@@ -88,40 +81,30 @@ class GroupViewSet(BasePropertyViewSet):
     filter_class = filters.GroupFilter
     backend_name = 'groups'
 
-    # XXX: put was added as portal has a temporary bug with widget update
-    @detail_route(methods=['get', 'post', 'put', 'delete'])
+    def post_create(self, group, backend_group):
+        backend = self.get_backend(group.tenant)
+        members = group.members.values_list('backend_id', flat=True)
+        if members:
+            backend.add_member(id=group.backend_id, user_id=','.join(members))
+
     @track_exceptions
-    def members(self, request, pk=None, **kwargs):
+    def perform_update(self, serializer):
         group = self.get_object()
         backend = self.get_backend(group.tenant)
+        changed = {
+            k: v for k, v in serializer.validated_data.items()
+            if v and k != 'members' and getattr(group, k) != v}
+        if changed:
+            backend.change(id=group.backend_id, **changed)
 
-        if request.method in ('POST', 'PUT'):
-            serializer = serializers.GroupMemberSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+        new_members = set(u.backend_id for u in serializer.validated_data['members'])
+        cur_members = set(group.members.values_list('backend_id', flat=True))
 
-            user = serializer.validated_data['users']
-            data = serializers.UserSerializer(
-                instance=user, context={'request': request}, many=True).data
+        new_users = new_members - cur_members
+        if new_users:
+            backend.add_member(id=group.backend_id, user_id=','.join(new_users))
 
-            backend.add_member(
-                id=group.backend_id,
-                user_id=','.join([u.backend_id for u in user]))
+        for old_user in cur_members - new_members:
+            backend.del_member(id=group.backend_id, user_id=old_user)
 
-            return Response(data, status=HTTP_201_CREATED)
-
-        elif request.method == 'DELETE':
-            serializer = serializers.GroupMemberSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-
-            for user in serializer.validated_data['users']:
-                backend.del_member(
-                    id=group.backend_id,
-                    user_id=user.backend_id)
-
-            return Response(status=HTTP_204_NO_CONTENT)
-
-        else:
-            user_ids = [u.id for u in backend.list_members(id=group.backend_id)]
-            users = models.User.objects.filter(backend_id__in=user_ids)
-            data = serializers.UserSerializer(instance=users, many=True, context={'request': request}).data
-            return Response(data)
+        serializer.save()

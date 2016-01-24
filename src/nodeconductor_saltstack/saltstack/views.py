@@ -71,7 +71,8 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
         obj = self.get_object()
         backend = self.get_backend(obj.tenant)
         changed = {k: v for k, v in serializer.validated_data.items() if v and getattr(obj, k) != v}
-        backend.change(id=obj.backend_id, **changed)
+        if changed:
+            backend.change(id=obj.backend_id, **changed)
         serializer.save()
         self.post_update(obj, serializer)
 

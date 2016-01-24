@@ -25,12 +25,12 @@ PERMISSION_LOGICS = (
 
 property_permission_logic = FilteredCollaboratorsPermissionLogic(
     collaborators_query=[
-        'tenant_service_project_link__project__roles__permission_group__user',
-        'tenant_service_project_link__project__customer__roles__permission_group__user',
+        'tenant__service_project_link__project__roles__permission_group__user',
+        'tenant__service_project_link__project__customer__roles__permission_group__user',
     ],
     collaborators_filter=[
-        {'tenant_service_project_link__project__roles__role_type': ProjectRole.ADMINISTRATOR},
-        {'tenant_service_project_link__project__customer__roles__role_type': CustomerRole.OWNER},
+        {'tenant__service_project_link__project__roles__role_type': ProjectRole.ADMINISTRATOR},
+        {'tenant__service_project_link__project__customer__roles__role_type': CustomerRole.OWNER},
     ],
     any_permission=True,
 )

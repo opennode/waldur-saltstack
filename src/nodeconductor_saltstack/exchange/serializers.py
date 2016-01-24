@@ -1,8 +1,11 @@
+import os
+import re
 import binascii
 
 from rest_framework import serializers
 
 from nodeconductor.core.serializers import AugmentedSerializerMixin
+from nodeconductor.quotas.exceptions import QuotaExceededException
 from nodeconductor.quotas.serializers import QuotaSerializer
 from nodeconductor.structure import serializers as structure_serializers
 
@@ -71,7 +74,9 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
                 raise serializers.ValidationError({
                     'max_users': "Total mailbox size should be lower than %s MB" % storage_left})
 
-            attrs['backend_id'] = 'NC_%X' % (binascii.crc32(attrs['domain']) % (1 << 32))
+            # generate a random name to be used as unique tenant id in MS Exchange
+            # Example of formt: NC_28052BF28A
+            attrs['backend_id'] = 'NC_%s' % binascii.b2a_hex(os.urandom(5)).upper()
 
             backend = models.ExchangeTenant(service_project_link=spl).get_backend()
             try:
@@ -81,6 +86,20 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
                     'name': "This tenant name or domain is already taken: %s" % e.traceback_str})
 
         return attrs
+
+    def get_fields(self):
+        fields = super(TenantSerializer, self).get_fields()
+
+        try:
+            request = self.context['view'].request
+            user = request.user
+        except (KeyError, AttributeError):
+            return fields
+
+        if not user.is_staff:
+            del fields['ecp_url']
+
+        return fields
 
 
 class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
@@ -114,32 +133,44 @@ class UserSerializer(BasePropertySerializer):
         view_name = 'exchange-users-detail'
         fields = BasePropertySerializer.Meta.fields + (
             'name', 'first_name', 'last_name', 'username', 'password', 'mailbox_size',
-            'office', 'phone', 'department', 'company', 'title', 'manager',
+            'office', 'phone', 'department', 'company', 'title', 'manager', 'email'
         )
         # password update is handled separately in views.py
-        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password',)
+        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password', 'email')
         extra_kwargs = dict(
             manager={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
             **BasePropertySerializer.Meta.extra_kwargs
         )
 
-    def validate_name(self, value):
-        if models.User.objects.filter(name=value).exclude(pk=getattr(self.instance, 'pk', None)).exists():
-            raise serializers.ValidationError('This field must be unique.')
+    def validate_username(self, value):
+        if value:
+            if not re.match(r'[a-zA-Z0-9_.-]+$', value) or re.search(r'^\.|\.$', value):
+                raise serializers.ValidationError(
+                    "The username can contain only letters, numbers, hyphens, underscores and period.")
         return value
 
     def validate(self, attrs):
         tenant = self.instance.tenant if self.instance else attrs['tenant']
 
-        # validation for user creation
         if not self.instance:
-            if attrs['mailbox_size'] > tenant.mailbox_size:
-                raise serializers.ValidationError(
-                    {'mailbox_size': "Mailbox size should be lower than %s MB" % tenant.mailbox_size})
+            deltas = {
+                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'],
+                tenant.Quotas.user_count: 1,
+            }
 
-            user_count_quota = tenant.quotas.get(name='user_count')
-            if user_count_quota.is_exceeded(delta=1):
-                raise serializers.ValidationError('Tenant user count quota exceeded.')
+            if not tenant.is_username_available(attrs['username']):
+                raise serializers.ValidationError(
+                    {'username': "This username is already taken."})
+
+        else:
+            deltas = {
+                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'] - self.instance.mailbox_size,
+            }
+
+        try:
+            tenant.validate_quota_change(deltas, raise_exception=True)
+        except QuotaExceededException as e:
+            raise serializers.ValidationError(str(e))
 
         return attrs
 
@@ -154,29 +185,53 @@ class ContactSerializer(BasePropertySerializer):
         )
 
 
-class GroupMemberSerializer(serializers.Serializer):
-
-    users = serializers.HyperlinkedRelatedField(
-        queryset=models.User.objects.all(),
-        view_name='exchange-users-detail',
-        lookup_field='uuid',
-        write_only=True,
-        many=True)
-
-
 class GroupSerializer(BasePropertySerializer):
 
     class Meta(BasePropertySerializer.Meta):
         model = models.Group
         view_name = 'exchange-groups-detail'
         fields = BasePropertySerializer.Meta.fields + (
-            'manager', 'manager_uuid', 'manager_name', 'name', 'username',
+            'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email', 'members'
         )
+        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
         extra_kwargs = dict(
             BasePropertySerializer.Meta.extra_kwargs.items() +
-            {'manager': {'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'}}.items()
+            {
+                'manager': {'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
+                'members': {'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
+            }.items()
         )
         related_paths = dict(
             BasePropertySerializer.Meta.related_paths.items() +
             {'manager': ('uuid', 'name')}.items()
         )
+
+    def get_fields(self):
+        fields = super(GroupSerializer, self).get_fields()
+        try:
+            method = self.context['view'].request.method
+        except (KeyError, AttributeError):
+            pass
+        else:
+            if method == 'GET':
+                fields['members'] = UserSerializer(many=True, read_only=True)
+        return fields
+
+    def validate(self, attrs):
+        tenant = self.instance.tenant if self.instance else attrs['tenant']
+
+        if not self.instance:
+            if not tenant.is_username_available(attrs['username']):
+                raise serializers.ValidationError(
+                    {'username': "This username is already taken."})
+
+            if attrs['manager'].tenant != tenant:
+                raise serializers.ValidationError(
+                    {'manager': "Manager user must be form the same tenant as group."})
+
+        for user in attrs['members']:
+            if user.tenant != tenant:
+                raise serializers.ValidationError(
+                    "Users must be from the same tenat as group, can't add %s." % user)
+
+        return attrs
