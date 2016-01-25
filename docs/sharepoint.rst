@@ -96,6 +96,7 @@ To track the status of the tenant use its **initialization_status** field. Possi
  - Not initialized
  - Initializing
  - Initialized
+ - Initialization failed
 
 Tenant display
 --------------
@@ -266,8 +267,7 @@ To create a new SharePoint site collection, issue POST request against **/api/sh
  - name - site collection name;
  - site_url - site collection URL suffix;
  - description - site collection description;
- - max_quota - maximum quota size (MB);
- - warn_quota - warning quota size (MB);
+ - max_quota - maximum storage quota size (MB);
  - link to a site collection template;
  - link to a user object - user will be configured as admin of site collection;
 
@@ -288,7 +288,6 @@ To create a new SharePoint site collection, issue POST request against **/api/sh
         "name": "Test",
         "description": "Test portal",
         "max_quota": 5,
-        "warn_quota": 3
     }
 
 
