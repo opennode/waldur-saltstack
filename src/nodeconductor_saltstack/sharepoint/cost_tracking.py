@@ -31,7 +31,7 @@ class SaltStackCostTrackingBackend(CostTrackingBackend):
     @classmethod
     def get_used_items(cls, resource):
         backend = resource.get_backend()
-        storage = sum(s.usage for s in backend.sites.list())
+        storage = sum(s.usage for s in backend.site_collections.list())
         return [
             (Type.USAGE, Type.CHOICES[Type.USAGE], 1),
             (Type.STORAGE, Type.CHOICES[Type.STORAGE], storage),

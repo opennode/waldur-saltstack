@@ -200,6 +200,7 @@ class SaltStackBaseAPI(SaltStackAPI):
                         'Accepted DomainName': 'domain',
                         'DistinguishedName': 'dn',
                     },
+                    # if output is specified as '*' - return task result without mapping.
                     clean={  # execute some operations on output before provision
                         'Accepted DomainName': <clean_function>
                     },
@@ -219,9 +220,10 @@ class SaltStackBaseAPI(SaltStackAPI):
             if not entity or not out:
                 return None
 
-            # XXX: I need to get all returned fields and I do not know their names.
-            if fn_opts.get('output') == 'all_data':
+            # If output specified as * - return all
+            if fn_opts.get('output') == '*':
                 return entity
+
             opts = {}
             for key, val in entity.items():
                 if key in out:
