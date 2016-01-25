@@ -341,46 +341,8 @@ Response example:
             "username": "grp",
             "email": "grp@test.com",
             "members": [
-                {
-                    "url": "http://example.com/api/exchange-users/77a5451549854258820ae211b473ce9b/",
-                    "uuid": "77a5451549854258820ae211b473ce9b",
-                    "tenant": "http://example.com/api/exchange-tenants/9760d685cbad4fa4b3255d6ffd917393/",
-                    "tenant_uuid": "9760d685cbad4fa4b3255d6ffd917393",
-                    "tenant_domain": "test.com",
-                    "name": "Ivan P",
-                    "first_name": "Ivan",
-                    "last_name": "Petrov",
-                    "username": "ivan.p",
-                    "password": "Y16j$Keub@G",
-                    "mailbox_size": 2,
-                    "office": "",
-                    "phone": "",
-                    "department": "",
-                    "company": "",
-                    "title": "",
-                    "manager": null,
-                    "email": "ivan.p@test.com"
-                },
-                {
-                    "url": "http://example.com/api/exchange-users/ee6ca4b2929c46cb85bedb276a937ac2/",
-                    "uuid": "ee6ca4b2929c46cb85bedb276a937ac2",
-                    "tenant": "http://example.com/api/exchange-tenants/9760d685cbad4fa4b3255d6ffd917393/",
-                    "tenant_uuid": "9760d685cbad4fa4b3255d6ffd917393",
-                    "tenant_domain": "test.com",
-                    "name": "Zoe",
-                    "first_name": "Zoe",
-                    "last_name": "Chloe",
-                    "username": "zoe",
-                    "password": "pBo07@WZ-te",
-                    "mailbox_size": 2,
-                    "office": "",
-                    "phone": "",
-                    "department": "",
-                    "company": "",
-                    "title": "",
-                    "manager": null,
-                    "email": "zoe@test.com"
-                }
+                "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
+                "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/"
             ]
         }
     ]
@@ -447,7 +409,7 @@ Example of a requests:
 
 .. code-block:: http
 
-    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
+    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
@@ -464,7 +426,7 @@ Example of a requests:
 
 .. code-block:: http
 
-    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
+    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
@@ -482,7 +444,7 @@ Example of a requests:
 
 .. code-block:: http
 
-    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
+    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
@@ -491,3 +453,56 @@ Example of a requests:
     {
         "members": []
     }
+
+
+List group members
+------------------
+
+To get a list of all distribution group members - issue GET request against **/api/exchange-groups/<group_uuid>/members/**.
+
+Response example:
+
+.. code-block:: javascript
+
+    [
+        {
+            "url": "http://example.com/api/exchange-users/77a5451549854258820ae211b473ce9b/",
+            "uuid": "77a5451549854258820ae211b473ce9b",
+            "tenant": "http://example.com/api/exchange-tenants/9760d685cbad4fa4b3255d6ffd917393/",
+            "tenant_uuid": "9760d685cbad4fa4b3255d6ffd917393",
+            "tenant_domain": "test.com",
+            "name": "Ivan P",
+            "first_name": "Ivan",
+            "last_name": "Petrov",
+            "username": "ivan.p",
+            "password": "Y16j$Keub@G",
+            "mailbox_size": 2,
+            "office": "",
+            "phone": "",
+            "department": "",
+            "company": "",
+            "title": "",
+            "manager": null,
+            "email": "ivan.p@test.com"
+        },
+        {
+            "url": "http://example.com/api/exchange-users/ee6ca4b2929c46cb85bedb276a937ac2/",
+            "uuid": "ee6ca4b2929c46cb85bedb276a937ac2",
+            "tenant": "http://example.com/api/exchange-tenants/9760d685cbad4fa4b3255d6ffd917393/",
+            "tenant_uuid": "9760d685cbad4fa4b3255d6ffd917393",
+            "tenant_domain": "test.com",
+            "name": "Zoe",
+            "first_name": "Zoe",
+            "last_name": "Chloe",
+            "username": "zoe",
+            "password": "pBo07@WZ-te",
+            "mailbox_size": 2,
+            "office": "",
+            "phone": "",
+            "department": "",
+            "company": "",
+            "title": "",
+            "manager": null,
+            "email": "zoe@test.com"
+        }
+    ]
