@@ -108,3 +108,10 @@ class GroupViewSet(BasePropertyViewSet):
             backend.del_member(id=group.backend_id, user_id=old_user)
 
         serializer.save()
+
+    @detail_route(methods=['get'])
+    def members(self, request, pk=None, **kwargs):
+        group = self.get_object()
+
+        return Response(serializers.UserSerializer(
+            group.members.all(), many=True, context={'request': request}).data, status=HTTP_200_OK)

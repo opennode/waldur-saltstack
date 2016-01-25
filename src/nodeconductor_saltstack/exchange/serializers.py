@@ -206,17 +206,6 @@ class GroupSerializer(BasePropertySerializer):
             {'manager': ('uuid', 'name')}.items()
         )
 
-    def get_fields(self):
-        fields = super(GroupSerializer, self).get_fields()
-        try:
-            method = self.context['view'].request.method
-        except (KeyError, AttributeError):
-            pass
-        else:
-            if method == 'GET':
-                fields['members'] = UserSerializer(many=True, read_only=True)
-        return fields
-
     def validate(self, attrs):
         tenant = self.instance.tenant if self.instance else attrs['tenant']
 
