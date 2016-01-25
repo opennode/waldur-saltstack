@@ -10,27 +10,13 @@ class TenantAPI(SaltStackBaseAPI):
         create = dict(
             name='AddTenant',
             input={
-                'tenant': 'TenantName',
+                'backend_id': 'TenantName',
                 'domain': 'TenantDomain',
-                'name': 'TenantSiteName',
-                'description': 'TenantSiteDesc',
-                'template_code': 'TenantSiteTemplate',
-                'admin_id': 'TenantSiteAdmin',
-                'storage_size': 'MainSiteSizeQuota',
-                'user_count': 'NumberOfUsers',
             },
             output={
-                'Site Subscription ID': 'id',
                 'Tenant Database': 'db',
-                'Tenant WebApplication': 'app_name',
-                'WebAppUrl': 'app_url',
-                'Admin Site Admin URL': 'admin_url',
-                'Main Site URL': 'base_url',
-                'My Site URL': 'url',
                 'DistinguishedName': 'dn',
-                'Collection Sites Administrator': 'admin_name',
-                'Administrator Login Name': 'admin_login',
-                'Administrator Password': 'admin_password'
+                'UPNSuffix': 'upn_suffix',
             },
         )
 
@@ -47,7 +33,7 @@ class TenantAPI(SaltStackBaseAPI):
         )
 
         change_quota = dict(
-            name='EditSiteQuota',
+            name='EditSiteCollectionQuota',
             input={
                 'domain': 'TenantDomain',
                 'storage_size': 'MainSiteSizeQuota',
@@ -71,7 +57,7 @@ class TenantAPI(SaltStackBaseAPI):
             input={
                 'domain': 'TenantDomain',
             },
-            output='all_data',
+            output='*',
             defaults={
                 'domain': '{backend.tenant.domain}'
             },
@@ -91,7 +77,7 @@ class TemplateAPI(SaltStackBaseAPI):
         )
 
 
-class SiteAPI(SaltStackBaseAPI):
+class SiteCollectionAPI(SaltStackBaseAPI):
 
     class Methods:
         _base = dict(
@@ -106,6 +92,7 @@ class SiteAPI(SaltStackBaseAPI):
         create = dict(
             name='AddSiteCollection',
             input={
+                'backend_id': 'TenantName',
                 'domain': 'TenantDomain',
                 'site_url': 'RelativeSiteUrl',
                 'name': 'SiteName',
@@ -113,10 +100,29 @@ class SiteAPI(SaltStackBaseAPI):
                 'template_code': 'SiteTemplate',
                 'admin_id': 'SiteAdmin',
                 'max_quota': 'MaxQuota',
-                'warn_quota': 'WarningQuota',
+            },
+            defaults={
+                'domain': '{backend.tenant.domain}',
+                'backend_id': '{backend.tenant.backend_id}'
+            },
+            **_base
+        )
+
+        create_main = dict(
+            name='AddMainSiteCollection',
+            input={
+                'backend_id': 'TenantName',
+                'domain': 'TenantDomain',
+                'name': 'SiteName',
+                'description': 'SiteDesc',
+                'template_code': 'SiteTemplate',
+                'admin_id': 'SiteAdmin',
+                'max_quota': 'MaxQuota',
+                'user_count': 'MaxNumberOfUsers',
             },
             defaults={
                 'domain': "{backend.tenant.domain}",
+                'backend_id': '{backend.tenant.backend_id}'
             },
             **_base
         )
@@ -128,7 +134,7 @@ class SiteAPI(SaltStackBaseAPI):
                 'domain': 'TenantDomain',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'tenant': "{backend.tenant.backend_id}",
                 'domain': "{backend.tenant.domain}",
             },
             many=True,
@@ -136,7 +142,7 @@ class SiteAPI(SaltStackBaseAPI):
         )
 
         delete = dict(
-            name='DelSiteCollection',
+            name='DelSiteCollectionCollection',
             input={
                 'url': 'SiteUrl',
             },
@@ -232,7 +238,7 @@ class SharepointBackend(SaltStackBaseBackend):
     TARGET_OPTION_NAME = 'sharepoint_target'
     MAPPING_OPTION_NAME = 'sharepoint_mapping'
     API = {
-        'sites': SiteAPI,
+        'site_collections': SiteCollectionAPI,
         'tenants': TenantAPI,
         'templates': TemplateAPI,
         'users': UserAPI,
@@ -256,8 +262,8 @@ class SharepointBackend(SaltStackBaseBackend):
 
         map(lambda i: i.delete(), cur_tmpls.values())
 
-    def provision(self, tenant, template=None, **kwargs):
-        send_task('sharepoint', 'provision')(tenant.uuid.hex, template_code=template.code, **kwargs)
+    def provision(self, tenant, **kwargs):
+        send_task('sharepoint', 'provision')(tenant.uuid.hex, **kwargs)
 
     def destroy(self, tenant, force=False):
         tenant.schedule_deletion()

@@ -4,7 +4,7 @@ from nodeconductor.core.exceptions import IncorrectStateException
 from nodeconductor.structure import views as structure_views
 
 from ..saltstack.backend import SaltStackBackendError
-from . import models, serializers
+from . import models, serializers, tasks
 
 
 class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
@@ -13,56 +13,59 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
     http_method_names = ['head', 'get', 'post', 'delete']
 
     def perform_provision(self, serializer):
-        resource = serializer.save()
-        backend = resource.get_backend()
-        backend.provision(
-            resource,
-            template=serializer.validated_data['template'],
-            storage_size=serializer.validated_data['storage_size'],
-            user_count=serializer.validated_data['user_count'])
+        user_count = serializer.validated_data.pop('user_count')
+        storage = serializer.validated_data.pop('storage')
+        tenant = serializer.save()
+
+        tenant.set_quota_limit(tenant.Quotas.user_count, user_count)
+        tenant.set_quota_limit(tenant.Quotas.storage, storage)
+
+        backend = tenant.get_backend()
+        backend.provision(tenant)
 
     def get_serializer_class(self):
         serializer_class = super(TenantViewSet, self).get_serializer_class()
-        if self.action == 'set_quotas':
-            serializer_class = serializers.TenantQuotaSerializer
+        if self.action == 'initialize':
+            serializer_class = serializers.MainSiteCollectionSerializer
         return serializer_class
 
     @decorators.detail_route(methods=['post'])
-    def set_quotas(self, request, **kwargs):
-        if not request.user.is_staff:
-            raise exceptions.PermissionDenied()
-
+    def initialize(self, request, **kwargs):
         tenant = self.get_object()
-        if tenant.state != models.SharepointTenant.States.ONLINE:
-            raise IncorrectStateException("Tenant must be in online to perform quotas update")
+        if tenant.initialization_status != models.SharepointTenant.InitializationStatuses.NOT_INITIALIZED:
+            raise IncorrectStateException("Tenant must be in not initialized to perform initialization operation.")
 
+        # create main site collection
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        storage_size_quota = tenant.quotas.get(name=tenant.Quotas.storage_size)
-        user_count_quota = tenant.quotas.get(name=tenant.Quotas.user_count)
-        new_quotas_limits = {
-            'storage_size': serializer.validated_data.get('storage_size', storage_size_quota.limit),
-            'user_count': serializer.validated_data.get('user_count', user_count_quota.limit),
-        }
+        storage = serializer.validated_data.pop('storage')
+        user = serializer.validated_data['user']
 
-        try:
-            backend = tenant.get_backend()
-            backend.tenants.change_quota(**new_quotas_limits)
-        except SaltStackBackendError as e:
-            raise exceptions.APIException(e.traceback_str)
+        main_site_collection = models.SiteCollection.objects.create(
+            name='Main', description='Main site collection', **serializer.validated_data)
+        main_site_collection.set_quota_limit(main_site_collection.Quotas.storage, storage)
 
-        if 'storage_size' in serializer.validated_data:
-            tenant.storage_size = serializer.validated_data['storage_size']
-            tenant.save()
-            tenant.set_quota_limit(tenant.Quotas.storage_size, tenant.storage_size)
-        if 'user_count' in serializer.validated_data:
-            tenant.user_count = serializer.validated_data['user_count']
-            tenant.save()
-            tenant.set_quota_limit(tenant.Quotas.user_count, tenant.user_count)
+        # TODO: Understand what templates we should use for admin and users site collections
+        admin_site_collection = models.SiteCollection.objects.create(
+            name='Admin', user=user, site_url='admin',
+            template=models.Template.objects.first(), description='Admin site collection')
+        admin_site_collection.set_quota_limit(admin_site_collection.Quotas.storage, 100)
 
-        return response.Response({'status': 'Quota was changed successfully'}, status=status.HTTP_200_OK)
+        users_site_collection = models.SiteCollection.objects.create(
+            name='Users', user=user, site_url='my',
+            template=models.Template.objects.first(), description='Users site collection')
+        users_site_collection.set_quota_limit(users_site_collection.Quotas.storage,
+                                              100 * tenant.quotas.get(name=tenant.Quotas.user_count).limit)
+
+        tenant.initialization_status = models.SharepointTenant.InitializationStatuses.INITIALIZING
+        tenant.save()
+
+        tasks.initialize_tenant.delay(tenant.uuid.hex, main_site_collection.uuid.hex, admin_site_collection.uuid.hex,
+                                      users_site_collection.uuid.hex)
+
+        return response.Response({'status': 'Initialization was scheduled successfully.'}, status=status.HTTP_200_OK)
 
 
 class TemplateViewSet(structure_views.BaseServicePropertyViewSet):
@@ -126,14 +129,14 @@ class UserViewSet(viewsets.ModelViewSet):
             user.delete()
 
 
-class SiteViewSet(mixins.CreateModelMixin,
-                  mixins.RetrieveModelMixin,
-                  mixins.DestroyModelMixin,
-                  mixins.ListModelMixin,
-                  viewsets.GenericViewSet):
+class SiteCollectionViewSet(mixins.CreateModelMixin,
+                            mixins.RetrieveModelMixin,
+                            mixins.DestroyModelMixin,
+                            mixins.ListModelMixin,
+                            viewsets.GenericViewSet):
 
-    queryset = models.Site.objects.all()
-    serializer_class = serializers.SiteSerializer
+    queryset = models.SiteCollection.objects.all()
+    serializer_class = serializers.SiteCollectionSerializer
     lookup_field = 'uuid'
 
     def perform_create(self, serializer):
@@ -145,26 +148,28 @@ class SiteViewSet(mixins.CreateModelMixin,
             raise IncorrectStateException("Tenant must be in stable state to perform site creation")
 
         try:
-            backend_site = backend.sites.create(
+            max_quota = serializer.validated_data.pop('max_quota')
+            backend_site = backend.site_collections.create(
                 admin_id=user.admin_id,
                 template_code=template.code,
                 site_url=serializer.validated_data['site_url'],
                 name=serializer.validated_data['name'],
                 description=serializer.validated_data['description'],
                 warn_quota=serializer.validated_data.pop('warn_quota'),
-                max_quota=serializer.validated_data.pop('max_quota'))
+                max_quota=max_quota)
 
         except SaltStackBackendError as e:
             raise exceptions.APIException(e.traceback_str)
         else:
             site = serializer.save()
             site.site_url = backend_site.url
+            site.set_quota_limit(site.Quotas.storage_size, max_quota)
             site.save()
 
     def perform_destroy(self, site):
         backend = site.user.tenant.get_backend()
         try:
-            backend.sites.delete(url=site.site_url)
+            backend.site_collections.delete(url=site.site_url)
         except SaltStackBackendError as e:
             raise exceptions.APIException(e.traceback_str)
         else:

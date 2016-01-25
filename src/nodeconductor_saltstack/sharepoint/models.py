@@ -8,28 +8,34 @@ from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
 
 
 class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_models.PaidResource):
+    class InitializationStatuses(object):
+        NOT_INITIALIZED = 'Not initialized'
+        INITIALIZING = 'Initializing'
+        INITIALIZED = 'Initialized'
+        FAILED = 'Initialization failed'
+
+        CHOICES = ((NOT_INITIALIZED, NOT_INITIALIZED), (INITIALIZING, INITIALIZING),
+                   (INITIALIZED, INITIALIZED), (FAILED, FAILED))
+
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='sharepoint_tenants', on_delete=models.PROTECT)
 
     domain = models.CharField(max_length=255)
-    site_name = models.CharField(max_length=255)
-    site_url = models.URLField(blank=True)
-    admin_url = models.URLField(blank=True)
-    admin_login = models.CharField(max_length=255, blank=True)
-    admin_password = models.CharField(max_length=255, blank=True)
-    storage_size = models.PositiveIntegerField(help_text='Maximum size of tenants, MB')
-    user_count = models.PositiveIntegerField(help_text='Maximum number of users in tenant')
+    initialization_status = models.CharField(
+        max_length=20, choices=InitializationStatuses.CHOICES, default=InitializationStatuses.NOT_INITIALIZED)
+
+    main_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
+    admin_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
+    users_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
 
     class Quotas(QuotaModelMixin.Quotas):
-        storage_size = QuotaField(
-            default_limit=lambda t: t.storage_size,
-            is_backend=True
+        storage = QuotaField(
+            default_limit=5 * 1024,
         )
         user_count = CounterQuotaField(
             target_models=lambda: [User],
             path_to_scope='tenant',
-            default_limit=lambda t: t.user_count,
-            is_backend=True
+            default_limit=10,
         )
 
     @classmethod
@@ -39,6 +45,13 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
     def get_backend(self):
         from .backend import SharepointBackend
         return super(SharepointTenant, self).get_backend(backend_class=SharepointBackend, tenant=self)
+
+    def initialize(self, main_site_collection, admin_site_collection, users_site_collection):
+        self.main_site_collection = main_site_collection
+        self.admin_site_collection = admin_site_collection
+        self.users_site_collection = users_site_collection
+        self.initialization_status = self.InitializationStatuses.INITIALIZED
+        self.save()
 
 
 class Template(structure_models.ServiceProperty):
@@ -66,8 +79,14 @@ class User(SaltStackProperty):
     password = models.CharField(max_length=255)
 
 
-class Site(SaltStackProperty):
-    user = models.ForeignKey(User, related_name='sites')
+class SiteCollection(QuotaModelMixin, SaltStackProperty):
+    user = models.ForeignKey(User, related_name='site_collections')
     site_url = models.CharField(max_length=255)
     description = models.CharField(max_length=500)
+    template = models.ForeignKey(Template, related_name='site_collections')
+    access_url = models.CharField(max_length=255, blank=True)
+
+    class Quotas(QuotaModelMixin.Quotas):
+        storage = QuotaField(is_backend=True)
+
     # TODO: ADD max quota field and use it for tenant storage_size quota.

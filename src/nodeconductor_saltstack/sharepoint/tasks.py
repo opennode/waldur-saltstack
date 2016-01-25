@@ -1,3 +1,6 @@
+import binascii
+import os
+
 from celery import shared_task, chain
 
 from django.utils import timezone
@@ -5,7 +8,7 @@ from django.utils import timezone
 from nodeconductor.core.tasks import save_error_message, transition
 from nodeconductor.structure.tasks import sync_service_project_links
 
-from .models import SharepointTenant
+from .models import SharepointTenant, SiteCollection
 from nodeconductor_saltstack.saltstack.models import SaltStackServiceProjectLink
 
 
@@ -51,20 +54,15 @@ def schedule_deletion(tenant_uuid):
 def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
     tenant = transition_entity
     backend = tenant.get_backend()
-    backend_tenant = backend.tenants.create(
-        tenant=tenant.name,
-        domain=tenant.domain,
-        name=tenant.site_name,
-        description=tenant.description,
-        storage_size=tenant.storage_size,
-        user_count=kwargs['user_count'],
-        template_code=kwargs['template_code'])
+    # generate a random name to be used as unique tenant id in MS Exchange
+    # Example of formt: NC_28052BF28A
+    tenant_backend_id = 'NC_%s' % binascii.b2a_hex(os.urandom(5)).upper()
 
-    tenant.backend_id = backend_tenant.id
-    tenant.site_url = backend_tenant.base_url
-    tenant.admin_url = backend_tenant.admin_url
-    tenant.admin_login = backend_tenant.admin_login
-    tenant.admin_password = backend_tenant.admin_password
+    backend.tenants.create(
+        backend_id=tenant_backend_id,
+        domain=tenant.domain,
+    )
+    tenant.backend_id = tenant_backend_id
     tenant.save()
 
 
@@ -96,9 +94,48 @@ def sync_spl_quotas(spl_id):
 
 
 @shared_task
-def sync_tenant_storage_size_quota(tenant_uuid):
+def initialize_tenant(tenant_uuid, main_site_collection_uuid, admin_site_collection_uuid, users_site_collection_uuid):
     tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
-    backend = tenant.get_backend()
-    storage_quotas = backend.tenants.storage_size_usage()
-    storage_size_usage = sum([backend.gb2mb(v) for v in storage_quotas.values()])
-    tenant.set_quota_usage(tenant.Quotas.storage_size, storage_size_usage)
+    main_site_collection = SiteCollection.objects.get(uuid=main_site_collection_uuid)
+    admin_site_collection = SiteCollection.objects.get(uuid=admin_site_collection_uuid)
+    users_site_collection = SiteCollection.objects.get(uuid=users_site_collection_uuid)
+
+    try:
+        backend = tenant.get_backend()
+
+        backend_site_collection = backend.site_collections.create_main(
+            admin_id=main_site_collection.user.admin_id,
+            template_code=main_site_collection.template.code,
+            name=main_site_collection.name,
+            description=main_site_collection.description,
+            max_quota=main_site_collection.quotas.get(name=main_site_collection.Quotas.storage).limit,
+            user_count=tenant.quotas.get(name=tenant.Quotas.user_count).limit,
+        )
+        main_site_collection.access_url = backend_site_collection.url
+        main_site_collection.save()
+
+        backend_site_collection = backend.site_collections.create(
+            admin_id=admin_site_collection.user.admin_id,
+            template_code=admin_site_collection.template.code,
+            name=admin_site_collection.name,
+            description=admin_site_collection.description,
+            max_quota=admin_site_collection.quotas.get(name=main_site_collection.Quotas.storage).limit,
+            site_url=admin_site_collection.site_url,
+        )
+        admin_site_collection.access_url = backend_site_collection.url
+        admin_site_collection.save()
+
+        backend_site_collection = backend.site_collections.create(
+            admin_id=users_site_collection.user.admin_id,
+            template_code=users_site_collection.template.code,
+            name=users_site_collection.name,
+            description=users_site_collection.description,
+            max_quota=users_site_collection.quotas.get(name=main_site_collection.Quotas.storage).limit,
+            site_url=users_site_collection.site_url,
+        )
+        users_site_collection.access_url = backend_site_collection.url
+        users_site_collection.save()
+    except:
+        tenant.initialization_status = tenant.InitializationStatuses.FAILED
+        tenant.save()
+        raise
