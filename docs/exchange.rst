@@ -409,7 +409,7 @@ Example of a requests:
 
 .. code-block:: http
 
-    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
+    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
@@ -426,7 +426,7 @@ Example of a requests:
 
 .. code-block:: http
 
-    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
+    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
@@ -444,7 +444,7 @@ Example of a requests:
 
 .. code-block:: http
 
-    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/members/ HTTP/1.1
+    PATCH /api/exchange-groups/c39cc7f57fab499786609298019cf844/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
