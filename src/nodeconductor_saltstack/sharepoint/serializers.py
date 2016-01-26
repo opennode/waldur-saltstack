@@ -68,13 +68,6 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         return attrs
 
 
-class TenantQuotaSerializer(serializers.Serializer):
-    storage_size = serializers.FloatField(
-        min_value=1, write_only=True, help_text='Maximum storage size, MB', required=False)
-    user_count = serializers.IntegerField(
-        min_value=1, write_only=True, help_text='Maximum users count', required=False)
-
-
 class TemplateSerializer(structure_serializers.BasePropertySerializer):
 
     class Meta(object):
@@ -175,6 +168,7 @@ class SiteCollectionSerializer(MainSiteCollectionSerializer):
             tenant={'lookup_field': 'uuid', 'view_name': 'sharepoint-tenants-detail'},
             **MainSiteCollectionSerializer.Meta.extra_kwargs
         )
+        read_only_fields = MainSiteCollectionSerializer.Meta.read_only_fields + ('access_url',)
 
     def validate(self, attrs):
         user = attrs['user']
@@ -182,6 +176,22 @@ class SiteCollectionSerializer(MainSiteCollectionSerializer):
         storage_quota = tenant.quotas.get(name=tenant.Quotas.storage)
         if storage_quota.is_exceeded(delta=attrs['storage']):
             max_storage = storage_quota.limit - storage_quota.usage
+            raise serializers.ValidationError(
+                'Storage quota is over limit. Site collection cannot be greater then %s MB' % max_storage)
+        return attrs
+
+
+# Should be initialized with site_collection in context
+class SiteCollectionQuotaSerializer(serializers.Serializer):
+    storage = serializers.FloatField(min_value=1, write_only=True, help_text='Maximum storage size, MB')
+
+    def validate(self, attrs):
+        site_collection = self.context['site_collection']
+        old_storage = site_collection.quotas.get(name=SiteCollection.Quotas.storage).limit
+        new_storage = attrs['storage']
+        storage_quota = site_collection.user.tenant.quotas.get(name=SharepointTenant.Quotas.storage)
+        if new_storage > old_storage and storage_quota.is_exceeded(delta=new_storage-old_storage):
+            max_storage = storage_quota.limit - storage_quota.usage + old_storage
             raise serializers.ValidationError(
                 'Storage quota is over limit. Site collection cannot be greater then %s MB' % max_storage)
         return attrs
