@@ -160,24 +160,30 @@ Example rendering of the tenant object:
     }
 
 
-Update tenant quotas
---------------------
+Update tenant
+-------------
 
-To update tenant quotas - issue POST request against **/api/sharepoint-tenants/<tenant_uuid>/set_quotas/**.
+Only tenant name and description could be updated.
 
-Example of a valid request:
+For tenant update - execute PUT request to **/api/sharepoint-tenants/<tenant_uuid>/** with parameters:
+
+ - name - tenant new name;
+ - description - tenant new description;
+
+
+ Example of a valid request:
 
 .. code-block:: http
 
-    PUT /api/sharepoint-tenants/8194584bc21449ccbe60509ec34b03e2/set_quotas/ HTTP/1.1
+    PUT /api/sharepoint-tenants/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
     Host: example.com
 
     {
-        "storage_size": 5,
-        "users_count": 20
+        "name": "tenant new name",
+        "description": "tenant new description"
     }
 
 

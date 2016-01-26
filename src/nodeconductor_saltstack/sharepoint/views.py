@@ -10,7 +10,6 @@ from . import models, serializers, tasks
 class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
     queryset = models.SharepointTenant.objects.all()
     serializer_class = serializers.TenantSerializer
-    http_method_names = ['head', 'get', 'post', 'delete']
 
     def perform_provision(self, serializer):
         user_count = serializer.validated_data.pop('user_count')
