@@ -1,7 +1,9 @@
 from rest_framework import decorators, exceptions, mixins, response, viewsets, status
+from rest_framework.status import HTTP_200_OK
 
 from nodeconductor.core.exceptions import IncorrectStateException
 from nodeconductor.structure import views as structure_views
+from nodeconductor_saltstack.saltstack.views import track_exceptions
 
 from ..saltstack.backend import SaltStackBackendError
 from . import models, serializers, tasks, filters
@@ -32,8 +34,8 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
     @decorators.detail_route(methods=['post'])
     def initialize(self, request, **kwargs):
         tenant = self.get_object()
-        # if tenant.initialization_status != models.SharepointTenant.InitializationStatuses.NOT_INITIALIZED:
-        #     raise IncorrectStateException("Tenant must be in not initialized to perform initialization operation.")
+        if tenant.initialization_status != models.SharepointTenant.InitializationStatuses.NOT_INITIALIZED:
+            raise IncorrectStateException("Tenant must be in 'Not initialized' state to perform initialization operation.")
 
         # create main site collection
         serializer_class = self.get_serializer_class()
@@ -43,6 +45,8 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         storage = serializer.validated_data.pop('storage')
         template = serializer.validated_data.pop('template')
         user = serializer.validated_data.pop('user')
+        name = serializer.validated_data.pop('name')
+        description = serializer.validated_data.pop('description')
 
         if user.tenant != tenant:
             return response.Response(
@@ -51,7 +55,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         tenant.initialization_status = models.SharepointTenant.InitializationStatuses.INITIALIZING
         tenant.save()
 
-        tasks.initialize_tenant.delay(tenant.uuid.hex, template.uuid.hex, user.uuid.hex, storage)
+        tasks.initialize_tenant.delay(tenant.uuid.hex, template.uuid.hex, user.uuid.hex, storage, name, description)
 
         return response.Response({'status': 'Initialization was scheduled successfully.'}, status=status.HTTP_200_OK)
 
@@ -117,6 +121,18 @@ class UserViewSet(viewsets.ModelViewSet):
             raise exceptions.APIException(e.traceback_str)
         else:
             user.delete()
+
+    # XXX: put was added as portal has a temporary bug with widget update
+    @decorators.detail_route(methods=['post', 'put'])
+    @track_exceptions
+    def password(self, request, pk=None, **kwargs):
+        user = self.get_object()
+        backend = user.tenant.get_backend()
+        new_password = backend.users.reset_password(id=user.backend_id)
+        user.password = new_password.password
+        user.save()
+        data = serializers.UserPasswordSerializer(instance=user, context={'request': request}).data
+        return response.Response(data, status=HTTP_200_OK)
 
 
 class SiteCollectionViewSet(mixins.CreateModelMixin,

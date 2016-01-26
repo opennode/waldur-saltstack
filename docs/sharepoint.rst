@@ -83,6 +83,8 @@ the following steps must be done:
  2. Request initialisation of the tenant by issuing POST request to **/api/sharepoint-tenants/<tenant_uuid>/initialize/**
     with the payload defining:
 
+    - name - name of the main site collection;
+    - description - description of the main site collection;
     - template - link to a site collection template;
     - storage - size of a quota for the main site collection (in MBs);
     - user - link to a user, who will be granted administrative privileges.
@@ -299,6 +301,29 @@ Update user
 
 To update user data - issue PUT or PATCH request against **/api/sharepoint-users/<user_uuid>/**.
 
+
+Reset user password
+-------------------
+
+To reset user password - issue POST request against **/api/sharepoint-users/<user_uuid>/password/**.
+
+Example of a valid request:
+
+.. code-block:: http
+
+    POST /api/sharepoint-users/db82a52368ba4957ac2cdb6a37d22dee/password/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+Example of a valid response:
+
+.. code-block:: javascript
+
+    {
+        "password": "eD0YQpc076cR"
+    }
 
 Delete user
 -----------

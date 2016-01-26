@@ -94,7 +94,7 @@ def sync_spl_quotas(spl_id):
 
 
 @shared_task
-def initialize_tenant(tenant_uuid, template_uuid, user_uuid, storage):
+def initialize_tenant(tenant_uuid, template_uuid, user_uuid, storage, main_name, main_description):
     """ Create main, admin and personal site collections for tenant """
     tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
     template = Template.objects.get(uuid=template_uuid)
@@ -102,19 +102,20 @@ def initialize_tenant(tenant_uuid, template_uuid, user_uuid, storage):
 
     try:
         backend = tenant.get_backend()
-        data = SiteCollection.Defaults.main_site_collection.copy()
-        data['template_code'] = template.code
-        data['storage'] = storage
-        data['user_count'] = tenant.quotas.get(name=tenant.Quotas.user_count).limit
-        data['admin_id'] = user.admin_id
-
+        data = {
+            'name': main_name,
+            'description': main_description,
+            'template_code': template.code,
+            'storage': storage,
+            'user_count': tenant.quotas.get(name=tenant.Quotas.user_count).limit,
+            'admin_id': user.admin_id,
+        }
         backend_collections_details = backend.site_collections.create_main(**data)
     except SaltStackBackendError:
         tenant.initialization_status = tenant.InitializationStatuses.FAILED
         tenant.save()
         raise
     else:
-        print 'backend_collections_details', backend_collections_details
         # main site collection
         main = SiteCollection.objects.create(
             name=data['name'],

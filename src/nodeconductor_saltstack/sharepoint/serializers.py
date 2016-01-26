@@ -33,7 +33,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
 
     def get_admin_url(self, tenant):
         if tenant.admin_site_collection:
-            return tenant.admin_site_collection.site_url
+            return tenant.admin_site_collection.access_url
         return
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
@@ -86,6 +86,13 @@ class TemplateSerializer(structure_serializers.BasePropertySerializer):
         }
 
 
+class UserPasswordSerializer(serializers.ModelSerializer):
+
+    class Meta(object):
+        model = User
+        fields = ('password',)
+
+
 class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
 
     class Meta(object):
@@ -95,7 +102,7 @@ class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSeria
             'url', 'uuid', 'tenant', 'tenant_uuid', 'tenant_domain', 'name', 'email',
             'first_name', 'last_name', 'username', 'password',
         )
-        read_only_fields = ('uuid',)
+        read_only_fields = ('uuid', 'password')
         protected_fields = ('tenant',)
         extra_kwargs = {
             'url': {'lookup_field': 'uuid'},
@@ -104,19 +111,6 @@ class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSeria
         related_paths = {
             'tenant': ('uuid', 'domain')
         }
-
-    def get_fields(self):
-        fields = super(UserSerializer, self).get_fields()
-        try:
-            method = self.context['view'].request.method
-        except (KeyError, AttributeError):
-            pass
-        else:
-            if method == 'POST':
-                # disabple password field during creation
-                fields['password'].read_only = True
-
-        return fields
 
     def validate(self, attrs):
         if not self.instance:
@@ -141,7 +135,7 @@ class MainSiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
         model = SiteCollection
         view_name = 'sharepoint-site-collections-detail'
         fields = (
-            'url', 'uuid', 'template', 'user', 'storage'
+            'url', 'uuid', 'template', 'user', 'storage', 'name', 'description',
         )
         read_only_fields = ('uuid',)
         extra_kwargs = {
@@ -176,7 +170,7 @@ class SiteCollectionSerializer(MainSiteCollectionSerializer):
     quotas = QuotaSerializer(many=True, read_only=True)
 
     class Meta(MainSiteCollectionSerializer.Meta):
-        fields = MainSiteCollectionSerializer.Meta.fields + ('quotas', 'site_url', 'access_url', 'name', 'description')
+        fields = MainSiteCollectionSerializer.Meta.fields + ('quotas', 'site_url', 'access_url')
         extra_kwargs = dict(
             tenant={'lookup_field': 'uuid', 'view_name': 'sharepoint-tenants-detail'},
             **MainSiteCollectionSerializer.Meta.extra_kwargs
