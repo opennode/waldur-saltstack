@@ -32,8 +32,8 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
     @decorators.detail_route(methods=['post'])
     def initialize(self, request, **kwargs):
         tenant = self.get_object()
-        # if tenant.initialization_status != models.SharepointTenant.InitializationStatuses.NOT_INITIALIZED:
-        #     raise IncorrectStateException("Tenant must be in not initialized to perform initialization operation.")
+        if tenant.initialization_status != models.SharepointTenant.InitializationStatuses.NOT_INITIALIZED:
+            raise IncorrectStateException("Tenant must be in 'Not initialized' state to perform initialization operation.")
 
         # create main site collection
         serializer_class = self.get_serializer_class()
