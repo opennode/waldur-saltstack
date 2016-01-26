@@ -26,7 +26,7 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
 
     main_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
     admin_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
-    users_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
+    personal_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
 
     class Quotas(QuotaModelMixin.Quotas):
         storage = QuotaField(
@@ -81,12 +81,29 @@ class User(SaltStackProperty):
 
 class SiteCollection(QuotaModelMixin, SaltStackProperty):
     user = models.ForeignKey(User, related_name='site_collections')
-    site_url = models.CharField(max_length=255)
+    site_url = models.CharField(max_length=255, blank=True)
     description = models.CharField(max_length=500)
-    template = models.ForeignKey(Template, related_name='site_collections')
-    access_url = models.CharField(max_length=255, blank=True)
+    template = models.ForeignKey(Template, related_name='site_collections', blank=True, null=True)
+    access_url = models.CharField(max_length=255)
 
     class Quotas(QuotaModelMixin.Quotas):
-        storage = QuotaField(is_backend=True)
+        storage = QuotaField()
+
+    class Defaults(object):
+        """ Default parameters for initial tenant site collections """
+        main_site_collection = {
+            'name': 'Main',
+            'description': 'Main site collection',
+        }
+        personal_site_collection = {
+            'name': 'Personal',
+            'description': 'Personal site collection',
+            'storage': 100,  # storage per user
+        }
+        admin_site_collection = {
+            'name': 'Admin',
+            'description': 'Admin site collection',
+            'storage': 100,
+        }
 
     # TODO: ADD max quota field and use it for tenant storage_size quota.

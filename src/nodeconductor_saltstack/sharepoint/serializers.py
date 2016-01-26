@@ -64,6 +64,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
                     'storage': "Total tenant size should be lower than %s MB" % storage_left})
 
             # TODO: Add validation on user count vs storage size.
+            # TODO: Check tenant domain is unique
         return attrs
 
 

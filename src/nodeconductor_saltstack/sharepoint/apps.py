@@ -32,7 +32,7 @@ class SaltStackConfig(AppConfig):
             dispatch_uid='nodeconductor.saltstack.sharepoint.handlers.increase_quotas_usage_on_tenant_creation',
         )
 
-        signals.post_delete.connect(
+        signals.pre_delete.connect(
             handlers.decrease_quotas_usage_on_tenant_deletion,
             sender=SharepointTenant,
             dispatch_uid='nodeconductor.saltstack.sharepoint.handlers.decrease_quotas_usage_on_tenant_deletion',

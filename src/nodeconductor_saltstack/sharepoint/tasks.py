@@ -8,8 +8,9 @@ from django.utils import timezone
 from nodeconductor.core.tasks import save_error_message, transition
 from nodeconductor.structure.tasks import sync_service_project_links
 
-from .models import SharepointTenant, SiteCollection
-from nodeconductor_saltstack.saltstack.models import SaltStackServiceProjectLink
+from .models import SharepointTenant, SiteCollection, Template, User
+from ..saltstack.backend import SaltStackBackendError
+from ..saltstack.models import SaltStackServiceProjectLink
 
 
 @shared_task(name='nodeconductor.sharepoint.provision')
@@ -41,7 +42,6 @@ def destroy(tenant_uuid, force=False):
 
 
 @shared_task
-@save_error_message
 def schedule_deletion(tenant_uuid):
     tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
     backend = tenant.get_backend()
@@ -94,48 +94,60 @@ def sync_spl_quotas(spl_id):
 
 
 @shared_task
-def initialize_tenant(tenant_uuid, main_site_collection_uuid, admin_site_collection_uuid, users_site_collection_uuid):
+def initialize_tenant(tenant_uuid, template_uuid, user_uuid, storage):
+    """ Create main, admin and personal site collections for tenant """
     tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
-    main_site_collection = SiteCollection.objects.get(uuid=main_site_collection_uuid)
-    admin_site_collection = SiteCollection.objects.get(uuid=admin_site_collection_uuid)
-    users_site_collection = SiteCollection.objects.get(uuid=users_site_collection_uuid)
+    template = Template.objects.get(uuid=template_uuid)
+    user = User.objects.get(uuid=user_uuid)
 
     try:
         backend = tenant.get_backend()
+        data = SiteCollection.Defaults.main_site_collection.copy()
+        data['template_code'] = template.code
+        data['storage'] = storage
+        data['user_count'] = tenant.quotas.get(name=tenant.Quotas.user_count).limit
+        data['admin_id'] = user.admin_id
 
-        backend_site_collection = backend.site_collections.create_main(
-            admin_id=main_site_collection.user.admin_id,
-            template_code=main_site_collection.template.code,
-            name=main_site_collection.name,
-            description=main_site_collection.description,
-            max_quota=main_site_collection.quotas.get(name=main_site_collection.Quotas.storage).limit,
-            user_count=tenant.quotas.get(name=tenant.Quotas.user_count).limit,
-        )
-        main_site_collection.access_url = backend_site_collection.url
-        main_site_collection.save()
-
-        backend_site_collection = backend.site_collections.create(
-            admin_id=admin_site_collection.user.admin_id,
-            template_code=admin_site_collection.template.code,
-            name=admin_site_collection.name,
-            description=admin_site_collection.description,
-            max_quota=admin_site_collection.quotas.get(name=main_site_collection.Quotas.storage).limit,
-            site_url=admin_site_collection.site_url,
-        )
-        admin_site_collection.access_url = backend_site_collection.url
-        admin_site_collection.save()
-
-        backend_site_collection = backend.site_collections.create(
-            admin_id=users_site_collection.user.admin_id,
-            template_code=users_site_collection.template.code,
-            name=users_site_collection.name,
-            description=users_site_collection.description,
-            max_quota=users_site_collection.quotas.get(name=main_site_collection.Quotas.storage).limit,
-            site_url=users_site_collection.site_url,
-        )
-        users_site_collection.access_url = backend_site_collection.url
-        users_site_collection.save()
-    except:
+        backend_collections_details = backend.site_collections.create_main(**data)
+    except SaltStackBackendError:
         tenant.initialization_status = tenant.InitializationStatuses.FAILED
         tenant.save()
         raise
+    else:
+        # main site collection
+        main = SiteCollection.objects.create(
+            name=data['name'],
+            description=data['description'],
+            template=template,
+            access_url=backend_collections_details.main_site_collection_url,
+            user=user,
+        )
+        storage = backend_collections_details.main_site_collection_storage
+        main.set_quota_limit(SiteCollection.Quotas.storage, storage)
+        tenant.add_quota_usage(SharepointTenant.Quotas.storage, storage)
+        tenant.main_site_collection = main
+
+        admin = SiteCollection.objects.create(
+            name=SiteCollection.Defaults.admin_site_collection['name'],
+            description=SiteCollection.Defaults.admin_site_collection['description'],
+            access_url=backend_collections_details.admin_site_collection_url,
+            user=user,
+        )
+        storage = backend_collections_details.admin_site_collection_storage
+        admin.set_quota_limit(SiteCollection.Quotas.storage, storage)
+        tenant.add_quota_usage(SharepointTenant.Quotas.storage, storage)
+        tenant.admin_site_collection = admin
+
+        personal = SiteCollection.objects.create(
+            name=SiteCollection.Defaults.personal_site_collection['name'],
+            description=SiteCollection.Defaults.personal_site_collection['description'],
+            access_url=backend_collections_details.personal_site_collection_url,
+            user=user,
+        )
+        storage = backend_collections_details.personal_site_collection_storage
+        personal.set_quota_limit(SiteCollection.Quotas.storage, storage)
+        tenant.add_quota_usage(SharepointTenant.Quotas.storage, storage)
+        tenant.personal_site_collection = personal
+
+        tenant.initialization_status = tenant.InitializationStatuses.INITIALIZED
+        tenant.save()
