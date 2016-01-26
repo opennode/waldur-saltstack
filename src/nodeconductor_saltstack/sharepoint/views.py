@@ -1,7 +1,9 @@
 from rest_framework import decorators, exceptions, mixins, response, viewsets, status
+from rest_framework.status import HTTP_200_OK
 
 from nodeconductor.core.exceptions import IncorrectStateException
 from nodeconductor.structure import views as structure_views
+from nodeconductor_saltstack.saltstack.views import track_exceptions
 
 from ..saltstack.backend import SaltStackBackendError
 from . import models, serializers, tasks, filters
@@ -129,6 +131,18 @@ class UserViewSet(viewsets.ModelViewSet):
             raise exceptions.APIException(e.traceback_str)
         else:
             user.delete()
+
+    # XXX: put was added as portal has a temporary bug with widget update
+    @decorators.detail_route(methods=['post', 'put'])
+    @track_exceptions
+    def password(self, request, pk=None, **kwargs):
+        user = self.get_object()
+        backend = backend = user.tenant.get_backend()
+        new_password = backend.users.reset_password(id=user.backend_id)
+        user.password = new_password.password
+        user.save()
+        data = serializers.UserPasswordSerializer(instance=user, context={'request': request}).data
+        return response.Response(data, status=HTTP_200_OK)
 
 
 class SiteCollectionViewSet(mixins.CreateModelMixin,
