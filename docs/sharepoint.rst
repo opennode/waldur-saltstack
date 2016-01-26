@@ -315,6 +315,10 @@ Example of a valid request:
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
     Host: example.com
 
+Example of a valid response:
+
+.. code-block:: javascript
+
     {
         "password": "eD0YQpc076cR"
     }
