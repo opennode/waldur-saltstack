@@ -4,12 +4,13 @@ from nodeconductor.core.exceptions import IncorrectStateException
 from nodeconductor.structure import views as structure_views
 
 from ..saltstack.backend import SaltStackBackendError
-from . import models, serializers, tasks
+from . import models, serializers, tasks, filters
 
 
 class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
     queryset = models.SharepointTenant.objects.all()
     serializer_class = serializers.TenantSerializer
+    filter_class = filters.TenantFilter
 
     def perform_provision(self, serializer):
         user_count = serializer.validated_data.pop('user_count')
@@ -76,6 +77,7 @@ class TemplateViewSet(structure_views.BaseServicePropertyViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
+    filter_class = filters.UserFilter
     lookup_field = 'uuid'
 
     def perform_create(self, serializer):
@@ -106,11 +108,12 @@ class UserViewSet(viewsets.ModelViewSet):
         backend = user.tenant.get_backend()
 
         try:
-            new_password = serializer.validated_data.pop('password', None)
+            new_password = serializer.validated_data.get('password', None)
             if new_password and user.password != new_password:
                 backend.users.change_password(id=user.backend_id, password=new_password)
 
-            changed = {k: v for k, v in serializer.validated_data.items() if v and getattr(user, k) != v}
+            changed = {k: v for k, v in serializer.validated_data.items()
+                       if v and getattr(user, k) != v and k != 'password'}
             backend.users.change(admin_id=user.admin_id, **changed)
 
         except SaltStackBackendError as e:

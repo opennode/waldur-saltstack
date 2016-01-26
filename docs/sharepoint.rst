@@ -4,6 +4,13 @@ List templates
 Templates synced automatically from backend after service settings creation or on daily basis.
 To get a list of templates - issue GET request against **/api/sharepoint-templates/**.
 
+Filtering is possible by:
+
+- ?name
+- ?domain
+
+Ordering is possible by: name, domain.
+
 Response example:
 
 .. code-block:: javascript
@@ -191,6 +198,44 @@ Delete tenant
 -------------
 
 To delete tenant - issue DELETE request against **/api/sharepoint-tenants/<tenant_uuid>/**.
+
+
+List users
+----------
+
+To get list of users - issue GET request against **/api/sharepoint-users/**
+
+Filtering is possible by:
+
+- ?name
+- ?username
+- ?email
+- ?first_name
+- ?last_name
+- ?tenant_uuid
+- ?tenant=<tenant URL>
+
+Ordering is possible by: name, username, email, first_name, last_name.
+
+Example:
+
+.. code-block:: javascript
+
+    [
+        {
+            "url": "http://example.com/api/sharepoint-users/d1d5a5e24fe940c9aea9640e176684de/",
+            "uuid": "d1d5a5e24fe940c9aea9640e176684de",
+            "tenant": "http://example.com/api/sharepoint-tenants/8194584bc21449ccbe60509ec34b03e2/",
+            "tenant_uuid": "8194584bc21449ccbe60509ec34b03e2",
+            "tenant_domain": "blog.com",
+            "name": "Joe",
+            "email": "joe@email.com",
+            "first_name": "Joe",
+            "last_name": "Doe",
+            "username": "joe.doe",
+            "password": "l1LJ7UK2YZt0"
+        }
+    ]
 
 
 Create user
