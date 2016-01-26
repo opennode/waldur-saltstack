@@ -306,10 +306,6 @@ Delete user
 To delete user - issue DELETE request against **/api/sharepoint-users/<user_uuid>/**.
 
 
-Endpoints to be implemented in future release
----------------------------------------------
-
-
 Create site collection
 ----------------------
 
@@ -318,7 +314,7 @@ To create a new SharePoint site collection, issue POST request against **/api/sh
  - name - site collection name;
  - site_url - site collection URL suffix;
  - description - site collection description;
- - max_quota - maximum storage quota size (MB);
+ - storage - maximum storage quota size (MB);
  - link to a site collection template;
  - link to a user object - user will be configured as admin of site collection;
 
@@ -335,11 +331,12 @@ To create a new SharePoint site collection, issue POST request against **/api/sh
     {
         "template": "http://example.com/api/sharepoint-templates/04e2a211df964967ad2e57796056bdb9/",
         "user": "http://example.com/api/sharepoint-users/d1d5a5e24fe940c9aea9640e176684de/",
-        "site_url": "/test",
+        "site_url": "test",
         "name": "Test",
         "description": "Test portal",
-        "max_quota": 5,
+        "storage": 100,
     }
+
 
 
 Site collection display
@@ -352,13 +349,24 @@ Example rendering of the site object:
 .. code-block:: javascript
 
     {
-        "url": "http://akara.me/api/sharepoint-sites/0c0d58331274477585a4ef16e0e67efa/",
-        "uuid": "0c0d58331274477585a4ef16e0e67efa",
-        "user": "http://akara.me/api/sharepoint-users/d1d5a5e24fe940c9aea9640e176684de/",
-        "site_url": "http://blog.come/sites/test",
-        "name": "Test",
-        "description": "Test portal"
-    }
+        "url": "http://example.com/api/sharepoint-site-collections/2ec3edc4b46b4b04bef17f48667ce04f/",
+        "uuid": "2ec3edc4b46b4b04bef17f48667ce04f",
+        "user": "http://example.com/api/sharepoint-users/db39a1e2a4794c31b1c6dd656df8d7e5/",
+        "quotas": [
+            {
+                "url": "http://example.com/api/quotas/587b4b252a7a4ea88b0d5217ef95cd7e/",
+                "uuid": "587b4b252a7a4ea88b0d5217ef95cd7e",
+                "name": "storage",
+                "limit": 100.0,
+                "usage": 0.0,
+                "scope": "http://example.com/api/sharepoint-site-collections/2ec3edc4b46b4b04bef17f48667ce04f/"
+            }
+        ],
+        "access_url": "http://pavel-test-sharepoint-606.com/sites/test-site-collection",
+        "site_url": "test-site-collection",
+        "name": "test-site-collection",
+        "description": "test-site-collection"
+    },
 
 
 Delete site

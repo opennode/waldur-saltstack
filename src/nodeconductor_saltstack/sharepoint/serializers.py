@@ -135,7 +135,7 @@ class MainSiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
         write_only=True,
         lookup_field='uuid')
 
-    storage = serializers.IntegerField(write_only=True, help_text='Main site size limit, MB')
+    storage = serializers.IntegerField(write_only=True, help_text='Main site collection size limit, MB')
 
     class Meta(object):
         model = SiteCollection
@@ -149,17 +149,45 @@ class MainSiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
             'user': {'lookup_field': 'uuid', 'view_name': 'sharepoint-users-detail'},
         }
 
-    # TODO: Add storage quota validation.
+    def validate(self, attrs):
+        user = attrs['user']
+        tenant = user.tenant
+        storage_quota = tenant.quotas.get(name=tenant.Quotas.storage)
+        # With main site collection we also creating admin and personal collections - we need to count their quotas too.
+        main_site_collection_storage = attrs['storage']
+        admin_site_collection_storage = SiteCollection.Defaults.admin_site_collection['storage']
+        user_count = tenant.quotas.get(name=tenant.Quotas.user_count).limit
+        personal_site_collection_storage = SiteCollection.Defaults.presonal_site_collection['storage'] * user_count
+        storage = main_site_collection_storage + admin_site_collection_storage + personal_site_collection_storage
+        if storage_quota.is_exceeded(delta=storage):
+            max_storage = (storage_quota.limit - storage_quota.usage -
+                           admin_site_collection_storage - personal_site_collection_storage)
+            raise serializers.ValidationError(
+                'Storage quota is over limit. Site collection cannot be greater then %s MB.' % max_storage)
+        return attrs
+
     # TODO: Check that template belong to the same service settings.
 
 
 class SiteCollectionSerializer(MainSiteCollectionSerializer):
 
-    storage = serializers.IntegerField(write_only=True, help_text='Site size limit, MB')
+    storage = serializers.IntegerField(write_only=True, help_text='Site collection size limit, MB')
+
+    quotas = QuotaSerializer(many=True, read_only=True)
 
     class Meta(MainSiteCollectionSerializer.Meta):
-        fields = MainSiteCollectionSerializer.Meta.fields + ('site_url', 'name', 'description')
+        fields = MainSiteCollectionSerializer.Meta.fields + ('quotas', 'site_url', 'access_url', 'name', 'description')
         extra_kwargs = dict(
             tenant={'lookup_field': 'uuid', 'view_name': 'sharepoint-tenants-detail'},
             **MainSiteCollectionSerializer.Meta.extra_kwargs
         )
+
+    def validate(self, attrs):
+        user = attrs['user']
+        tenant = user.tenant
+        storage_quota = tenant.quotas.get(name=tenant.Quotas.storage)
+        if storage_quota.is_exceeded(delta=attrs['storage']):
+            max_storage = storage_quota.limit - storage_quota.usage
+            raise serializers.ValidationError(
+                'Storage quota is over limit. Site collection cannot be greater then %s MB' % max_storage)
+        return attrs

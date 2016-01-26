@@ -94,12 +94,12 @@ class SiteCollectionAPI(SaltStackBaseAPI):
             input={
                 'backend_id': 'TenantName',
                 'domain': 'TenantDomain',
-                'site_url': 'RelativeSiteUrl',
+                'site_url': 'SiteCollectionName',
                 'name': 'SiteName',
                 'description': 'SiteDesc',
                 'template_code': 'SiteTemplate',
                 'admin_id': 'SiteAdmin',
-                'max_quota': 'MaxQuota',
+                'storage': 'SiteQuotaSize',
             },
             defaults={
                 'domain': '{backend.tenant.domain}',
@@ -155,9 +155,9 @@ class SiteCollectionAPI(SaltStackBaseAPI):
         )
 
         delete = dict(
-            name='DelSiteCollectionCollection',
+            name='DelSiteCollection',
             input={
-                'url': 'SiteUrl',
+                'url': 'SiteCollectionUrl',
             },
         )
 
