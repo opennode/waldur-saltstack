@@ -17,12 +17,6 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         backend = resource.get_backend()
         backend.provision(resource)
 
-    def get_serializer_class(self):
-        serializer = super(TenantViewSet, self).get_serializer_class()
-        if self.action == 'domain':
-            serializer = serializers.ExchangeDomainSerializer
-        return serializer
-
     # XXX: put was added as portal has a temporary bug with widget update
     @detail_route(methods=['get', 'post', 'put'])
     @track_exceptions
@@ -51,9 +45,12 @@ class UserViewSet(BasePropertyViewSet):
     filter_class = filters.UserFilter
     backend_name = 'users'
 
-    def post_create(self, user, backend_user):
+    def post_create(self, user, serializer, backend_user):
         user.password = backend_user.password
         user.save()
+
+        if serializer.validated_data['notify']:
+            user.notify()
 
     # XXX: put was added as portal has a temporary bug with widget update
     @detail_route(methods=['post', 'put'])
@@ -64,8 +61,13 @@ class UserViewSet(BasePropertyViewSet):
         response = backend.reset_password(id=user.backend_id)
         user.password = response.password
         user.save()
-        data = serializers.UserPasswordSerializer(instance=user, context={'request': request}).data
-        return Response(data, status=HTTP_200_OK)
+
+        serializer = serializers.UserPasswordSerializer(instance=user, context={'request': request})
+        serializer.is_valid()
+        if serializer.validated_data['notify']:
+            user.notify()
+
+        return Response(serializer.data, status=HTTP_200_OK)
 
 
 class ContactViewSet(BasePropertyViewSet):
@@ -81,7 +83,7 @@ class GroupViewSet(BasePropertyViewSet):
     filter_class = filters.GroupFilter
     backend_name = 'groups'
 
-    def post_create(self, group, backend_group):
+    def post_create(self, group, serializer, backend_group):
         backend = self.get_backend(group.tenant)
         members = group.members.values_list('backend_id', flat=True)
         if members:

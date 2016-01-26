@@ -14,6 +14,9 @@ class ServiceSerializer(structure_serializers.BaseServiceSerializer):
     SERVICE_ACCOUNT_EXTRA_FIELDS = {
         # Exchange
         'exchange_target': 'Salt minion target with MS Exchange Domains',
+        'sms_email_from': 'Sender e-mail address for SMS notifications',
+        'sms_email_rcpt': 'Recipient e-mail template for SMS notifications (e.g. "{phone}@example.com")',
+        'phone_regex': 'Phone number validation regex',
         'owa_url': 'URL for Outlook Web Access',
         'ecp_url': 'Exchange Control Panel',
         # Sharepoint

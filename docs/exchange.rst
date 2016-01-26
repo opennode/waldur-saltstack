@@ -174,6 +174,7 @@ Request parameters:
  - department - user department (optional);
  - company - user company name (optional);
  - title - user title (optional);
+ - notify - whether to SMS temp password to user (optional);
 
 Example of a request:
 
@@ -197,6 +198,7 @@ Example of a request:
         "department": "test department",
         "company": "test company",
         "title": "Joe",
+        "notify": true,
         "manager": "http://example.com/api/exchange-users/b5b164ffbc434bbaaad15d4ae8f6a979/"
     }
 
@@ -223,7 +225,8 @@ Example of a valid request:
     Host: example.com
 
     {
-        "password": "eD0YQpc076cR"
+        "password": "eD0YQpc076cR",
+        "notify": true
     }
 
 
