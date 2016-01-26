@@ -156,6 +156,13 @@ class UserSerializer(BasePropertySerializer):
     def validate(self, attrs):
         tenant = self.instance.tenant if self.instance else attrs['tenant']
 
+        phone = attrs.get('phone')
+        if phone:
+            options = tenant.service_project_link.service.settings.options or {}
+            phone_regex = options.get('phone_regex')
+            if phone_regex and not re.search(phone_regex, phone):
+                raise serializers.ValidationError('Invalid phone number.')
+
         if not self.instance:
             deltas = {
                 tenant.Quotas.global_mailbox_size: attrs['mailbox_size'],

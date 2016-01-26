@@ -1,5 +1,4 @@
 from django.db import models
-from django.conf import settings
 from django.core.mail import send_mail
 from django.utils.encoding import python_2_unicode_compatible
 from model_utils import FieldTracker
@@ -9,7 +8,7 @@ from nodeconductor.quotas.fields import QuotaField, CounterQuotaField
 from nodeconductor.structure import models as structure_models
 
 from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
-from .validators import domain_validator, username_validator, phone_validator
+from .validators import domain_validator
 
 
 class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_models.PaidResource):
@@ -54,13 +53,13 @@ class ExchangeProperty(SaltStackProperty):
 
 @python_2_unicode_compatible
 class User(ExchangeProperty):
-    username = models.CharField(max_length=255, validators=[username_validator])
+    username = models.CharField(max_length=255)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     password = models.CharField(max_length=255)
     mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of mailbox, MB')
     office = models.CharField(max_length=255, blank=True)
-    phone = models.CharField(max_length=255, blank=True, validators=[phone_validator])
+    phone = models.CharField(max_length=255, blank=True)
     department = models.CharField(max_length=255, blank=True)
     company = models.CharField(max_length=255, blank=True)
     manager = models.ForeignKey('User', blank=True, null=True)
@@ -81,9 +80,14 @@ class User(ExchangeProperty):
 
     def notify(self):
         if self.phone:
-            send_mail(
-                '', self.password, settings.SMS_EMAIL_FROM,
-                [settings.SMS_EMAIL_GATEWAY.format(phone=self.phone)], fail_silently=True)
+            options = self.tenant.service_project_link.service.settings.options or {}
+            sender = options.get('sms_email_from')
+            recipient = options.get('sms_email_rcpt')
+
+            if sender and recipient and '{phone}' in recipient:
+                send_mail(
+                    '', self.password, sender,
+                    [recipient.format(phone=self.phone)], fail_silently=True)
 
     def __str__(self):
         return '%s (%s)' % (self.name, self.tenant)
