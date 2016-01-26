@@ -87,7 +87,7 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
     access_url = models.CharField(max_length=255)
 
     class Quotas(QuotaModelMixin.Quotas):
-        storage = QuotaField(is_backend=True)
+        storage = QuotaField()
 
     class Defaults(object):
         """ Default parameters for initial tenant site collections """
