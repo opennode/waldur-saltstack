@@ -33,7 +33,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
 
     def get_admin_url(self, tenant):
         if tenant.admin_site_collection:
-            return tenant.admin_site_collection.site_url
+            return tenant.admin_site_collection.access_url
         return
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
@@ -135,7 +135,7 @@ class MainSiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
         model = SiteCollection
         view_name = 'sharepoint-site-collections-detail'
         fields = (
-            'url', 'uuid', 'template', 'user', 'storage'
+            'url', 'uuid', 'template', 'user', 'storage', 'name', 'description',
         )
         read_only_fields = ('uuid',)
         extra_kwargs = {
@@ -152,7 +152,7 @@ class SiteCollectionSerializer(MainSiteCollectionSerializer):
     storage = serializers.IntegerField(write_only=True, help_text='Site size limit, MB')
 
     class Meta(MainSiteCollectionSerializer.Meta):
-        fields = MainSiteCollectionSerializer.Meta.fields + ('site_url', 'name', 'description')
+        fields = MainSiteCollectionSerializer.Meta.fields + ('site_url',)
         extra_kwargs = dict(
             tenant={'lookup_field': 'uuid', 'view_name': 'sharepoint-tenants-detail'},
             **MainSiteCollectionSerializer.Meta.extra_kwargs
