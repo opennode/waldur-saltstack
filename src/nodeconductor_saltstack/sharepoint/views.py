@@ -151,33 +151,36 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
         backend = user.tenant.get_backend()
 
         if user.tenant.state != models.SharepointTenant.States.ONLINE:
-            raise IncorrectStateException("Tenant must be in stable state to perform site creation")
+            raise IncorrectStateException("Tenant must be in stable state to perform site collection creation")
 
         try:
-            max_quota = serializer.validated_data.pop('max_quota')
+            storage = serializer.validated_data.pop('storage')
             backend_site = backend.site_collections.create(
                 admin_id=user.admin_id,
                 template_code=template.code,
                 site_url=serializer.validated_data['site_url'],
                 name=serializer.validated_data['name'],
                 description=serializer.validated_data['description'],
-                warn_quota=serializer.validated_data.pop('warn_quota'),
-                max_quota=max_quota)
+                storage=storage)
 
         except SaltStackBackendError as e:
             raise exceptions.APIException(e.traceback_str)
         else:
-            site = serializer.save()
-            site.site_url = backend_site.url
-            site.set_quota_limit(site.Quotas.storage_size, max_quota)
-            site.save()
+            site_collection = serializer.save()
+            site_collection.access_url = backend_site.url
+            site_collection.save()
+            site_collection.set_quota_limit(site_collection.Quotas.storage, storage)
+            user.tenant.add_quota_usage(models.SharepointTenant.Quotas.storage, storage)
 
-    def perform_destroy(self, site):
-        # It should be impossible to delete admin, personal or main site collection.
-        backend = site.user.tenant.get_backend()
+    def perform_destroy(self, site_collection):
+        tenant = site_collection.user.tenant
+        if site_collection in tenant.get_default_site_collections():
+            raise exceptions.PermissionDenied(
+                'It is impossible to delete default tenant site collections.')
+        backend = site_collection.user.tenant.get_backend()
         try:
-            backend.site_collections.delete(url=site.site_url)
+            backend.site_collections.delete(url=site_collection.access_url)
         except SaltStackBackendError as e:
             raise exceptions.APIException(e.traceback_str)
         else:
-            site.delete()
+            site_collection.delete()

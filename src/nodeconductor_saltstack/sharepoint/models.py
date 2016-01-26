@@ -46,12 +46,8 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
         from .backend import SharepointBackend
         return super(SharepointTenant, self).get_backend(backend_class=SharepointBackend, tenant=self)
 
-    def initialize(self, main_site_collection, admin_site_collection, users_site_collection):
-        self.main_site_collection = main_site_collection
-        self.admin_site_collection = admin_site_collection
-        self.users_site_collection = users_site_collection
-        self.initialization_status = self.InitializationStatuses.INITIALIZED
-        self.save()
+    def get_default_site_collections(self):
+        return [self.main_site_collection, self.admin_site_collection, self.personal_site_collection]
 
     def get_access_url(self):
         if self.main_site_collection:
@@ -89,6 +85,10 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
     description = models.CharField(max_length=500)
     template = models.ForeignKey(Template, related_name='site_collections', blank=True, null=True)
     access_url = models.CharField(max_length=255)
+
+    @classmethod
+    def get_url_name(cls):
+        return 'sharepoint-site-collections'
 
     class Quotas(QuotaModelMixin.Quotas):
         storage = QuotaField()

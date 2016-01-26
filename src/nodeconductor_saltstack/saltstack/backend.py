@@ -139,6 +139,8 @@ class SaltStackAPI(object):
             name=self.MAPPING.get(cmd) or cmd,
             args=' '.join(['-%s "%s"' % (k, v) for k, v in kwargs.items()]))
 
+        logger.debug('Executing command: {}'.format(command))
+
         response = self.request('/run', {
             'client': 'local',
             'fun': 'cmd.run',
