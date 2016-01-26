@@ -40,29 +40,30 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         model = SharepointTenant
         view_name = 'sharepoint-tenants-detail'
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
-            'domain', 'quotas', 'user_count', 'storage', 'initialization_status', 'admin_url', 'management_ip'
+            'domain', 'quotas', 'user_count', 'storage', 'initialization_status', 'admin_url', 'management_ip',
         )
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
             'initialization_status',
         )
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
-            'domain',
+            'domain', 'user_count', 'storage',
         )
 
     def validate(self, attrs):
-        spl = attrs.get('service_project_link')
+        if not self.instance:
+            spl = attrs.get('service_project_link')
 
-        sharepoint_tenant_number_quota = spl.quotas.get(name=spl.Quotas.sharepoint_tenant_number)
-        if sharepoint_tenant_number_quota.is_exceeded(delta=1):
-            raise serializers.ValidationError("You have reached the maximum number of allowed tenants.")
+            sharepoint_tenant_number_quota = spl.quotas.get(name=spl.Quotas.sharepoint_tenant_number)
+            if sharepoint_tenant_number_quota.is_exceeded(delta=1):
+                raise serializers.ValidationError("You have reached the maximum number of allowed tenants.")
 
-        sharepoint_storage_quota = spl.quotas.get(name=spl.Quotas.sharepoint_storage)
-        if sharepoint_storage_quota.is_exceeded(delta=attrs.get('storage')):
-            storage_left = sharepoint_storage_quota.limit - sharepoint_storage_quota.usage
-            raise serializers.ValidationError({
-                'storage': "Total tenant size should be lower than %s MB" % storage_left})
+            sharepoint_storage_quota = spl.quotas.get(name=spl.Quotas.sharepoint_storage)
+            if sharepoint_storage_quota.is_exceeded(delta=attrs.get('storage')):
+                storage_left = sharepoint_storage_quota.limit - sharepoint_storage_quota.usage
+                raise serializers.ValidationError({
+                    'storage': "Total tenant size should be lower than %s MB" % storage_left})
 
-        # TODO: Add validation on user count vs storage size.
+            # TODO: Add validation on user count vs storage size.
         return attrs
 
 
