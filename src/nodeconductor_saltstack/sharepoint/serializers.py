@@ -85,6 +85,13 @@ class TemplateSerializer(structure_serializers.BasePropertySerializer):
         }
 
 
+class UserPasswordSerializer(serializers.ModelSerializer):
+
+    class Meta(object):
+        model = User
+        fields = ('password',)
+
+
 class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
 
     class Meta(object):
@@ -94,7 +101,7 @@ class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSeria
             'url', 'uuid', 'tenant', 'tenant_uuid', 'tenant_domain', 'name', 'email',
             'first_name', 'last_name', 'username', 'password',
         )
-        read_only_fields = ('uuid',)
+        read_only_fields = ('uuid', 'password')
         protected_fields = ('tenant',)
         extra_kwargs = {
             'url': {'lookup_field': 'uuid'},
@@ -103,19 +110,6 @@ class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSeria
         related_paths = {
             'tenant': ('uuid', 'domain')
         }
-
-    def get_fields(self):
-        fields = super(UserSerializer, self).get_fields()
-        try:
-            method = self.context['view'].request.method
-        except (KeyError, AttributeError):
-            pass
-        else:
-            if method == 'POST':
-                # disabple password field during creation
-                fields['password'].read_only = True
-
-        return fields
 
     def validate(self, attrs):
         if not self.instance:
