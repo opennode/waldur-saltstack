@@ -137,7 +137,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @track_exceptions
     def password(self, request, pk=None, **kwargs):
         user = self.get_object()
-        backend = backend = user.tenant.get_backend()
+        backend = user.tenant.get_backend()
         new_password = backend.users.reset_password(id=user.backend_id)
         user.password = new_password.password
         user.save()
