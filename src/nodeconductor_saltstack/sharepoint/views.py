@@ -32,8 +32,8 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
     @decorators.detail_route(methods=['post'])
     def initialize(self, request, **kwargs):
         tenant = self.get_object()
-        if tenant.initialization_status != models.SharepointTenant.InitializationStatuses.NOT_INITIALIZED:
-            raise IncorrectStateException("Tenant must be in not initialized to perform initialization operation.")
+        # if tenant.initialization_status != models.SharepointTenant.InitializationStatuses.NOT_INITIALIZED:
+        #     raise IncorrectStateException("Tenant must be in not initialized to perform initialization operation.")
 
         # create main site collection
         serializer_class = self.get_serializer_class()
@@ -41,29 +41,17 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         serializer.is_valid(raise_exception=True)
 
         storage = serializer.validated_data.pop('storage')
-        user = serializer.validated_data['user']
+        template = serializer.validated_data.pop('template')
+        user = serializer.validated_data.pop('user')
 
-        main_site_collection = models.SiteCollection.objects.create(
-            name='Main', description='Main site collection', **serializer.validated_data)
-        main_site_collection.set_quota_limit(main_site_collection.Quotas.storage, storage)
-
-        # TODO: Understand what templates we should use for admin and users site collections
-        admin_site_collection = models.SiteCollection.objects.create(
-            name='Admin', user=user, site_url='admin',
-            template=models.Template.objects.first(), description='Admin site collection')
-        admin_site_collection.set_quota_limit(admin_site_collection.Quotas.storage, 100)
-
-        users_site_collection = models.SiteCollection.objects.create(
-            name='Users', user=user, site_url='my',
-            template=models.Template.objects.first(), description='Users site collection')
-        users_site_collection.set_quota_limit(users_site_collection.Quotas.storage,
-                                              100 * tenant.quotas.get(name=tenant.Quotas.user_count).limit)
+        if user.tenant != tenant:
+            return response.Response(
+                {'user': 'User has to be from initializing tenant'}, status=status.HTTP_400_BAD_REQUEST)
 
         tenant.initialization_status = models.SharepointTenant.InitializationStatuses.INITIALIZING
         tenant.save()
 
-        tasks.initialize_tenant.delay(tenant.uuid.hex, main_site_collection.uuid.hex, admin_site_collection.uuid.hex,
-                                      users_site_collection.uuid.hex)
+        tasks.initialize_tenant.delay(tenant.uuid.hex, template.uuid.hex, user.uuid.hex, storage)
 
         return response.Response({'status': 'Initialization was scheduled successfully.'}, status=status.HTTP_200_OK)
 
@@ -169,6 +157,7 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
             site.save()
 
     def perform_destroy(self, site):
+        # It should be impossible to delete admin, personal or main site collection.
         backend = site.user.tenant.get_backend()
         try:
             backend.site_collections.delete(url=site.site_url)

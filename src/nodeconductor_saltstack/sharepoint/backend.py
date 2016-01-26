@@ -23,11 +23,11 @@ class TenantAPI(SaltStackBaseAPI):
         delete = dict(
             name='DelTenant',
             input={
-                'tenant': 'TenantName',
+                'backend_id': 'TenantName',
                 'domain': 'TenantDomain',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'backend_id': "{backend.tenant.backend_id}",
                 'domain': "{backend.tenant.domain}",
             },
         )
@@ -109,22 +109,35 @@ class SiteCollectionAPI(SaltStackBaseAPI):
         )
 
         create_main = dict(
-            name='AddMainSiteCollection',
+            name='AddTenantSiteCollections',
             input={
                 'backend_id': 'TenantName',
                 'domain': 'TenantDomain',
+                'admin_id': 'SiteAdmin',
                 'name': 'SiteName',
                 'description': 'SiteDesc',
                 'template_code': 'SiteTemplate',
-                'admin_id': 'SiteAdmin',
-                'max_quota': 'MaxQuota',
+                'storage': 'SiteQuotaSize',
                 'user_count': 'MaxNumberOfUsers',
             },
             defaults={
                 'domain': "{backend.tenant.domain}",
                 'backend_id': '{backend.tenant.backend_id}'
             },
-            **_base
+            output={
+                "My Site URL":  "personal_site_collection_url",
+                "My Site Quota [MB]":  'personal_site_collection_storage',
+                "Main Site URL":  "main_site_collection_url",
+                "Main Site Quota [MB]": "main_site_collection_storage",
+                "Admin Site Admin URL": "admin_site_collection_url",
+                "Admin Site Quota [MB]": "admin_site_collection_storage",
+                "Site Subscription ID":  "subscription_id",
+            },
+            clean={
+                "Admin Site Quota [MB]": int,
+                "Main Site Quota [MB]": int,
+                "My Site Quota [MB]": int,
+            }
         )
 
         list = dict(
