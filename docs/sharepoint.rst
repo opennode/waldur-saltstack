@@ -414,7 +414,28 @@ Example rendering of the site object:
      }
 
 
-Delete site
------------
+Delete site collection
+----------------------
 
 To delete a site collection, issue DELETE request against **/api/sharepoint-site-collections/<site_collection_uuid>/**.
+
+
+Change storage quota
+--------------------
+
+To change storage quota - issue POST or PUT request against
+**/api/sharepoint-site-collections/<site_collection_uuid>/change_quotas/** with "storage" as parameter.
+
+Example of valid request:
+
+.. code-block:: http
+
+    POST /api/sharepoint-site-collections/b05674b1063f42178267cc2f9ada2ace/change_quotas/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "storage": 200,
+    }

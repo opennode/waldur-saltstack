@@ -161,6 +161,14 @@ class SiteCollectionAPI(SaltStackBaseAPI):
             },
         )
 
+        set_storage = dict(
+            name='EditSiteQuota',
+            input={
+                'url': 'SiteCollectionUrl',
+                'storage': 'SiteQuotaSize',
+            },
+        )
+
 
 class UserAPI(SaltStackBaseAPI):
 

@@ -100,14 +100,8 @@ class UserViewSet(viewsets.ModelViewSet):
         backend = user.tenant.get_backend()
 
         try:
-            new_password = serializer.validated_data.get('password', None)
-            if new_password and user.password != new_password:
-                backend.users.change_password(id=user.backend_id, password=new_password)
-
-            changed = {k: v for k, v in serializer.validated_data.items()
-                       if v and getattr(user, k) != v and k != 'password'}
+            changed = {k: v for k, v in serializer.validated_data.items() if v and getattr(user, k) != v}
             backend.users.change(admin_id=user.admin_id, **changed)
-
         except SaltStackBackendError as e:
             raise exceptions.APIException(e.traceback_str)
         else:
@@ -145,6 +139,12 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
     serializer_class = serializers.SiteCollectionSerializer
     filter_class = filters.SiteCollectionFilter
     lookup_field = 'uuid'
+
+    def get_serializer_class(self):
+        serializer_class = super(SiteCollectionViewSet, self).get_serializer_class()
+        if self.action == 'change_quotas':
+            serializer_class = serializers.SiteCollectionQuotaSerializer
+        return serializer_class
 
     def perform_create(self, serializer):
         user = serializer.validated_data['user']
@@ -185,3 +185,27 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
             raise exceptions.APIException(e.traceback_str)
         else:
             site_collection.delete()
+
+    # XXX: put was added as portal has a temporary bug with widget update
+    @decorators.detail_route(methods=['post', 'put'])
+    @track_exceptions
+    def change_quotas(self, request, pk=None, **kwargs):
+        site_collection = self.get_object()
+        backend = site_collection.user.tenant.get_backend()
+        serializer_class = self.get_serializer_class()
+        serializer = serializer_class(data=request.data, context={'site_collection': site_collection})
+        serializer.is_valid(raise_exception=True)
+
+        new_storage = serializer.validated_data['storage']
+        old_storage = site_collection.quotas.get(name=models.SiteCollection.Quotas.storage).limit
+
+        try:
+            backend.site_collections.set_storage(url=site_collection.access_url, storage=new_storage)
+        except SaltStackBackendError as e:
+            raise exceptions.APIException(e.traceback_str)
+        else:
+            site_collection.set_quota_limit(models.SiteCollection.Quotas.storage, new_storage)
+            tenant = site_collection.user.tenant
+            tenant.add_quota_usage(models.SharepointTenant.Quotas.storage, new_storage - old_storage)
+
+        return response.Response('Storage quota was successfully changed.', status=HTTP_200_OK)
