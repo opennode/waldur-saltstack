@@ -22,7 +22,7 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
 
     domain = models.CharField(max_length=255)
     initialization_status = models.CharField(
-        max_length=20, choices=InitializationStatuses.CHOICES, default=InitializationStatuses.NOT_INITIALIZED)
+        max_length=30, choices=InitializationStatuses.CHOICES, default=InitializationStatuses.NOT_INITIALIZED)
 
     main_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
     admin_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
