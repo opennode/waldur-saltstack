@@ -126,18 +126,20 @@ class MainSiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
     template = serializers.HyperlinkedRelatedField(
         view_name='sharepoint-templates-detail',
         queryset=Template.objects.all(),
-        write_only=True,
         lookup_field='uuid')
 
     storage = serializers.IntegerField(write_only=True, help_text='Main site collection size limit, MB')
+    template_code = serializers.ReadOnlyField(source='template.code')
+    template_name = serializers.ReadOnlyField(source='template.name')
 
     class Meta(object):
         model = SiteCollection
         view_name = 'sharepoint-site-collections-detail'
         fields = (
-            'url', 'uuid', 'template', 'user', 'storage', 'name', 'description',
+            'url', 'uuid', 'template', 'template_code', 'template_name', 'user', 'storage', 'name', 'description',
         )
         read_only_fields = ('uuid',)
+        protected_fields = ('template',)
         extra_kwargs = {
             'url': {'lookup_field': 'uuid'},
             'user': {'lookup_field': 'uuid', 'view_name': 'sharepoint-users-detail'},

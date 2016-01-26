@@ -60,3 +60,35 @@ class TenantFilter(django_filters.FilterSet):
             '-name',
             '-domain',
         ]
+
+
+class SiteCollectionFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(lookup_type='icontains')
+    description = django_filters.CharFilter(lookup_type='icontains')
+    access_url = django_filters.CharFilter(lookup_type='icontains')
+    user_uuid = django_filters.CharFilter(name='user__uuid')
+    template_code = django_filters.CharFilter(lookup_type='icontains', name='template__code')
+    template_name = django_filters.CharFilter(lookup_type='icontains', name='template__name')
+    template_uuid = django_filters.CharFilter(name='template__uuid')
+    tenant_uuid = django_filters.CharFilter(name='user__tenant__uuid')
+
+    class Meta(object):
+        model = models.SiteCollection
+        fields = [
+            'name',
+            'description',
+            'access_url',
+            'user_uuid',
+            'template_uuid',
+            'template_code',
+            'template_name',
+            'template_uuid',
+            'tenant_uuid',
+        ]
+        order_by = [
+            'name',
+            'access_url',
+            # desc
+            '-name',
+            '-access_url',
+        ]
