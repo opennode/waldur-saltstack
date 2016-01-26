@@ -169,11 +169,11 @@ class UserAPI(SaltStackBaseAPI):
         list = dict(
             name='ListAllUsers',
             input={
-                'tenant': 'TenantName',
+                'backend_id': 'TenantName',
                 'domain': 'TenantDomain',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'backend_id': "{backend.tenant.backend_id}",
                 'domain': "{backend.tenant.domain}",
             },
             many=True,
@@ -183,7 +183,7 @@ class UserAPI(SaltStackBaseAPI):
         create = dict(
             name='AddUser',
             input={
-                'tenant': 'TenantName',
+                'backend_id': 'TenantName',
                 'domain': 'TenantDomain',
                 'name': 'DisplayName',
                 'username': 'UserName',
@@ -192,7 +192,7 @@ class UserAPI(SaltStackBaseAPI):
                 'email': 'UserEmail',
             },
             defaults={
-                'tenant': "{backend.tenant.name}",
+                'backend_id': "{backend.tenant.backend_id}",
                 'domain': "{backend.tenant.domain}",
                 'name': "{username}",
             },
@@ -218,8 +218,9 @@ class UserAPI(SaltStackBaseAPI):
         change = dict(
             name='EditUser',
             input={
+                'backend_id': 'TenantName',
                 'domain': 'TenantDomain',
-                'admin_id': 'SamAccName',
+                'admin_id': 'Id',
                 'name': 'DisplayName',
                 'username': 'UserName',
                 'first_name': 'UserFirstName',
@@ -227,6 +228,7 @@ class UserAPI(SaltStackBaseAPI):
                 'email': 'UserEmail',
             },
             defaults={
+                'backend_id': "{backend.tenant.backend_id}",
                 'domain': "{backend.tenant.domain}",
             },
             **_base
