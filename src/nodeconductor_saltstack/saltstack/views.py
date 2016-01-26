@@ -42,7 +42,7 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
         backend = tenant.get_backend()
         return getattr(backend, self.backend_name)
 
-    def post_create(self, obj, backend_obj):
+    def post_create(self, obj, serializer, backend_obj):
         pass
 
     def post_update(self, obj, serializer):
@@ -64,7 +64,7 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
             **{k: v for k, v in serializer.validated_data.items() if k not in ('tenant',) and v is not None})
 
         obj = serializer.save(backend_id=backend_obj.id)
-        self.post_create(obj, backend_obj)
+        self.post_create(obj, serializer, backend_obj)
 
     @track_exceptions
     def perform_update(self, serializer):

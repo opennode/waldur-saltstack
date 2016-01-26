@@ -1,5 +1,6 @@
 import re
 
+from django.conf import settings
 from django.core.validators import ValidationError, RegexValidator
 
 
@@ -28,8 +29,14 @@ def domain_validator(hostname):
             raise ValidationError("Unallowed characters in label '%(label)s'." % {'label': label})
 
 
+# XXX: useless validator yet incorrect regex
 username_validator = RegexValidator(
     regex="^[A-Z, a-z, 0-9, ., !, #, $, %, &, ', *, +, -, /, =, ?, ^, _, `]+$",
     message=("Field value is not valid. Valid values are: Strings formed with characters from A to Z "
              "(uppercase or lowercase), digits from 0 to 9, !, #, $, %, &, ', *, +, -, /, =, ?, ^, _, `")
+)
+
+phone_validator = RegexValidator(
+    regex=settings.SMS_PHONE_REGEX,
+    message="Invalid phone number."
 )

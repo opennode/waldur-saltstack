@@ -121,19 +121,23 @@ class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedMo
 
 class UserPasswordSerializer(serializers.ModelSerializer):
 
+    notify = serializers.BooleanField(write_only=True, required=False)
+
     class Meta(object):
         model = models.User
-        fields = ('password',)
+        fields = ('password', 'notify')
 
 
 class UserSerializer(BasePropertySerializer):
+
+    notify = serializers.BooleanField(write_only=True, required=False)
 
     class Meta(BasePropertySerializer.Meta):
         model = models.User
         view_name = 'exchange-users-detail'
         fields = BasePropertySerializer.Meta.fields + (
             'name', 'first_name', 'last_name', 'username', 'password', 'mailbox_size',
-            'office', 'phone', 'department', 'company', 'title', 'manager', 'email'
+            'office', 'phone', 'department', 'company', 'title', 'manager', 'email', 'notify'
         )
         # password update is handled separately in views.py
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password', 'email')
