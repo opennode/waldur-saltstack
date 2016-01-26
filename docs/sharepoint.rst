@@ -83,6 +83,8 @@ the following steps must be done:
  2. Request initialisation of the tenant by issuing POST request to **/api/sharepoint-tenants/<tenant_uuid>/initialize/**
     with the payload defining:
 
+    - name - name of the main site collection;
+    - description - description of the main site collection;
     - template - link to a site collection template;
     - storage - size of a quota for the main site collection (in MBs);
     - user - link to a user, who will be granted administrative privileges.

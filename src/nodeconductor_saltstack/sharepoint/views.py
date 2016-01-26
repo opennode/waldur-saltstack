@@ -45,6 +45,8 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         storage = serializer.validated_data.pop('storage')
         template = serializer.validated_data.pop('template')
         user = serializer.validated_data.pop('user')
+        name = serializer.validated_data.pop('name')
+        description = serializer.validated_data.pop('description')
 
         if user.tenant != tenant:
             return response.Response(
@@ -53,7 +55,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         tenant.initialization_status = models.SharepointTenant.InitializationStatuses.INITIALIZING
         tenant.save()
 
-        tasks.initialize_tenant.delay(tenant.uuid.hex, template.uuid.hex, user.uuid.hex, storage)
+        tasks.initialize_tenant.delay(tenant.uuid.hex, template.uuid.hex, user.uuid.hex, storage, name, description)
 
         return response.Response({'status': 'Initialization was scheduled successfully.'}, status=status.HTTP_200_OK)
 

@@ -53,6 +53,10 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
         self.initialization_status = self.InitializationStatuses.INITIALIZED
         self.save()
 
+    def get_access_url(self):
+        if self.main_site_collection:
+            return self.main_site_collection.access_url
+
 
 class Template(structure_models.ServiceProperty):
     code = models.CharField(max_length=255)
@@ -91,10 +95,6 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
 
     class Defaults(object):
         """ Default parameters for initial tenant site collections """
-        main_site_collection = {
-            'name': 'Main',
-            'description': 'Main site collection',
-        }
         personal_site_collection = {
             'name': 'Personal',
             'description': 'Personal site collection',
