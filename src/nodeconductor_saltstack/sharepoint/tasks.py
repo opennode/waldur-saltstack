@@ -114,7 +114,6 @@ def initialize_tenant(tenant_uuid, template_uuid, user_uuid, storage):
         tenant.save()
         raise
     else:
-        print 'backend_collections_details', backend_collections_details
         # main site collection
         main = SiteCollection.objects.create(
             name=data['name'],
