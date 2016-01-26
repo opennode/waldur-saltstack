@@ -137,6 +137,7 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
 
     queryset = models.SiteCollection.objects.all()
     serializer_class = serializers.SiteCollectionSerializer
+    filter_class = filters.SiteCollectionFilter
     lookup_field = 'uuid'
 
     def get_serializer_class(self):

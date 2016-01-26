@@ -359,9 +359,26 @@ To create a new SharePoint site collection, issue POST request against **/api/sh
         "site_url": "test",
         "name": "Test",
         "description": "Test portal",
-        "storage": 100,
+        "storage": 100
     }
 
+
+List site collections
+---------------------
+
+To get site collection list, issue GET request against **/api/sharepoint-site-collections/**.
+
+The following filtering options are present (**?field_name=...**):
+
+- name
+- description
+- access_url
+- user_uuid
+- template_uuid
+- template_code
+- template_name
+- template_uuid
+- tenant_uuid
 
 
 Site collection display
@@ -374,24 +391,27 @@ Example rendering of the site object:
 .. code-block:: javascript
 
     {
-        "url": "http://example.com/api/sharepoint-site-collections/2ec3edc4b46b4b04bef17f48667ce04f/",
-        "uuid": "2ec3edc4b46b4b04bef17f48667ce04f",
-        "user": "http://example.com/api/sharepoint-users/db39a1e2a4794c31b1c6dd656df8d7e5/",
+        "url": "http://example.com/api/sharepoint-site-collections/f38896cb1b7c472f9a7ccb865206dadd/",
+        "uuid": "f38896cb1b7c472f9a7ccb865206dadd",
+        "template": "http://example.com/api/sharepoint-templates/37f4d32bc4c94a40bfaac7eb02b493e6/",
+        "template_code": "STS#0",
+        "template_name": "Team Site",
+        "user": "http://example.com/api/sharepoint-users/26b5e4e14b1e48ff82d1e7b663282a1d/",
+        "name": "Personal",
+        "description": "Personal site collection",
         "quotas": [
             {
-                "url": "http://example.com/api/quotas/587b4b252a7a4ea88b0d5217ef95cd7e/",
-                "uuid": "587b4b252a7a4ea88b0d5217ef95cd7e",
+                "url": "http://example.com/api/quotas/c726408671794852aa3791eb0467a309/",
+                "uuid": "c726408671794852aa3791eb0467a309",
                 "name": "storage",
-                "limit": 100.0,
+                "limit": 1000.0,
                 "usage": 0.0,
-                "scope": "http://example.com/api/sharepoint-site-collections/2ec3edc4b46b4b04bef17f48667ce04f/"
+                "scope": "http://example.com/api/sharepoint-site-collections/f38896cb1b7c472f9a7ccb865206dadd/"
             }
         ],
-        "access_url": "http://pavel-test-sharepoint-606.com/sites/test-site-collection",
-        "site_url": "test-site-collection",
-        "name": "test-site-collection",
-        "description": "test-site-collection"
-    },
+        "site_url": "",
+        "access_url": "http://ilja-test-780.com/"
+     }
 
 
 Delete site collection
