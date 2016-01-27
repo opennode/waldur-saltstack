@@ -121,19 +121,23 @@ class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedMo
 
 class UserPasswordSerializer(serializers.ModelSerializer):
 
+    notify = serializers.BooleanField(write_only=True, required=False)
+
     class Meta(object):
         model = models.User
-        fields = ('password',)
+        fields = ('password', 'notify')
 
 
 class UserSerializer(BasePropertySerializer):
+
+    notify = serializers.BooleanField(write_only=True, required=False)
 
     class Meta(BasePropertySerializer.Meta):
         model = models.User
         view_name = 'exchange-users-detail'
         fields = BasePropertySerializer.Meta.fields + (
             'name', 'first_name', 'last_name', 'username', 'password', 'mailbox_size',
-            'office', 'phone', 'department', 'company', 'title', 'manager', 'email'
+            'office', 'phone', 'department', 'company', 'title', 'manager', 'email', 'notify'
         )
         # password update is handled separately in views.py
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password', 'email')
@@ -151,6 +155,13 @@ class UserSerializer(BasePropertySerializer):
 
     def validate(self, attrs):
         tenant = self.instance.tenant if self.instance else attrs['tenant']
+
+        phone = attrs.get('phone')
+        if phone:
+            options = tenant.service_project_link.service.settings.options or {}
+            phone_regex = options.get('phone_regex')
+            if phone_regex and not re.search(phone_regex, phone):
+                raise serializers.ValidationError('Invalid phone number.')
 
         if not self.instance:
             deltas = {

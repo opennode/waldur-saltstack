@@ -28,6 +28,7 @@ def domain_validator(hostname):
             raise ValidationError("Unallowed characters in label '%(label)s'." % {'label': label})
 
 
+# XXX: useless validator yet incorrect regex
 username_validator = RegexValidator(
     regex="^[A-Z, a-z, 0-9, ., !, #, $, %, &, ', *, +, -, /, =, ?, ^, _, `]+$",
     message=("Field value is not valid. Valid values are: Strings formed with characters from A to Z "

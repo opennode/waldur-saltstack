@@ -153,7 +153,7 @@ class MainSiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
         main_site_collection_storage = attrs['storage']
         admin_site_collection_storage = SiteCollection.Defaults.admin_site_collection['storage']
         user_count = tenant.quotas.get(name=tenant.Quotas.user_count).limit
-        personal_site_collection_storage = SiteCollection.Defaults.presonal_site_collection['storage'] * user_count
+        personal_site_collection_storage = SiteCollection.Defaults.personal_site_collection['storage'] * user_count
         storage = main_site_collection_storage + admin_site_collection_storage + personal_site_collection_storage
         if storage_quota.is_exceeded(delta=storage):
             max_storage = (storage_quota.limit - storage_quota.usage -
