@@ -105,5 +105,3 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
             'description': 'Admin site collection',
             'storage': 100,
         }
-
-    # TODO: ADD max quota field and use it for tenant storage_size quota.

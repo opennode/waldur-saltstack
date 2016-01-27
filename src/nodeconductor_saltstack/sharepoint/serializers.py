@@ -61,10 +61,20 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             if sharepoint_storage_quota.is_exceeded(delta=attrs.get('storage')):
                 storage_left = sharepoint_storage_quota.limit - sharepoint_storage_quota.usage
                 raise serializers.ValidationError({
-                    'storage': "Total tenant size should be lower than %s MB" % storage_left})
+                    'storage': "Total tenant storage size should be lower than %s MB" % storage_left})
 
-            # TODO: Add validation on user count vs storage size.
-            # TODO: Check tenant domain is unique
+            users_storage = attrs['user_count'] * SiteCollection.Defaults.personal_site_collection['storage']
+            admin_storage = SiteCollection.Defaults.admin_site_collection['storage']
+            if users_storage + admin_storage > attrs['storage']:
+                raise serializers.ValidationError(
+                    'Tenant storage size should be bigger than %s MB, if it needs to support %s users.' %
+                    (users_storage + admin_storage, attrs['user_count'])
+                )
+
+            kwargs = dict(domain=attrs['domain'], service_project_link__service__settings=spl.service.settings)
+            if SharepointTenant.objects.filter(**kwargs).exists():
+                raise serializers.ValidationError({'domain': 'Tenant domain should be unique.'})
+
         return attrs
 
 
@@ -105,6 +115,11 @@ class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSeria
             'tenant': ('uuid', 'domain')
         }
 
+    def validate_tenant(self, tenant):
+        if tenant.state != SharepointTenant.States.ONLINE:
+            raise serializers.ValidationError('It is impossible to create site collection if tenant is not online.')
+        return tenant
+
     def validate(self, attrs):
         if not self.instance:
             tenant = attrs['tenant']
@@ -137,6 +152,12 @@ class MainSiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
             'url': {'lookup_field': 'uuid'},
             'user': {'lookup_field': 'uuid', 'view_name': 'sharepoint-users-detail'},
         }
+
+    def validate_user(self, user):
+        if user.tenant.state != SharepointTenant.States.ONLINE:
+            raise serializers.ValidationError(
+                'It is impossible to create site collection if user tenant is not online.')
+        return user
 
     def validate(self, attrs):
         user = attrs['user']
@@ -172,6 +193,13 @@ class SiteCollectionSerializer(MainSiteCollectionSerializer):
         )
         read_only_fields = MainSiteCollectionSerializer.Meta.read_only_fields + ('access_url',)
 
+    def validate_user(self, user):
+        user = super(SiteCollectionSerializer, self).validate_user(user)
+        if user.tenant.initialization_status != SharepointTenant.InitializationStatuses.INITIALIZED:
+            raise serializers.ValidationError(
+                'It is impossible to create site collection if user tenant is not initialized.')
+        return user
+
     def validate(self, attrs):
         user = attrs['user']
         tenant = user.tenant
@@ -180,6 +208,11 @@ class SiteCollectionSerializer(MainSiteCollectionSerializer):
             max_storage = storage_quota.limit - storage_quota.usage
             raise serializers.ValidationError(
                 'Storage quota is over limit. Site collection cannot be greater then %s MB' % max_storage)
+
+        if SiteCollection.object.filter(name=attrs['name'], user__tenant=tenant).exists():
+            raise serializers.ValidationError(
+                'Site collection with name "%s" already exists in such tenant' % attrs['name'])
+
         return attrs
 
 
