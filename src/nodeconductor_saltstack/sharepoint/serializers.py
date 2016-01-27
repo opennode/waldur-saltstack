@@ -63,8 +63,15 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
                 raise serializers.ValidationError({
                     'storage': "Total tenant size should be lower than %s MB" % storage_left})
 
-            # TODO: Add validation on user count vs storage size.
-            # TODO: Check tenant domain is unique
+            users_storage = attrs['user_count'] * SiteCollection.Defaults.personal_site_collection['storage']
+            admin_storage = SiteCollection.Defaults.admin_site_collection['storage']
+
+            if users_storage + admin_storage > attrs['storage']:
+                raise serializers.ValidationError(
+                    'Tenant size should be bigger then %s MB, if it needs to support %s users.' %
+                    (users_storage + admin_storage, attrs['user_count'])
+                )
+
         return attrs
 
 

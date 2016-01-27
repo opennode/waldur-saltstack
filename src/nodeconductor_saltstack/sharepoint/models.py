@@ -20,7 +20,7 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='sharepoint_tenants', on_delete=models.PROTECT)
 
-    domain = models.CharField(max_length=255)
+    domain = models.CharField(max_length=255, unique=True)
     initialization_status = models.CharField(
         max_length=20, choices=InitializationStatuses.CHOICES, default=InitializationStatuses.NOT_INITIALIZED)
 
@@ -86,6 +86,9 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
     template = models.ForeignKey(Template, related_name='site_collections', blank=True, null=True)
     access_url = models.CharField(max_length=255)
 
+    class Meta(object):
+        unique_together = (('user__tenant', 'site_url'),)
+
     @classmethod
     def get_url_name(cls):
         return 'sharepoint-site-collections'
@@ -105,5 +108,3 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
             'description': 'Admin site collection',
             'storage': 100,
         }
-
-    # TODO: ADD max quota field and use it for tenant storage_size quota.
