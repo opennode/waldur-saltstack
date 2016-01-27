@@ -86,9 +86,6 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
     template = models.ForeignKey(Template, related_name='site_collections', blank=True, null=True)
     access_url = models.CharField(max_length=255)
 
-    class Meta(object):
-        unique_together = (('user__tenant', 'site_url'),)
-
     @classmethod
     def get_url_name(cls):
         return 'sharepoint-site-collections'
