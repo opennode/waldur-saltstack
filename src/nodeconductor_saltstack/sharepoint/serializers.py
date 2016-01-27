@@ -61,16 +61,19 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             if sharepoint_storage_quota.is_exceeded(delta=attrs.get('storage')):
                 storage_left = sharepoint_storage_quota.limit - sharepoint_storage_quota.usage
                 raise serializers.ValidationError({
-                    'storage': "Total tenant size should be lower than %s MB" % storage_left})
+                    'storage': "Total tenant storage size should be lower than %s MB" % storage_left})
 
             users_storage = attrs['user_count'] * SiteCollection.Defaults.personal_site_collection['storage']
             admin_storage = SiteCollection.Defaults.admin_site_collection['storage']
-
             if users_storage + admin_storage > attrs['storage']:
                 raise serializers.ValidationError(
-                    'Tenant size should be bigger then %s MB, if it needs to support %s users.' %
+                    'Tenant storage size should be bigger than %s MB, if it needs to support %s users.' %
                     (users_storage + admin_storage, attrs['user_count'])
                 )
+
+            kwargs = dict(domain=attrs['domain'], service_project_link__service__settings=spl.service.settings)
+            if SharepointTenant.objects.filter(**kwargs).exists():
+                raise serializers.ValidationError({'domain': 'Tenant domain should be unique.'})
 
         return attrs
 

@@ -20,7 +20,7 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='sharepoint_tenants', on_delete=models.PROTECT)
 
-    domain = models.CharField(max_length=255, unique=True)
+    domain = models.CharField(max_length=255)
     initialization_status = models.CharField(
         max_length=30, choices=InitializationStatuses.CHOICES, default=InitializationStatuses.NOT_INITIALIZED)
 
