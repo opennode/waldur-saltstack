@@ -5,6 +5,7 @@ from django.db import models, migrations
 import django.utils.timezone
 import django_fsm
 import nodeconductor.core.models
+import nodeconductor.core.validators
 import django.db.models.deletion
 import nodeconductor.logging.log
 import uuidfield.fields
@@ -25,7 +26,7 @@ class Migration(migrations.Migration):
                 ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, verbose_name='created', editable=False)),
                 ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, verbose_name='modified', editable=False)),
                 ('description', models.CharField(max_length=500, verbose_name='description', blank=True)),
-                ('name', models.CharField(max_length=150, verbose_name='name')),
+                ('name', models.CharField(max_length=150, verbose_name='name', validators=[nodeconductor.core.validators.validate_name])),
                 ('uuid', uuidfield.fields.UUIDField(unique=True, max_length=32, editable=False, blank=True)),
                 ('error_message', models.TextField(blank=True)),
                 ('billing_backend_id', models.CharField(help_text='ID of a resource in backend', max_length=255, blank=True)),

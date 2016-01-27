@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 from django.db import models, migrations
 import uuidfield.fields
 
+import nodeconductor.core.validators
+
 
 class Migration(migrations.Migration):
 
@@ -56,7 +58,7 @@ class Migration(migrations.Migration):
             name='Template',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.CharField(max_length=150, verbose_name='name')),
+                ('name', models.CharField(max_length=150, verbose_name='name', validators=[nodeconductor.core.validators.validate_name])),
                 ('uuid', uuidfield.fields.UUIDField(unique=True, max_length=32, editable=False, blank=True)),
                 ('backend_id', models.CharField(max_length=255, db_index=True)),
                 ('code', models.CharField(max_length=255)),
@@ -71,7 +73,7 @@ class Migration(migrations.Migration):
             name='User',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.CharField(max_length=150, verbose_name='name')),
+                ('name', models.CharField(max_length=150, verbose_name='name', validators=[nodeconductor.core.validators.validate_name])),
                 ('uuid', uuidfield.fields.UUIDField(unique=True, max_length=32, editable=False, blank=True)),
                 ('backend_id', models.CharField(db_index=True, max_length=255)),
                 ('email', models.EmailField(max_length=255)),

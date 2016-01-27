@@ -17,4 +17,10 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(to='exchange.User'),
             preserve_default=True,
         ),
+        migrations.AlterField(
+            model_name='user',
+            name='username',
+            field=models.CharField(max_length=255),
+            preserve_default=True,
+        ),
     ]
