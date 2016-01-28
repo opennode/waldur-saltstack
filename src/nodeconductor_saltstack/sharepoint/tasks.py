@@ -107,7 +107,7 @@ def initialize_tenant(tenant_uuid, template_uuid, user_uuid, storage, main_name,
             'description': main_description,
             'template_code': template.code,
             'storage': storage,
-            'user_count': tenant.quotas.get(name=tenant.Quotas.user_count).limit,
+            'user_count': int(tenant.quotas.get(name=tenant.Quotas.user_count).limit),
             'admin_id': user.admin_id,
         }
         backend_collections_details = backend.site_collections.create_main(**data)
