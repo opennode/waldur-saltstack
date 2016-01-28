@@ -148,7 +148,7 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
 
     def perform_create(self, serializer):
         user = serializer.validated_data['user']
-        template = serializer.validated_data.pop('template')
+        template = serializer.validated_data['template']
         backend = user.tenant.get_backend()
 
         if user.tenant.state != models.SharepointTenant.States.ONLINE:

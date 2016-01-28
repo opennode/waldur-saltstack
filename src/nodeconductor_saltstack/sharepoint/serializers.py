@@ -209,7 +209,7 @@ class SiteCollectionSerializer(MainSiteCollectionSerializer):
             raise serializers.ValidationError(
                 'Storage quota is over limit. Site collection cannot be greater then %s MB' % max_storage)
 
-        if SiteCollection.object.filter(name=attrs['name'], user__tenant=tenant).exists():
+        if SiteCollection.objects.filter(name=attrs['name'], user__tenant=tenant).exists():
             raise serializers.ValidationError(
                 'Site collection with name "%s" already exists in such tenant' % attrs['name'])
 
