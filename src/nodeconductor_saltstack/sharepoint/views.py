@@ -84,6 +84,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 first_name=serializer.validated_data['first_name'],
                 last_name=serializer.validated_data['last_name'],
                 username=serializer.validated_data['username'],
+                name=serializer.validated_data['name'],
                 email=serializer.validated_data['email'])
 
         except SaltStackBackendError as e:

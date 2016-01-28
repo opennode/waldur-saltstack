@@ -217,7 +217,6 @@ class UserAPI(SaltStackBaseAPI):
             defaults={
                 'backend_id': "{backend.tenant.backend_id}",
                 'domain': "{backend.tenant.domain}",
-                'name': "{username}",
             },
             **_base
         )
