@@ -127,10 +127,12 @@ class SiteCollectionAPI(SaltStackBaseAPI):
             output={
                 "My Site URL":  "personal_site_collection_url",
                 "My Site Quota [MB]":  'personal_site_collection_storage',
+                "My Site Template": "personal_site_collection_template_code",
                 "Main Site URL":  "main_site_collection_url",
                 "Main Site Quota [MB]": "main_site_collection_storage",
                 "Admin Site Admin URL": "admin_site_collection_url",
                 "Admin Site Quota [MB]": "admin_site_collection_storage",
+                "Admin Site Template": "admin_site_collection_template_code",
                 "Site Subscription ID":  "subscription_id",
             },
             clean={

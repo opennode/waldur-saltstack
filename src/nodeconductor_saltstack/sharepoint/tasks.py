@@ -129,22 +129,28 @@ def initialize_tenant(tenant_uuid, template_uuid, user_uuid, storage, main_name,
         tenant.add_quota_usage(SharepointTenant.Quotas.storage, storage)
         tenant.main_site_collection = main
 
+        template_code = backend_collections_details.admin_site_collection_template_code
         admin = SiteCollection.objects.create(
             name=SiteCollection.Defaults.admin_site_collection['name'],
             description=SiteCollection.Defaults.admin_site_collection['description'],
             access_url=backend_collections_details.admin_site_collection_url,
             user=user,
+            template=Template.objects.filter(
+                code=template_code, settings=tenant.service_project_link.service.settings).first(),
         )
         storage = backend_collections_details.admin_site_collection_storage
         admin.set_quota_limit(SiteCollection.Quotas.storage, storage)
         tenant.add_quota_usage(SharepointTenant.Quotas.storage, storage)
         tenant.admin_site_collection = admin
 
+        template_code = backend_collections_details.personal_site_collection_template_code
         personal = SiteCollection.objects.create(
             name=SiteCollection.Defaults.personal_site_collection['name'],
             description=SiteCollection.Defaults.personal_site_collection['description'],
             access_url=backend_collections_details.personal_site_collection_url,
             user=user,
+            template=Template.objects.filter(
+                code=template_code, settings=tenant.service_project_link.service.settings).first(),
         )
         storage = backend_collections_details.personal_site_collection_storage
         personal.set_quota_limit(SiteCollection.Quotas.storage, storage)
