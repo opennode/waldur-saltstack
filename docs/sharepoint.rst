@@ -410,7 +410,8 @@ Example rendering of the site object:
             }
         ],
         "site_url": "",
-        "access_url": "http://ilja-test-780.com/"
+        "access_url": "http://ilja-test-780.com/",
+        "deletable": false
      }
 
 
@@ -418,6 +419,7 @@ Delete site collection
 ----------------------
 
 To delete a site collection, issue DELETE request against **/api/sharepoint-site-collections/<site_collection_uuid>/**.
+Is is impossible to delete tenant initial site collections (main, personal and admin).
 
 
 Change storage quota

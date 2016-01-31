@@ -105,3 +105,7 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
             'description': 'Admin site collection',
             'storage': 100,
         }
+
+    @property
+    def deletable(self):
+        return self not in self.user.tenant.get_default_site_collections()

@@ -182,11 +182,10 @@ class MainSiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
 class SiteCollectionSerializer(MainSiteCollectionSerializer):
 
     storage = serializers.IntegerField(write_only=True, help_text='Site collection size limit, MB')
-
     quotas = QuotaSerializer(many=True, read_only=True)
 
     class Meta(MainSiteCollectionSerializer.Meta):
-        fields = MainSiteCollectionSerializer.Meta.fields + ('quotas', 'site_url', 'access_url')
+        fields = MainSiteCollectionSerializer.Meta.fields + ('quotas', 'site_url', 'access_url', 'deletable')
         extra_kwargs = dict(
             tenant={'lookup_field': 'uuid', 'view_name': 'sharepoint-tenants-detail'},
             **MainSiteCollectionSerializer.Meta.extra_kwargs
