@@ -175,8 +175,7 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
             user.tenant.add_quota_usage(models.SharepointTenant.Quotas.storage, storage)
 
     def perform_destroy(self, site_collection):
-        tenant = site_collection.user.tenant
-        if site_collection in tenant.get_default_site_collections():
+        if not site_collection.deletable:
             raise exceptions.PermissionDenied(
                 'It is impossible to delete default tenant site collections.')
         backend = site_collection.user.tenant.get_backend()
