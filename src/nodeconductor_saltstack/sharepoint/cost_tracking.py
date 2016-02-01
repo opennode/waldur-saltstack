@@ -30,8 +30,8 @@ class SaltStackCostTrackingBackend(CostTrackingBackend):
 
     @classmethod
     def get_used_items(cls, resource):
-        backend = resource.get_backend()
-        storage = sum(s.usage for s in backend.site_collections.list())
+        tenant = resource
+        storage = tenant.quotas.get(name=SharepointTenant.Quotas.storage).usage
         return [
             (Type.USAGE, Type.CHOICES[Type.USAGE], 1),
             (Type.STORAGE, Type.CHOICES[Type.STORAGE], storage),
