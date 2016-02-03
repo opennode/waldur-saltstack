@@ -225,6 +225,29 @@ Example of a request:
     }
 
 
+Create users in a bulk request
+------------------------------
+
+In order to create several users at once - issue POST request against **/api/exchange-tenants/<tenant_uuid>/users/**.
+It could be either 'application/json' or 'multipart/form-data' with parameter called 'csv'.
+Valid CSV with a header and comma delimiter is expected, all parameters from ordinary user creation are accepted
+except: 'tenant' and 'manager'
+
+Example of a valid request:
+
+.. code-block:: http
+
+    POST /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/users/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "csv": "name,first_name,last_name,username,password,mailbox_size,office,phone,department,company,title,email\nIvan P,Ivan,Petrov,ivan.p,Y16j$Keub@G,2,,,,,,ivan.p@test.com\nZoe,Zoe,Chloe,zoe,pBo07@WZ-te,2,,,,,,zoe@test.com"
+    }
+
+
 Update user
 -----------
 

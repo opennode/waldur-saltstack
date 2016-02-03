@@ -37,6 +37,17 @@ def destroy(tenant_uuid, force=False):
     )
 
 
+@shared_task(name='nodeconductor.exchange.create_user')
+def create_user(tenant_uuid, notify=False, **kwargs):
+    tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
+    backend = tenant.get_backend()
+    backend_user = backend.users.create(**kwargs)
+
+    user = User.objects.create(tenant=tenant, backend_id=backend_user.id, **kwargs)
+    if notify:
+        user.notify()
+
+
 @shared_task
 @save_error_message
 def schedule_deletion(tenant_uuid):
