@@ -11,6 +11,7 @@ from ..saltstack.views import BasePropertyViewSet, track_exceptions
 class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
     queryset = models.ExchangeTenant.objects.all()
     serializer_class = serializers.TenantSerializer
+    filter_class = filters.TenantFilter
 
     def perform_provision(self, serializer):
         resource = serializer.save()
