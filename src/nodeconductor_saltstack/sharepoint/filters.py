@@ -1,6 +1,7 @@
 import django_filters
 
 from nodeconductor.core import filters as core_filters
+from nodeconductor.structure.filters import BaseResourceFilter
 
 from . import models
 
@@ -43,23 +44,13 @@ class UserFilter(django_filters.FilterSet):
         ]
 
 
-class TenantFilter(django_filters.FilterSet):
-    name = django_filters.CharFilter(lookup_type='icontains')
+class TenantFilter(BaseResourceFilter):
     domain = django_filters.CharFilter(lookup_type='icontains')
 
-    class Meta(object):
+    class Meta(BaseResourceFilter.Meta):
         model = models.SharepointTenant
-        fields = [
-            'name',
-            'domain',
-        ]
-        order_by = [
-            'name',
-            'domain',
-            # desc
-            '-name',
-            '-domain',
-        ]
+        fields = BaseResourceFilter.Meta.fields + ('domain',)
+        order_by = BaseResourceFilter.Meta.order_by + ['domain', '-domain']
 
 
 class SiteCollectionFilter(django_filters.FilterSet):

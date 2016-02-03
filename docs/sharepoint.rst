@@ -112,9 +112,30 @@ Tenant display
 
 To get tenant data - issue GET request against **/api/sharepoint-tenants/<tenant_uuid>/**.
 
-- access_url - Main site collection URL
-- admin_url - ???
+- access_url - Main site collection URL.
+- admin_url - Admin site collection URL.
 - management_ip - IP of the main site collection. Make sure it resolves to the domain. (Optional)
+
+Filtering is possible by:
+
+- ?customer
+- ?customer_uuid
+- ?customer_name
+- ?customer_native_name
+- ?customer_abbreviation
+- ?project
+- ?project_uuid
+- ?project_name
+- ?project_group
+- ?project_group_uuid
+- ?project_group_name
+- ?service_uuid
+- ?service_name
+- ?name
+- ?description
+- ?state
+- ?uuid
+- ?domain
 
 Example rendering of the tenant object:
 

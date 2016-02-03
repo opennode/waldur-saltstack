@@ -37,6 +37,28 @@ Tenant display
 
 To get tenant data - issue GET request against **/api/exchange-tenants/<tenant_uuid>/**.
 
+Filtering is possible by:
+
+- ?customer
+- ?customer_uuid
+- ?customer_name
+- ?customer_native_name
+- ?customer_abbreviation
+- ?project
+- ?project_uuid
+- ?project_name
+- ?project_group
+- ?project_group_uuid
+- ?project_group_name
+- ?service_uuid
+- ?service_name
+- ?name
+- ?description
+- ?state
+- ?uuid
+- ?domain
+
+
 Example rendering of the tenant object:
 
 .. code-block:: javascript
