@@ -89,7 +89,8 @@ def delete(tenant_uuid):
 def sync_spl_quotas(spl_id):
     spl = SaltStackServiceProjectLink.objects.get(id=spl_id)
     tenants = SharepointTenant.objects.filter(service_project_link=spl)
-    spl.set_quota_usage('sharepoint_storage', sum([t.storage_size for t in tenants]))
+    storage = sum([t.quotas.get(name=SharepointTenant.Quotas.storage).limit for t in tenants])
+    spl.set_quota_usage('sharepoint_storage', storage)
     spl.set_quota_usage('sharepoint_tenant_number', tenants.count())
 
 
