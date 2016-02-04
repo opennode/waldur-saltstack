@@ -1,6 +1,6 @@
 from nodeconductor.core.tasks import send_task
 
-from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend
+from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend, ServiceSettingsAPI
 from .models import Template
 
 
@@ -268,6 +268,7 @@ class SharepointBackend(SaltStackBaseBackend):
         'tenants': TenantAPI,
         'templates': TemplateAPI,
         'users': UserAPI,
+        'service_settings': ServiceSettingsAPI,
     }
 
     def __init__(self, *args, **kwargs):
@@ -287,6 +288,10 @@ class SharepointBackend(SaltStackBaseBackend):
                 })
 
         map(lambda i: i.delete(), cur_tmpls.values())
+
+        storage = self.service_settings.get_storage()
+        self.settings.set_quota_limit(self.settings.Quotas.sharepoint_storage, storage.used + storage.free)
+        self.settings.set_quota_usage(self.settings.Quotas.sharepoint_storage, storage.used)
 
     def provision(self, tenant, **kwargs):
         send_task('sharepoint', 'provision')(tenant.uuid.hex, **kwargs)

@@ -55,7 +55,7 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
     tenant = transition_entity
     backend = tenant.get_backend()
     # generate a random name to be used as unique tenant id in MS Exchange
-    # Example of formt: NC_28052BF28A
+    # Example of format: NC_28052BF28A
     tenant_backend_id = 'NC_%s' % binascii.b2a_hex(os.urandom(5)).upper()
 
     backend.tenants.create(

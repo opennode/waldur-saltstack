@@ -1,6 +1,6 @@
 from nodeconductor.core.tasks import send_task
 
-from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend
+from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend, ServiceSettingsAPI
 
 
 def parse_size(size_str):
@@ -366,11 +366,17 @@ class ExchangeBackend(SaltStackBaseBackend):
         'groups': DistributionGroupAPI,
         'tenants': TenantAPI,
         'users': UserAPI,
+        'service_settings': ServiceSettingsAPI,
     }
 
     def __init__(self, *args, **kwargs):
         super(ExchangeBackend, self).__init__(*args, **kwargs)
         self.tenant = kwargs.get('tenant')
+
+    def sync_backend(self):
+        storage = self.service_settings.get_storage()
+        self.settings.set_quota_limit(self.settings.Quotas.exchange_storage, storage.used + storage.free)
+        self.settings.set_quota_usage(self.settings.Quotas.exchange_storage, storage.used)
 
     def provision(self, tenant):
         send_task('exchange', 'provision')(tenant.uuid.hex)

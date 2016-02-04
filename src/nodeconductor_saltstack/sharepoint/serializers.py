@@ -57,11 +57,22 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             if sharepoint_tenant_number_quota.is_exceeded(delta=1):
                 raise serializers.ValidationError("You have reached the maximum number of allowed tenants.")
 
-            sharepoint_storage_quota = spl.quotas.get(name=spl.Quotas.sharepoint_storage)
-            if sharepoint_storage_quota.is_exceeded(delta=attrs.get('storage')):
-                storage_left = sharepoint_storage_quota.limit - sharepoint_storage_quota.usage
+            spl_storage_quota = spl.quotas.get(name=spl.Quotas.sharepoint_storage)
+            if spl_storage_quota.is_exceeded(delta=attrs.get('storage')):
+                storage_left = spl_storage_quota.limit - spl_storage_quota.usage
                 raise serializers.ValidationError({
-                    'storage': "Total tenant storage size should be lower than %s MB" % storage_left})
+                    'storage': ("SPL quota exceeded: Total tenant storage size should be lower than %s MB"
+                                % storage_left)
+                })
+
+            service_settings_storage_quota = spl.service.settings.quotas.get(
+                name=spl.service.settings.Quotas.sharepoint_storage)
+            if service_settings_storage_quota.is_exceeded(delta=attrs.get('storage')):
+                storage_left = service_settings_storage_quota.limit - service_settings_storage_quota.usage
+                raise serializers.ValidationError({
+                    'max_users': ("Service quota exceeded: Total tenant storage size should be lower than %s MB"
+                                  % storage_left)
+                })
 
             users_storage = attrs['user_count'] * SiteCollection.Defaults.personal_site_collection['storage']
             admin_storage = SiteCollection.Defaults.admin_site_collection['storage']

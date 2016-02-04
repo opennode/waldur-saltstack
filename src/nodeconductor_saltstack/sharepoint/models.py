@@ -30,12 +30,12 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
 
     class Quotas(QuotaModelMixin.Quotas):
         storage = QuotaField(
-            default_limit=5 * 1024,
+            default_limit=0,
         )
         user_count = CounterQuotaField(
             target_models=lambda: [User],
             path_to_scope='tenant',
-            default_limit=10,
+            default_limit=0,
         )
 
     @classmethod
@@ -52,6 +52,20 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
     def get_access_url(self):
         if self.main_site_collection:
             return self.main_site_collection.access_url
+
+    def set_quota_limit(self, quota_name, limit):
+        # XXX: Increase service settings storage quota usage on tenant limit update.
+        #      This type of update logic should be moved to separate quota field. Issue NC-1149.
+        if str(quota_name) == self.Quotas.storage.name:
+            old_limit = self.quotas.get(name=quota_name).limit
+            if old_limit == -1:
+                diff = limit
+            else:
+                diff = limit - old_limit
+            if diff:
+                service_settings = self.service_project_link.service.settings
+                service_settings.add_quota_usage(service_settings.Quotas.sharepoint_storage, diff)
+        super(SharepointTenant, self).set_quota_limit(quota_name, limit)
 
 
 class Template(structure_models.ServiceProperty):
