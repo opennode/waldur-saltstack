@@ -1,6 +1,4 @@
-import csv
-import StringIO
-
+from cStringIO import StringIO
 from django.http import HttpResponse
 
 from rest_framework.decorators import detail_route
@@ -8,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 
 from nodeconductor.core.tasks import send_task
+from nodeconductor.core.csv import UnicodeDictReader, UnicodeDictWriter
 from nodeconductor.structure import views as structure_views
 
 from . import filters, models, serializers
@@ -58,9 +57,9 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
 
             csvfile = request.data['csv']
             if isinstance(csvfile, basestring):
-                csvfile = StringIO.StringIO(csvfile)
+                csvfile = StringIO(csvfile.encode('utf-8'))
 
-            reader = csv.DictReader(csvfile)
+            reader = UnicodeDictReader(csvfile)
             tenant_url = self.get_serializer(instance=tenant).data['url']
             data = [dict(tenant=tenant_url, **row) for row in reader]
 
@@ -85,11 +84,9 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
 
             exclude = ('url', 'tenant', 'tenant_uuid', 'tenant_domain', 'manager', 'notify')
             headers = [f for f in serializers.UserSerializer.Meta.fields if f not in exclude]
-            writer = csv.DictWriter(response, fieldnames=headers, extrasaction='ignore')
+            writer = UnicodeDictWriter(response, fieldnames=headers)
             writer.writeheader()
-            for row in serializer.data:
-                writer.writerow(row)
-
+            writer.writerows(serializer.data)
             return response
 
 
