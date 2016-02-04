@@ -1,7 +1,7 @@
 from celery import shared_task, chain
 from django.utils import timezone
 
-from nodeconductor.core.tasks import save_error_message, transition
+from nodeconductor.core.tasks import save_error_message, transition, throttle
 from nodeconductor.structure.tasks import sync_service_project_links
 
 from ..saltstack.models import SaltStackServiceProjectLink
@@ -35,6 +35,18 @@ def destroy(tenant_uuid, force=False):
         link=delete.si(tenant_uuid),
         link_error=error_callback,
     )
+
+
+@shared_task(name='nodeconductor.exchange.create_user')
+def create_user(tenant_uuid, notify=False, **kwargs):
+    tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
+    with throttle(key=tenant.service_project_link.service.settings.backend_url, concurrency=3):
+        backend = tenant.get_backend()
+        backend_user = backend.users.create(**kwargs)
+
+        user = User.objects.create(tenant=tenant, backend_id=backend_user.id, **kwargs)
+        if notify:
+            user.notify()
 
 
 @shared_task

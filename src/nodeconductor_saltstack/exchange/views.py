@@ -1,7 +1,12 @@
+from cStringIO import StringIO
+from django.http import HttpResponse
+
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 
+from nodeconductor.core.tasks import send_task
+from nodeconductor.core.csv import UnicodeDictReader, UnicodeDictWriter
 from nodeconductor.structure import views as structure_views
 
 from . import filters, models, serializers
@@ -38,6 +43,51 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         elif request.method == 'GET':
             data = serializers.ExchangeDomainSerializer(instance=tenant, context={'request': request}).data
             return Response(data)
+
+    # XXX: put was added as portal has a temporary bug with widget update
+    @detail_route(methods=['get', 'post', 'put'])
+    @track_exceptions
+    def users(self, request, pk=None, **kwargs):
+        tenant = self.get_object()
+
+        if request.method in ('POST', 'PUT'):
+            if 'csv' not in request.data:
+                return Response("Expecting 'csv' parameter as a file or JSON string",
+                                status=HTTP_400_BAD_REQUEST)
+
+            csvfile = request.data['csv']
+            if isinstance(csvfile, basestring):
+                csvfile = StringIO(csvfile.encode('utf-8'))
+
+            reader = UnicodeDictReader(csvfile)
+            tenant_url = self.get_serializer(instance=tenant).data['url']
+            data = [dict(tenant=tenant_url, **row) for row in reader]
+
+            serializer = serializers.UserSerializer(data=data, many=True, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+
+            for user in serializer.validated_data:
+                del user['tenant']
+                send_task('exchange', 'create_user')(
+                    tenant_uuid=tenant.uuid.hex,
+                    notify=user.pop('notify'),
+                    **user)
+
+            return Response("%s users scheduled for creation" % len(serializer.validated_data))
+
+        elif request.method == 'GET':
+            users = models.User.objects.filter(tenant=tenant)
+            serializer = serializers.UserSerializer(instance=users, many=True, context={'request': request})
+
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="%s_users.csv"' % tenant.backend_id
+
+            exclude = ('url', 'tenant', 'tenant_uuid', 'tenant_domain', 'manager', 'notify')
+            headers = [f for f in serializers.UserSerializer.Meta.fields if f not in exclude]
+            writer = UnicodeDictWriter(response, fieldnames=headers)
+            writer.writeheader()
+            writer.writerows(serializer.data)
+            return response
 
 
 class UserViewSet(BasePropertyViewSet):
