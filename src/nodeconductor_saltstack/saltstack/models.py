@@ -25,7 +25,7 @@ def _get_sharepoint_tenant_model():
 class SaltStackServiceProjectLink(QuotaModelMixin, structure_models.ServiceProjectLink):
     service = models.ForeignKey(SaltStackService)
 
-    class Meta(object):
+    class Meta(structure_models.ServiceProjectLink.Meta):
         verbose_name = 'SaltStack service project link'
         verbose_name_plural = 'SaltStack service project links'
 
