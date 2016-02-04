@@ -90,16 +90,8 @@ class GroupViewSet(BasePropertyViewSet):
         if members:
             backend.add_member(id=group.backend_id, user_id=','.join(members))
 
-    @track_exceptions
-    def perform_update(self, serializer):
-        group = self.get_object()
+    def post_update(self, group, serializer):
         backend = self.get_backend(group.tenant)
-        changed = {
-            k: v for k, v in serializer.validated_data.items()
-            if v and k != 'members' and getattr(group, k) != v}
-        if changed:
-            backend.change(id=group.backend_id, **changed)
-
         new_members = set(u.backend_id for u in serializer.validated_data['members'])
         cur_members = set(group.members.values_list('backend_id', flat=True))
 
@@ -109,8 +101,6 @@ class GroupViewSet(BasePropertyViewSet):
 
         for old_user in cur_members - new_members:
             backend.del_member(id=group.backend_id, user_id=old_user)
-
-        serializer.save()
 
     @detail_route(methods=['get'])
     def members(self, request, pk=None, **kwargs):
