@@ -126,6 +126,7 @@ class UserPasswordSerializer(serializers.ModelSerializer):
     class Meta(object):
         model = models.User
         fields = ('password', 'notify')
+        read_only_fields = ('password',)
 
 
 class UserSerializer(BasePropertySerializer):
@@ -145,6 +146,7 @@ class UserSerializer(BasePropertySerializer):
             manager={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
             **BasePropertySerializer.Meta.extra_kwargs
         )
+        protected_fields = BasePropertySerializer.Meta.protected_fields + ('notify',)
 
     def validate_username(self, value):
         if value:
@@ -184,6 +186,12 @@ class UserSerializer(BasePropertySerializer):
             raise serializers.ValidationError(str(e))
 
         return attrs
+
+    def create(self, validated_data):
+        notify = validated_data.pop('notify')
+        user = super(UserSerializer, self).create(validated_data)
+        validated_data['notify'] = notify
+        return user
 
 
 class ContactSerializer(BasePropertySerializer):
