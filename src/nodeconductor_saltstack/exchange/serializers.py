@@ -146,6 +146,7 @@ class UserSerializer(BasePropertySerializer):
             manager={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
             **BasePropertySerializer.Meta.extra_kwargs
         )
+        protected_fields = BasePropertySerializer.Meta.protected_fields + ('notify',)
 
     def validate_username(self, value):
         if value:
