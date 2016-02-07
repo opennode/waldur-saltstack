@@ -96,6 +96,12 @@ class UserViewSet(BasePropertyViewSet):
     filter_class = filters.UserFilter
     backend_name = 'users'
 
+    def get_serializer_class(self):
+        serializer_class = super(UserViewSet, self).get_serializer_class()
+        if self.action == 'password':
+            serializer_class = serializers.UserPasswordSerializer
+        return serializer_class
+
     def post_create(self, user, serializer, backend_user):
         user.password = backend_user.password
         user.save()
@@ -113,7 +119,8 @@ class UserViewSet(BasePropertyViewSet):
         user.password = response.password
         user.save()
 
-        serializer = serializers.UserPasswordSerializer(instance=user, context={'request': request})
+        serializer_class = self.get_serializer_class()
+        serializer = serializer_class(instance=user, data=request.data, context={'request': request})
         serializer.is_valid()
         if serializer.validated_data['notify']:
             user.notify()

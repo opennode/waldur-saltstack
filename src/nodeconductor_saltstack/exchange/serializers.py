@@ -126,6 +126,7 @@ class UserPasswordSerializer(serializers.ModelSerializer):
     class Meta(object):
         model = models.User
         fields = ('password', 'notify')
+        read_only_fields = ('password',)
 
 
 class UserSerializer(BasePropertySerializer):
