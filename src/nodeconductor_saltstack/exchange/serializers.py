@@ -186,6 +186,12 @@ class UserSerializer(BasePropertySerializer):
 
         return attrs
 
+    def create(self, validated_data):
+        notify = validated_data.pop('notify')
+        user = super(UserSerializer, self).create(validated_data)
+        validated_data['notify'] = notify
+        return user
+
 
 class ContactSerializer(BasePropertySerializer):
 
