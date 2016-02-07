@@ -270,7 +270,6 @@ Example of a valid request:
     Host: example.com
 
     {
-        "password": "eD0YQpc076cR",
         "notify": true
     }
 
