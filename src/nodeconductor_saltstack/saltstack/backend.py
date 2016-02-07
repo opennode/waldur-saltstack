@@ -64,7 +64,7 @@ class SaltStackBaseBackend(six.with_metaclass(SaltStackMetaclass, ServiceBackend
         self.settings = settings
 
         options = settings.options or {}
-        apis = dict(base=SaltStackBaseAPI, **self.API)
+        apis = dict(base=SaltStackBaseAPI, service_settings=ServiceSettingsAPI, **self.API)
         for name, api_cls in apis.items():
             try:
                 api = api_cls(
@@ -312,3 +312,25 @@ class SaltStackBaseAPI(SaltStackAPI):
             return next(self.findall(id=obj_id))
         except StopIteration:
             return None
+
+
+class ServiceSettingsAPI(SaltStackBaseAPI):
+
+    class Methods:
+        get_storage = dict(
+            name='DiskUsage',
+            input={
+                'drive': 'DriveLetter',
+            },
+            output={
+                'Free [MB]': 'free',
+                'Used [MB]': 'used',
+            },
+            defaults={
+                'drive': 'D',
+            },
+            clean={
+                'Free [MB]': int,
+                'Used [MB]': int,
+            }
+        )

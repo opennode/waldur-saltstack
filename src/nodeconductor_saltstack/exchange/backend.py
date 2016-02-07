@@ -372,6 +372,11 @@ class ExchangeBackend(SaltStackBaseBackend):
         super(ExchangeBackend, self).__init__(*args, **kwargs)
         self.tenant = kwargs.get('tenant')
 
+    def sync_backend(self):
+        storage = self.service_settings.get_storage()
+        self.settings.set_quota_limit(self.settings.Quotas.exchange_storage, storage.used + storage.free)
+        self.settings.set_quota_usage(self.settings.Quotas.exchange_storage, storage.used)
+
     def provision(self, tenant):
         send_task('exchange', 'provision')(tenant.uuid.hex)
 

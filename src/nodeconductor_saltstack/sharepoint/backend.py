@@ -288,6 +288,10 @@ class SharepointBackend(SaltStackBaseBackend):
 
         map(lambda i: i.delete(), cur_tmpls.values())
 
+        storage = self.service_settings.get_storage()
+        self.settings.set_quota_limit(self.settings.Quotas.sharepoint_storage, storage.used + storage.free)
+        self.settings.set_quota_usage(self.settings.Quotas.sharepoint_storage, storage.used)
+
     def provision(self, tenant, **kwargs):
         send_task('sharepoint', 'provision')(tenant.uuid.hex, **kwargs)
 

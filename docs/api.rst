@@ -1,6 +1,14 @@
 SaltStack service
 =================
 
+SaltStack service settings
+--------------------------
+
+SaltStack service settings have two additional quotas:
+
+- exchange_storage
+- sharepoint_storage
+
 SaltStack services list
 -----------------------
 

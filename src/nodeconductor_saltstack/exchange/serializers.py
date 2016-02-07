@@ -68,11 +68,20 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
                 raise serializers.ValidationError({
                     'max_users': "Total mailbox size should be lower than 2 TB"})
 
-            exchange_storage_quota = spl.quotas.get(name='exchange_storage')
-            if exchange_storage_quota.is_exceeded(delta=tenant_size):
-                storage_left = exchange_storage_quota.limit - exchange_storage_quota.usage
+            spl_storage_quota = spl.quotas.get(name=spl.Quotas.exchange_storage)
+            if spl_storage_quota.is_exceeded(delta=tenant_size):
+                storage_left = spl_storage_quota.limit - spl_storage_quota.usage
                 raise serializers.ValidationError({
-                    'max_users': "Total mailbox size should be lower than %s MB" % storage_left})
+                    'max_users': ("Service project link quota exceeded: Total mailbox size should be lower than %s MB"
+                                  % storage_left)
+                })
+
+            service_settings_storage_quota = spl.service.settings.quotas.get(
+                name=spl.service.settings.Quotas.exchange_storage)
+            if service_settings_storage_quota.is_exceeded(delta=tenant_size):
+                storage_left = service_settings_storage_quota.limit - service_settings_storage_quota.usage
+                raise serializers.ValidationError({
+                    'max_users': "Service quota exceeded: Total mailbox size should be lower than %s MB" % storage_left})
 
             # generate a random name to be used as unique tenant id in MS Exchange
             # Example of formt: NC_28052BF28A
