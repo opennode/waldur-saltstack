@@ -106,7 +106,7 @@ class UserViewSet(BasePropertyViewSet):
         user.password = backend_user.password
         user.save()
 
-        if serializer.validated_data['notify']:
+        if serializer.validated_data.get('notify'):
             user.notify()
 
     # XXX: put was added as portal has a temporary bug with widget update
@@ -119,10 +119,10 @@ class UserViewSet(BasePropertyViewSet):
         user.password = response.password
         user.save()
 
-        serializer_class = self.get_serializer_class()
+        serializer_class = serializers.UserPasswordSerializer
         serializer = serializer_class(instance=user, data=request.data, context={'request': request})
-        serializer.is_valid()
-        if serializer.validated_data['notify']:
+        serializer.is_valid(raise_exception=True)
+        if serializer.validated_data.get('notify'):
             user.notify()
 
         return Response(serializer.data, status=HTTP_200_OK)
