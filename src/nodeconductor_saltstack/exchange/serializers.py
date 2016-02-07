@@ -72,7 +72,9 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             if spl_storage_quota.is_exceeded(delta=tenant_size):
                 storage_left = spl_storage_quota.limit - spl_storage_quota.usage
                 raise serializers.ValidationError({
-                    'max_users': "SPL quota exceeded: Total mailbox size should be lower than %s MB" % storage_left})
+                    'max_users': ("Service project link quota exceeded: Total mailbox size should be lower than %s MB"
+                                  % storage_left)
+                })
 
             service_settings_storage_quota = spl.service.settings.quotas.get(
                 name=spl.service.settings.Quotas.exchange_storage)

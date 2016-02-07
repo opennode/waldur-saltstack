@@ -61,8 +61,8 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             if spl_storage_quota.is_exceeded(delta=attrs.get('storage')):
                 storage_left = spl_storage_quota.limit - spl_storage_quota.usage
                 raise serializers.ValidationError({
-                    'storage': ("SPL quota exceeded: Total tenant storage size should be lower than %s MB"
-                                % storage_left)
+                    'storage': ("Service project link quota exceeded: Total tenant storage size should be lower "
+                                "than %s MB" % storage_left)
                 })
 
             service_settings_storage_quota = spl.service.settings.quotas.get(

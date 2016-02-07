@@ -1,6 +1,6 @@
 from nodeconductor.core.tasks import send_task
 
-from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend, ServiceSettingsAPI
+from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend
 from .models import Template
 
 
@@ -268,7 +268,6 @@ class SharepointBackend(SaltStackBaseBackend):
         'tenants': TenantAPI,
         'templates': TemplateAPI,
         'users': UserAPI,
-        'service_settings': ServiceSettingsAPI,
     }
 
     def __init__(self, *args, **kwargs):

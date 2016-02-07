@@ -64,7 +64,7 @@ class SaltStackBaseBackend(six.with_metaclass(SaltStackMetaclass, ServiceBackend
         self.settings = settings
 
         options = settings.options or {}
-        apis = dict(base=SaltStackBaseAPI, **self.API)
+        apis = dict(base=SaltStackBaseAPI, service_settings=ServiceSettingsAPI, **self.API)
         for name, api_cls in apis.items():
             try:
                 api = api_cls(
