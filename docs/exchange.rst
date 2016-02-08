@@ -277,7 +277,7 @@ Example of a valid request:
 User delegation SendOnBehalf
 ----------------------------
 
-To add or remove delagations - issue POST or DELETE request against **/api/exchange-users/<user_uuid>/sendonbehalf/**.
+To add or remove delegations, issue POST or DELETE request against **/api/exchange-users/<user_uuid>/sendonbehalf/**.
 
 Example of a valid request:
 
@@ -299,7 +299,7 @@ Example of a valid request:
 User delegation SendAs
 ----------------------
 
-To add or remove delagations - issue POST or DELETE request against **/api/exchange-users/<user_uuid>/sendas/**.
+To add or remove delegations - issue POST or DELETE request against **/api/exchange-users/<user_uuid>/sendas/**.
 
 See usage example in delegation of SendOnBehalf.
 
