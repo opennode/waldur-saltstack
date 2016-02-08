@@ -202,7 +202,7 @@ class UserAPI(SaltStackBaseAPI):
                 'user_id': 'MemberId',
                 'add': 'Add',
             },
-            defaults={'add': True}, **_base
+            defaults={'add': None}, **_base
         )
 
         del_send_on_behalf = dict(
@@ -212,7 +212,7 @@ class UserAPI(SaltStackBaseAPI):
                 'user_id': 'MemberId',
                 'del': 'Remove',
             },
-            defaults={'del': True}, **_base
+            defaults={'del': None}, **_base
         )
 
         add_send_as = dict(
@@ -222,7 +222,7 @@ class UserAPI(SaltStackBaseAPI):
                 'user_id': 'MemberId',
                 'add': 'Add',
             },
-            defaults={'add': True}, **_base
+            defaults={'add': None}, **_base
         )
 
         del_send_as = dict(
@@ -232,7 +232,7 @@ class UserAPI(SaltStackBaseAPI):
                 'user_id': 'MemberId',
                 'del': 'Remove',
             },
-            defaults={'del': True}, **_base
+            defaults={'del': None}, **_base
         )
 
 

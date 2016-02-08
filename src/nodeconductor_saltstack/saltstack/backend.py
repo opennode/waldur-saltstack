@@ -137,10 +137,11 @@ class SaltStackAPI(object):
     def run_cmd(self, cmd, **kwargs):
 
         def prepare_args():
-            for k, v in kwargs.items():
-                if isinstance(v, bool):
-                    if v:
-                        yield '-{}'.format(k)
+            for k, v in kwargs.iteritems():
+                if v is None:
+                    yield '-{}'.format(k)
+                elif isinstance(v, bool):
+                    yield '-{} {}'.format(k, str(v).lower())
                 else:
                     yield '-{} "{}"'.format(k, v)
 
@@ -267,7 +268,7 @@ class SaltStackBaseAPI(SaltStackAPI):
                             kwargs[opt] = fn.format(backend=self.backend, **kwargs)
                         elif isinstance(fn, types.FunctionType):
                             kwargs[opt] = fn(self.backend, **kwargs)
-                        if isinstance(fn, (int, bool, float)):
+                        if isinstance(fn, (int, bool, float)) or fn is None:
                             kwargs[opt] = fn
                         else:
                             raise NotImplementedError(
