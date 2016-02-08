@@ -177,7 +177,7 @@ class SaltStackAPI(object):
             raise SaltStackBackendError(
                 "Cannot run command %s on %s: %s" % (
                     cmd, self.target, result.get('Message') or result.get('Output')),
-                result.get('Message'))
+                result.get('Output'))
 
 
 class SaltStackBaseAPI(SaltStackAPI):
@@ -268,7 +268,7 @@ class SaltStackBaseAPI(SaltStackAPI):
                             kwargs[opt] = fn.format(backend=self.backend, **kwargs)
                         elif isinstance(fn, types.FunctionType):
                             kwargs[opt] = fn(self.backend, **kwargs)
-                        if isinstance(fn, (int, bool, float)) or fn is None:
+                        elif isinstance(fn, (int, bool, float)) or fn is None:
                             kwargs[opt] = fn
                         else:
                             raise NotImplementedError(
