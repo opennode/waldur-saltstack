@@ -2,8 +2,9 @@ from cStringIO import StringIO
 from django.http import HttpResponse
 
 from rest_framework.decorators import detail_route
+from rest_framework.exceptions import APIException, NotAcceptable
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT, HTTP_200_OK, HTTP_400_BAD_REQUEST
 
 from nodeconductor.core.tasks import send_task
 from nodeconductor.core.csv import UnicodeDictReader, UnicodeDictWriter
@@ -90,7 +91,44 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             return response
 
 
-class UserViewSet(BasePropertyViewSet):
+class ExchangePropertyViewSet(BasePropertyViewSet):
+
+    def manage_members(self, add_method=None, del_method=None):
+        obj = self.get_object()
+        request = self.request
+        backend = self.get_backend(obj.tenant)
+
+        serializer = serializers.MemberSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        users = serializer.validated_data['users']
+
+        if not users:
+            raise NotAcceptable("Empty users list")
+
+        if request.method == 'POST':
+            if add_method is None:
+                raise APIException("Add method is not defined")
+
+            add_func = getattr(backend, add_method)
+            add_func(id=obj.backend_id, user_id=','.join(u.backend_id for u in users))
+
+            data = serializers.UserSerializer(
+                instance=users, context={'request': request}, many=True).data
+
+            return Response(data, status=HTTP_201_CREATED)
+
+        elif request.method == 'DELETE':
+            if del_method is None:
+                raise APIException("Delete method is not defined")
+
+            del_func = getattr(backend, del_method)
+            for user in users:
+                del_func(id=obj.backend_id, user_id=user.backend_id)
+
+            return Response(status=HTTP_204_NO_CONTENT)
+
+
+class UserViewSet(ExchangePropertyViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
     filter_class = filters.UserFilter
@@ -127,6 +165,16 @@ class UserViewSet(BasePropertyViewSet):
 
         return Response(serializer.data, status=HTTP_200_OK)
 
+    @detail_route(methods=['post', 'delete'])
+    @track_exceptions
+    def sendonbehalf(self, request, pk=None, **kwargs):
+        return self.manage_members(add_method='add_send_on_behalf', del_method='del_send_on_behalf')
+
+    @detail_route(methods=['post', 'delete'])
+    @track_exceptions
+    def sendas(self, request, pk=None, **kwargs):
+        return self.manage_members(add_method='add_send_as', del_method='del_send_as')
+
 
 class ContactViewSet(BasePropertyViewSet):
     queryset = models.Contact.objects.all()
@@ -135,7 +183,7 @@ class ContactViewSet(BasePropertyViewSet):
     backend_name = 'contacts'
 
 
-class GroupViewSet(BasePropertyViewSet):
+class GroupViewSet(ExchangePropertyViewSet):
     queryset = models.Group.objects.all()
     serializer_class = serializers.GroupSerializer
     filter_class = filters.GroupFilter

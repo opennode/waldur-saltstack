@@ -195,6 +195,46 @@ class UserAPI(SaltStackBaseAPI):
             },
         )
 
+        add_send_on_behalf = dict(
+            name='UserDelegationSB',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'add': 'Add',
+            },
+            defaults={'add': True}, **_base
+        )
+
+        del_send_on_behalf = dict(
+            name='UserDelegationSB',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'del': 'Remove',
+            },
+            defaults={'del': True}, **_base
+        )
+
+        add_send_as = dict(
+            name='UserDelegationSA',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'add': 'Add',
+            },
+            defaults={'add': True}, **_base
+        )
+
+        del_send_as = dict(
+            name='UserDelegationSA',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'del': 'Remove',
+            },
+            defaults={'del': True}, **_base
+        )
+
 
 class ContactAPI(SaltStackBaseAPI):
 

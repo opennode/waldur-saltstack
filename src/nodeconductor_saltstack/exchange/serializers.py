@@ -128,6 +128,16 @@ class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedMo
         }
 
 
+class MemberSerializer(serializers.Serializer):
+
+    users = serializers.HyperlinkedRelatedField(
+        queryset=models.User.objects.all(),
+        view_name='exchange-users-detail',
+        lookup_field='uuid',
+        write_only=True,
+        many=True)
+
+
 class UserPasswordSerializer(serializers.ModelSerializer):
 
     notify = serializers.BooleanField(write_only=True, required=False)

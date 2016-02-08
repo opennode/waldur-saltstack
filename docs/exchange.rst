@@ -274,6 +274,36 @@ Example of a valid request:
     }
 
 
+User delegation SendOnBehalf
+----------------------------
+
+To add or remove delagations - issue POST or DELETE request against **/api/exchange-users/<user_uuid>/sendonbehalf/**.
+
+Example of a valid request:
+
+.. code-block:: http
+
+    POST /api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/sendonbehalf/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "users": [
+            "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
+            "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/"
+        ]
+    }
+
+User delegation SendAs
+----------------------
+
+To add or remove delagations - issue POST or DELETE request against **/api/exchange-users/<user_uuid>/sendas/**.
+
+See usage example in delegation of SendOnBehalf.
+
+
 Delete user
 -----------
 

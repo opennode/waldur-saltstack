@@ -135,9 +135,16 @@ class SaltStackAPI(object):
         return all(response['return'][0].values())
 
     def run_cmd(self, cmd, **kwargs):
-        command = self.COMMAND.format(
-            name=self.MAPPING.get(cmd) or cmd,
-            args=' '.join(['-%s "%s"' % (k, v) for k, v in kwargs.items()]))
+
+        def prepare_args():
+            for k, v in kwargs.items():
+                if isinstance(v, bool):
+                    if v:
+                        yield '-{}'.format(k)
+                else:
+                    yield '-{} "{}"'.format(k, v)
+
+        command = self.COMMAND.format(name=self.MAPPING.get(cmd) or cmd, args=' '.join(prepare_args()))
 
         logger.debug('Executing command: {}'.format(command))
 
@@ -260,6 +267,8 @@ class SaltStackBaseAPI(SaltStackAPI):
                             kwargs[opt] = fn.format(backend=self.backend, **kwargs)
                         elif isinstance(fn, types.FunctionType):
                             kwargs[opt] = fn(self.backend, **kwargs)
+                        if isinstance(fn, (int, bool, float)):
+                            kwargs[opt] = fn
                         else:
                             raise NotImplementedError(
                                 "Unknown default argument '%s' for method %s.%s" % (opt, name, func))
