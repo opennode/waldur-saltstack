@@ -197,7 +197,7 @@ class UserSerializer(BasePropertySerializer):
         return attrs
 
     def create(self, validated_data):
-        notify = validated_data.pop('notify')
+        notify = validated_data.pop('notify', False)
         user = super(UserSerializer, self).create(validated_data)
         validated_data['notify'] = notify
         return user
@@ -234,6 +234,11 @@ class GroupSerializer(BasePropertySerializer):
             {'manager': ('uuid', 'name')}.items()
         )
 
+    def get_fields(self):
+        fields = super(GroupSerializer, self).get_fields()
+        fields['members'].required = False
+        return fields
+
     def validate(self, attrs):
         tenant = self.instance.tenant if self.instance else attrs['tenant']
 
@@ -246,9 +251,9 @@ class GroupSerializer(BasePropertySerializer):
                 raise serializers.ValidationError(
                     {'manager': "Manager user must be form the same tenant as group."})
 
-        for user in attrs['members']:
+        for user in attrs.get('members', []):
             if user.tenant != tenant:
                 raise serializers.ValidationError(
-                    "Users must be from the same tenat as group, can't add %s." % user)
+                    "Users must be from the same tenant as group, can't add %s." % user)
 
         return attrs

@@ -149,15 +149,16 @@ class GroupViewSet(BasePropertyViewSet):
 
     def post_update(self, group, serializer):
         backend = self.get_backend(group.tenant)
-        new_members = set(u.backend_id for u in serializer.validated_data['members'])
-        cur_members = set(group.members.values_list('backend_id', flat=True))
+        if 'members' in serializer.validated_data:
+            new_members = set(u.backend_id for u in serializer.validated_data['members'])
+            cur_members = set(group.members.values_list('backend_id', flat=True))
 
-        new_users = new_members - cur_members
-        if new_users:
-            backend.add_member(id=group.backend_id, user_id=','.join(new_users))
+            new_users = new_members - cur_members
+            if new_users:
+                backend.add_member(id=group.backend_id, user_id=','.join(new_users))
 
-        for old_user in cur_members - new_members:
-            backend.del_member(id=group.backend_id, user_id=old_user)
+            for old_user in cur_members - new_members:
+                backend.del_member(id=group.backend_id, user_id=old_user)
 
     @detail_route(methods=['get'])
     def members(self, request, pk=None, **kwargs):
