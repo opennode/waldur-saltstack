@@ -116,13 +116,13 @@ Example of a valid request:
 Change tenant domain name
 -------------------------
 
-To update tenant domain - issue PUT request against **/api/exchange-tenants/<tenant_uuid>/domain/**.
+To update tenant domain - issue POST request against **/api/exchange-tenants/<tenant_uuid>/domain/**.
 
 Example of a valid request:
 
 .. code-block:: http
 
-    PUT /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/domain/ HTTP/1.1
+    POST /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/domain/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
@@ -130,6 +130,30 @@ Example of a valid request:
 
     {
         "domain": "test.io"
+    }
+
+
+Change tenant quotas
+--------------------
+
+To update tenant quotas - issue POST request against **/api/exchange-tenants/<tenant_uuid>/change_quotas/** with
+parameters (at least one parameter should be defined):
+ - user_count
+ - global_mailbox_size
+
+
+Example of valid request:
+
+.. code-block:: http
+
+    POST /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/change_quotas/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "global_mailbox_size": 200
     }
 
 
