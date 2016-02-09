@@ -32,6 +32,18 @@ class ContactFilter(django_filters.FilterSet):
         ]
 
 
+class ConferenceRoomFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(lookup_type='icontains')
+    tenant_uuid = django_filters.CharFilter(name='tenant__uuid')
+
+    class Meta(object):
+        model = models.ConferenceRoom
+        fields = [
+            'name',
+            'tenant_uuid',
+        ]
+
+
 class GroupFilter(django_filters.FilterSet):
     name = django_filters.CharFilter(lookup_type='icontains')
     username = django_filters.CharFilter(lookup_type='icontains')

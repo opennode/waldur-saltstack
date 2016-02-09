@@ -382,11 +382,11 @@ class ConferenceRoomAPI(SaltStackBaseAPI):
             input={
                 'tenant': 'TenantName',
                 'domain': 'TenantDomain',
-                'name': 'RoomName',
-                'alias': 'RoomAlias',
-                'location': 'RoomLocation',
-                'phone': 'RoomPhone',
-                'mailbox_size': 'RoomMailboxSize',
+                'name': 'DisplayName',
+                'username': 'Alias',
+                'location': 'Location',
+                'phone': 'Phone',
+                'mailbox_size': 'MailboxSize',
             },
             defaults={
                 'tenant': "{backend.tenant.backend_id}",
@@ -417,11 +417,12 @@ class ConferenceRoomAPI(SaltStackBaseAPI):
         change = dict(
             name='EditConfRoom',
             input={
-                'id': 'Guid',
-                'name': 'ContactName',
-                'email': 'ContactEmail',
-                'first_name': 'ContactFirstName',
-                'last_name': 'ContactLastName',
+                'id': 'Id',
+                'name': 'DisplayName',
+                'username': 'Alias',
+                'location': 'Location',
+                'phone': 'Phone',
+                'mailbox_size': 'MailboxSize'
             },
             **_base
         )
@@ -436,6 +437,7 @@ class ExchangeBackend(SaltStackBaseBackend):
         'groups': DistributionGroupAPI,
         'tenants': TenantAPI,
         'users': UserAPI,
+        'conference_rooms': ConferenceRoomAPI,
     }
 
     def __init__(self, *args, **kwargs):

@@ -7,4 +7,5 @@ PERMISSION_LOGICS = (
     ('exchange.Group', property_permission_logic),
     ('exchange.Contact', property_permission_logic),
     ('exchange.User', property_permission_logic),
+    ('exchange.ConferenceRoom', property_permission_logic),
 )

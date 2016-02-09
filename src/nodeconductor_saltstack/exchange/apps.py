@@ -24,6 +24,7 @@ class SaltStackConfig(AppConfig):
         from . import handlers
         ExchangeTenant = self.get_model('ExchangeTenant')
         User = self.get_model('User')
+        ConferenceRoom = self.get_model('ConferenceRoom')
 
         # Tenants CRUD
         signals.post_save.connect(
@@ -50,4 +51,19 @@ class SaltStackConfig(AppConfig):
             handlers.decrease_global_mailbox_size_usage_on_user_deletion,
             sender=User,
             dispatch_uid='nodeconductor.saltstack.exchange.handlers.decrease_global_mailbox_size_usage_on_user_deletion',
+        )
+
+        # Conference rooms CRUD
+        signals.post_save.connect(
+            handlers.increase_global_mailbox_size_usage_on_conference_room_creation_or_modification,
+            sender=ConferenceRoom,
+            dispatch_uid=('nodeconductor.saltstack.exchange.handlers'
+                          '.increase_global_mailbox_size_usage_on_conference_room_creation_or_modification'),
+        )
+
+        signals.post_delete.connect(
+            handlers.decrease_global_mailbox_size_usage_on_conference_room_deletion,
+            sender=ConferenceRoom,
+            dispatch_uid=('nodeconductor.saltstack.exchange.handlers'
+                          '.decrease_global_mailbox_size_usage_on_conference_room_deletion'),
         )

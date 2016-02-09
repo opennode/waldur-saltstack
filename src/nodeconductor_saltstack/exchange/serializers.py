@@ -215,12 +215,53 @@ class ContactSerializer(BasePropertySerializer):
 
 class ConferenceRoomSerializer(BasePropertySerializer):
 
+    name = serializers.CharField()
+
     class Meta(BasePropertySerializer.Meta):
         model = models.ConferenceRoom
-        view_name = 'exchange-conferencerooms-detail'
+        view_name = 'exchange-conference-rooms-detail'
         fields = BasePropertySerializer.Meta.fields + (
-            'name', 'alias', 'email', 'location', 'mailbox_size', 'phone'
+            'name', 'username', 'email', 'location', 'mailbox_size', 'phone'
         )
+
+    def validate_username(self, value):
+        if value:
+            if not re.match(r'[a-zA-Z0-9_.-]+$', value) or re.search(r'^\.|\.$', value):
+                raise serializers.ValidationError(
+                    "The username can contain only letters, numbers, hyphens, underscores and period.")
+        return value
+
+    def validate(self, attrs):
+        tenant = self.instance.tenant if self.instance else attrs['tenant']
+
+        phone = attrs.get('phone')
+        if phone:
+            options = tenant.service_project_link.service.settings.options or {}
+            phone_regex = options.get('phone_regex')
+            if phone_regex and not re.search(phone_regex, phone):
+                raise serializers.ValidationError('Invalid phone number.')
+
+        if not self.instance:
+            deltas = {
+                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'],
+                tenant.Quotas.user_count: 1,
+            }
+
+            if not tenant.is_username_available(attrs['username']):
+                raise serializers.ValidationError(
+                    {'username': "This username is already taken."})
+
+        else:
+            deltas = {
+                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'] - self.instance.mailbox_size,
+            }
+
+        try:
+            tenant.validate_quota_change(deltas, raise_exception=True)
+        except QuotaExceededException as e:
+            raise serializers.ValidationError(str(e))
+
+        return attrs
 
 
 class GroupSerializer(BasePropertySerializer):

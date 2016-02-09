@@ -38,8 +38,14 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
         return super(ExchangeTenant, self).get_backend(backend_class=ExchangeBackend, tenant=self)
 
     def is_username_available(self, username):
-        for model in (User, Group):
+        for model in (User, Group, ConferenceRoom):
             if username in model.objects.filter(tenant=self).values_list('username', flat=True):
+                return False
+        return True
+
+    def is_conference_room_name_available(self, name):
+        for model in (User, Group):
+            if name in model.objects.filter(tenant=self).values_list('name', flat=True):
                 return False
         return True
 
@@ -124,11 +130,12 @@ class Group(ExchangeProperty):
 
 
 class ConferenceRoom(ExchangeProperty):
-    alias = models.CharField(max_length=255)
-    email = models.EmailField(max_length=255)
+    username = models.CharField(max_length=255)
     location = models.CharField(max_length=255, blank=True)
-    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of conference room mailbox, MB')
     phone = models.CharField(max_length=255, blank=True)
+    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of conference room mailbox, MB')
+
+    tracker = FieldTracker()
 
     @property
     def email(self):
