@@ -213,6 +213,16 @@ class ContactSerializer(BasePropertySerializer):
         )
 
 
+class ConferenceRoomSerializer(BasePropertySerializer):
+
+    class Meta(BasePropertySerializer.Meta):
+        model = models.ConferenceRoom
+        view_name = 'exchange-conferencerooms-detail'
+        fields = BasePropertySerializer.Meta.fields + (
+            'name', 'alias', 'email', 'location', 'mailbox_size', 'phone'
+        )
+
+
 class GroupSerializer(BasePropertySerializer):
 
     class Meta(BasePropertySerializer.Meta):

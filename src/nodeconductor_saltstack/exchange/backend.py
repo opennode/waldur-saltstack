@@ -357,6 +357,76 @@ class DistributionGroupAPI(SaltStackBaseAPI):
         )
 
 
+class ConferenceRoomAPI(SaltStackBaseAPI):
+
+    class Methods:
+        _base = dict(
+            output={
+                'Guid': 'id',
+                'Email Address': 'email',
+                'DisplayName': 'name',
+                'DistinguishedName': 'dn',
+                'alias': 'RoomAlias',
+                'Location': 'location',
+                'Phone': 'phone',
+                'MailboxQuota': 'mailbox_size',
+
+            },
+            clean={
+                'MailboxQuota': parse_size,
+            },
+        )
+
+        create = dict(
+            name='AddConfRoom',
+            input={
+                'tenant': 'TenantName',
+                'domain': 'TenantDomain',
+                'name': 'RoomName',
+                'alias': 'RoomAlias',
+                'location': 'RoomLocation',
+                'phone': 'RoomPhone',
+                'mailbox_size': 'RoomMailboxSize',
+            },
+            defaults={
+                'tenant': "{backend.tenant.backend_id}",
+                'domain': "{backend.tenant.domain}",
+            },
+            **_base
+        )
+
+        list = dict(
+            name='ConfRoomList',
+            input={
+                'tenant': 'TenantName',
+            },
+            defaults={
+                'tenant': "{backend.tenant.backend_id}",
+            },
+            many=True,
+            **_base
+        )
+
+        delete = dict(
+            name='DelConfRoom',
+            input={
+                'id': 'Id',
+            },
+        )
+
+        change = dict(
+            name='EditConfRoom',
+            input={
+                'id': 'Guid',
+                'name': 'ContactName',
+                'email': 'ContactEmail',
+                'first_name': 'ContactFirstName',
+                'last_name': 'ContactLastName',
+            },
+            **_base
+        )
+
+
 class ExchangeBackend(SaltStackBaseBackend):
 
     TARGET_OPTION_NAME = 'exchange_target'

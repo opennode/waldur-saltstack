@@ -135,6 +135,13 @@ class ContactViewSet(BasePropertyViewSet):
     backend_name = 'contacts'
 
 
+class ConferenceRoomViewSet(BasePropertyViewSet):
+    queryset = models.ConferenceRoom.objects.all()
+    serializer_class = serializers.ConferenceRoomSerializer
+    #filter_class = filters.ConferenceRoomFilter
+    backend_name = 'conferenceroom'
+
+
 class GroupViewSet(BasePropertyViewSet):
     queryset = models.Group.objects.all()
     serializer_class = serializers.GroupSerializer

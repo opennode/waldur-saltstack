@@ -121,3 +121,15 @@ class Group(ExchangeProperty):
     @property
     def email(self):
         return '{}@{}'.format(self.username, self.tenant.domain)
+
+
+class ConferenceRoom(ExchangeProperty):
+    alias = models.CharField(max_length=255)
+    email = models.EmailField(max_length=255)
+    location = models.CharField(max_length=255, blank=True)
+    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of conference room mailbox, MB')
+    phone = models.CharField(max_length=255, blank=True)
+
+    @property
+    def email(self):
+        return '{}@{}'.format(self.alias, self.tenant.domain)
