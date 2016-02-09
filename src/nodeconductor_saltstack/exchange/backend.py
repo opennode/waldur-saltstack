@@ -71,6 +71,20 @@ class TenantAPI(SaltStackBaseAPI):
             },
         )
 
+        change_quotas = dict(
+            name='EditQuota',
+            input={
+                'tenant': 'TenantName',
+                'global_mailbox_size': 'MailboxDatabaseSize',
+            },
+            defaults={
+                'tenant': "{backend.tenant.backend_id}",
+            },
+            output={
+                'Mailbox Database Size': 'global_mailbox_size',
+            },
+        )
+
 
 class UserAPI(SaltStackBaseAPI):
 

@@ -89,6 +89,25 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             writer.writerows(serializer.data)
             return response
 
+    # XXX: put was added as portal has a temporary bug with widget update
+    @detail_route(methods=['post', 'put'])
+    @track_exceptions
+    def change_quotas(self, request, pk=None, **kwargs):
+        tenant = self.get_object()
+        backend = tenant.get_backend()
+
+        serializer = serializers.TenantQuotaSerializer(data=request.data, context={'tenant': tenant})
+        serializer.is_valid(raise_exception=True)
+
+        if 'user_count' in serializer.validated_data:
+            tenant.set_quota_limit(models.ExchangeTenant.Quotas.user_count, serializer.validated_data['user_count'])
+        if 'global_mailbox_size' in serializer.validated_data:
+            backend.tenants.change_quotas(global_mailbox_size=serializer.validated_data['global_mailbox_size'])
+            tenant.set_quota_limit(
+                models.ExchangeTenant.Quotas.global_mailbox_size, serializer.validated_data['global_mailbox_size'])
+
+        return Response('Tenant quotas were successfully changed.', status=HTTP_200_OK)
+
 
 class UserViewSet(BasePropertyViewSet):
     queryset = models.User.objects.all()

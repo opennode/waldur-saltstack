@@ -104,6 +104,42 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         return fields
 
 
+# should be initialized with tenant in context
+class TenantQuotaSerializer(serializers.Serializer):
+    user_count = serializers.IntegerField(
+        min_value=1, write_only=True, required=False, help_text='Maximum users count.')
+    global_mailbox_size = serializers.FloatField(
+        min_value=1, write_only=True, required=False, help_text='Maximum mailbox storage size, MB.')
+
+    def validate_user_count(self, value):
+        tenant = self.context['tenant']
+        user_count_quota = tenant.quotas.get(name=models.ExchangeTenant.Quotas.user_count)
+        if value < user_count_quota.usage:
+            raise serializers.ValidationError('User count limit cannot be lower than current user count.')
+        return value
+
+    def validate_global_mailbox_size(self, value):
+        tenant = self.context['tenant']
+
+        global_mailbox_size_quota = tenant.quotas.get(name=models.ExchangeTenant.Quotas.global_mailbox_size)
+        if value < global_mailbox_size_quota.usage:
+            raise serializers.ValidationError('Global mailbox size limit cannot be lower than current usage.')
+
+        diff = value - global_mailbox_size_quota.limit
+        spl = tenant.service_project_link
+        spl_storage_quota = spl.quotas.get(name=spl.Quotas.exchange_storage)
+        if diff > 0 and spl_storage_quota.is_exceeded(delta=diff):
+            storage_left = spl_storage_quota.limit - spl_storage_quota.usage
+            raise serializers.ValidationError(
+                "Service project link quota exceeded: Total mailbox size should be lower than %s MB" % storage_left)
+        return value
+
+    def validate(self, attrs):
+        if 'user_count' not in attrs and 'global_mailbox_size' not in attrs:
+            raise serializers.ValidationError('At least one quota should be defined.')
+        return attrs
+
+
 class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
 
     class Meta(object):
