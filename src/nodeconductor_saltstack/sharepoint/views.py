@@ -199,13 +199,9 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
         new_storage = serializer.validated_data['storage']
         old_storage = site_collection.quotas.get(name=models.SiteCollection.Quotas.storage).limit
 
-        try:
-            backend.site_collections.set_storage(url=site_collection.access_url, storage=new_storage)
-        except SaltStackBackendError as e:
-            raise exceptions.APIException(e.traceback_str)
-        else:
-            site_collection.set_quota_limit(models.SiteCollection.Quotas.storage, new_storage)
-            tenant = site_collection.user.tenant
-            tenant.add_quota_usage(models.SharepointTenant.Quotas.storage, new_storage - old_storage)
+        backend.site_collections.set_storage(url=site_collection.access_url, storage=new_storage)
+        site_collection.set_quota_limit(models.SiteCollection.Quotas.storage, new_storage)
+        tenant = site_collection.user.tenant
+        tenant.add_quota_usage(models.SharepointTenant.Quotas.storage, new_storage - old_storage)
 
         return response.Response('Storage quota was successfully changed.', status=HTTP_200_OK)

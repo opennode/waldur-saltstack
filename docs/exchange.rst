@@ -116,13 +116,13 @@ Example of a valid request:
 Change tenant domain name
 -------------------------
 
-To update tenant domain - issue PUT request against **/api/exchange-tenants/<tenant_uuid>/domain/**.
+To update tenant domain - issue POST request against **/api/exchange-tenants/<tenant_uuid>/domain/**.
 
 Example of a valid request:
 
 .. code-block:: http
 
-    PUT /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/domain/ HTTP/1.1
+    POST /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/domain/ HTTP/1.1
     Content-Type: application/json
     Accept: application/json
     Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
@@ -130,6 +130,30 @@ Example of a valid request:
 
     {
         "domain": "test.io"
+    }
+
+
+Change tenant quotas
+--------------------
+
+To update tenant quotas - issue POST request against **/api/exchange-tenants/<tenant_uuid>/change_quotas/** with
+parameters (at least one parameter should be defined):
+ - user_count
+ - global_mailbox_size
+
+
+Example of valid request:
+
+.. code-block:: http
+
+    POST /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/change_quotas/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "global_mailbox_size": 200
     }
 
 
@@ -274,6 +298,40 @@ Example of a valid request:
     }
 
 
+User delegation SendOnBehalf
+----------------------------
+
+To get a list of delegations - issue GET request against **/api/exchange-users/<user_uuid>/sendonbehalf/**.
+
+To update delegations - issue POST request against **/api/exchange-users/<user_uuid>/sendonbehalf/**.
+
+Example of a valid request:
+
+.. code-block:: http
+
+    POST /api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/sendonbehalf/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "users": [
+            "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
+            "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/"
+        ]
+    }
+
+User delegation SendAs
+----------------------
+
+To get a list of delegations - issue GET request against **/api/exchange-users/<user_uuid>/sendas/**.
+
+To add or remove delegations - issue POST request against **/api/exchange-users/<user_uuid>/sendas/**.
+
+See usage example in delegation of SendOnBehalf.
+
+
 Delete user
 -----------
 
@@ -407,6 +465,7 @@ Request parameters:
  - name - distribution group name;
  - username - group username;
  - members - a list of group members' links;
+ - senders_out - flag for delivery management for senders outside organizational unit;
 
 Example of a request:
 
@@ -423,6 +482,7 @@ Example of a request:
         "manager": "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/",
         "name": "My Group",
         "username": "grp",
+        "senders_out": false,
         "members": [
             "http://example.com/api/exchange-users/ee6ca4b2929c46cb85bedb276a937ac2/"
         ]
@@ -553,3 +613,27 @@ Response example:
             "email": "zoe@test.com"
         }
     ]
+
+Manage distribution group delivery members
+------------------------------------------
+
+To get a list of all delivery members - issue GET request against **/api/exchange-groups/<group_uuid>/delivery_members/**.
+
+To update a list of all delivery members - issue POST request against **/api/exchange-groups/<group_uuid>/delivery_members/**.
+
+Example of a request:
+
+.. code-block:: http
+
+    POST /api/exchange-groups/c39cc7f57fab499786609298019cf844/delivery_members/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "members": [
+            "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
+            "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/"
+        ]
+    }
