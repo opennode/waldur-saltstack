@@ -76,13 +76,6 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
                                   % storage_left)
                 })
 
-            service_settings_storage_quota = spl.service.settings.quotas.get(
-                name=spl.service.settings.Quotas.exchange_storage)
-            if service_settings_storage_quota.is_exceeded(delta=tenant_size):
-                storage_left = service_settings_storage_quota.limit - service_settings_storage_quota.usage
-                raise serializers.ValidationError({
-                    'max_users': "Service quota exceeded: Total mailbox size should be lower than %s MB" % storage_left})
-
             # generate a random name to be used as unique tenant id in MS Exchange
             # Example of formt: NC_28052BF28A
             attrs['backend_id'] = 'NC_%s' % binascii.b2a_hex(os.urandom(5)).upper()

@@ -43,20 +43,6 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
                 return False
         return True
 
-    def set_quota_limit(self, quota_name, limit):
-        # XXX: Increase service settings storage quota usage on tenant limit update.
-        #      This type of update logic should be moved to separate quota field. Issue NC-1149.
-        if str(quota_name) == self.Quotas.global_mailbox_size.name:
-            old_limit = self.quotas.get(name=quota_name).limit
-            if old_limit == -1:
-                diff = limit
-            else:
-                diff = limit - old_limit
-            if diff:
-                service_settings = self.service_project_link.service.settings
-                service_settings.add_quota_usage(service_settings.Quotas.exchange_storage, diff)
-        super(ExchangeTenant, self).set_quota_limit(quota_name, limit)
-
 
 class ExchangeProperty(SaltStackProperty):
     tenant = models.ForeignKey(ExchangeTenant, related_name='+')
