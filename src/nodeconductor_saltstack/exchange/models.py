@@ -38,7 +38,7 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
         return super(ExchangeTenant, self).get_backend(backend_class=ExchangeBackend, tenant=self)
 
     def is_username_available(self, username):
-        for model in (User, Group):
+        for model in (User, Group, ConferenceRoom):
             if username in model.objects.filter(tenant=self).values_list('username', flat=True):
                 return False
         return True
@@ -103,6 +103,19 @@ class Group(ExchangeProperty):
     manager = models.ForeignKey(User, related_name='groups')
     username = models.CharField(max_length=255)
     members = models.ManyToManyField(User)
+
+    @property
+    def email(self):
+        return '{}@{}'.format(self.username, self.tenant.domain)
+
+
+class ConferenceRoom(ExchangeProperty):
+    username = models.CharField(max_length=255)
+    location = models.CharField(max_length=255, blank=True)
+    phone = models.CharField(max_length=255, blank=True)
+    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of conference room mailbox, MB')
+
+    tracker = FieldTracker()
 
     @property
     def email(self):

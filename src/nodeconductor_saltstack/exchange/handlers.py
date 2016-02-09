@@ -30,3 +30,20 @@ def decrease_global_mailbox_size_usage_on_user_deletion(sender, instance=None, *
     except Quota.DoesNotExist:
         # in case of cascade deletion tenant will not have quotas
         pass
+
+
+def increase_global_mailbox_size_usage_on_conference_room_creation_or_modification(sender, instance=None, created=False,
+                                                                                   **kwargs):
+    if created:
+        instance.tenant.add_quota_usage(instance.tenant.Quotas.global_mailbox_size, instance.mailbox_size)
+    else:
+        instance.tenant.add_quota_usage(instance.tenant.Quotas.global_mailbox_size,
+                                        instance.mailbox_size - instance.tracker.previous('mailbox_size'))
+
+
+def decrease_global_mailbox_size_usage_on_conference_room_deletion(sender, instance=None, **kwargs):
+    try:
+        instance.tenant.add_quota_usage(instance.tenant.Quotas.global_mailbox_size, -instance.mailbox_size)
+    except Quota.DoesNotExist:
+        # in case of cascade deletion tenant will not have quotas
+        pass

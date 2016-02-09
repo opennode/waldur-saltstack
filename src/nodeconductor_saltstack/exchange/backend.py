@@ -469,6 +469,77 @@ class DistributionGroupAPI(SaltStackBaseAPI):
         )
 
 
+class ConferenceRoomAPI(SaltStackBaseAPI):
+
+    class Methods:
+        _base = dict(
+            output={
+                'Guid': 'id',
+                'Email Address': 'email',
+                'DisplayName': 'name',
+                'DistinguishedName': 'dn',
+                'RoomAlias': 'username',
+                'Location': 'location',
+                'Phone': 'phone',
+                'MailboxQuota': 'mailbox_size',
+
+            },
+            clean={
+                'MailboxQuota': parse_size,
+            },
+        )
+
+        create = dict(
+            name='AddConfRoom',
+            input={
+                'tenant': 'TenantName',
+                'domain': 'TenantDomain',
+                'name': 'DisplayName',
+                'username': 'Alias',
+                'location': 'Location',
+                'phone': 'Phone',
+                'mailbox_size': 'MailboxSize',
+            },
+            defaults={
+                'tenant': "{backend.tenant.backend_id}",
+                'domain': "{backend.tenant.domain}",
+            },
+            **_base
+        )
+
+        list = dict(
+            name='ConfRoomList',
+            input={
+                'tenant': 'TenantName',
+            },
+            defaults={
+                'tenant': "{backend.tenant.backend_id}",
+            },
+            many=True,
+            **_base
+        )
+
+        delete = dict(
+            name='DelConfRoom',
+            input={
+                'id': 'Id',
+            },
+        )
+
+        change = dict(
+            name='EditConfRoom',
+            input={
+                'id': 'Id',
+                'name': 'DisplayName',
+                'username': 'Alias',
+                'location': 'Location',
+                'phone': 'Phone',
+                'mailbox_size': 'MailboxSize'
+            },
+            **_base
+        )
+
+
 class ExchangeBackend(SaltStackBaseBackend):
 
     TARGET_OPTION_NAME = 'exchange_target'
@@ -478,6 +549,7 @@ class ExchangeBackend(SaltStackBaseBackend):
         'groups': DistributionGroupAPI,
         'tenants': TenantAPI,
         'users': UserAPI,
+        'conference_rooms': ConferenceRoomAPI,
     }
 
     def __init__(self, *args, **kwargs):

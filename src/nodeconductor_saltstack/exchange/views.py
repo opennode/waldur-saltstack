@@ -110,8 +110,10 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         return Response('Tenant quotas were successfully changed.', status=HTTP_200_OK)
 
 
+# TODO: add some explanation for this mixin.
 class ExchangePropertyViewSet(BasePropertyViewSet):
 
+    # TODO: add explanation for this method. - it is too complex
     def manage_members(self, add_method=None, del_method=None, list_method=None):
         obj = self.get_object()
         request = self.request
@@ -225,6 +227,13 @@ class ContactViewSet(BasePropertyViewSet):
     serializer_class = serializers.ContactSerializer
     filter_class = filters.ContactFilter
     backend_name = 'contacts'
+
+
+class ConferenceRoomViewSet(BasePropertyViewSet):
+    queryset = models.ConferenceRoom.objects.all()
+    serializer_class = serializers.ConferenceRoomSerializer
+    filter_class = filters.ConferenceRoomFilter
+    backend_name = 'conference_rooms'
 
 
 class GroupViewSet(ExchangePropertyViewSet):
