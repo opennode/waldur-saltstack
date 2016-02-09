@@ -103,7 +103,7 @@ class ExchangePropertyViewSet(BasePropertyViewSet):
                 raise APIException("List method is not defined")
 
             ids = [u.id for u in getattr(backend, list_method)(id=obj.backend_id)]
-            users = models.User.objects.filter(id__in=ids)
+            users = models.User.objects.filter(backend_id__in=ids)
             serializer = serializers.UserSerializer(
                 instance=users, context={'request': request}, many=True)
 
@@ -128,10 +128,12 @@ class ExchangePropertyViewSet(BasePropertyViewSet):
                 new_members = set(users.split(','))
 
                 to_add = new_members - cur_members
-                to_del = cur_members - new_members
+                if to_add:
+                    getattr(backend, add_method)(id=obj.backend_id, user_id=','.join(to_add))
 
-                getattr(backend, add_method)(id=obj.backend_id, user_id=','.join(to_add))
-                getattr(backend, del_method)(id=obj.backend_id, user_id=','.join(to_del))
+                to_del = cur_members - new_members
+                if to_del:
+                    getattr(backend, del_method)(id=obj.backend_id, user_id=','.join(to_del))
             else:
                 getattr(backend, add_method)(id=obj.backend_id, user_id=users)
 
@@ -182,15 +184,21 @@ class UserViewSet(ExchangePropertyViewSet):
 
         return Response(serializer.data, status=HTTP_200_OK)
 
-    @detail_route(methods=['post', 'delete'])
+    @detail_route(methods=['get', 'post'])
     @track_exceptions
     def sendonbehalf(self, request, pk=None, **kwargs):
-        return self.manage_members(add_method='add_send_on_behalf', del_method='del_send_on_behalf')
+        return self.manage_members(
+            add_method='add_send_on_behalf',
+            del_method='del_send_on_behalf',
+            list_method='list_send_on_behalf')
 
-    @detail_route(methods=['post', 'delete'])
+    @detail_route(methods=['get', 'post'])
     @track_exceptions
     def sendas(self, request, pk=None, **kwargs):
-        return self.manage_members(add_method='add_send_as', del_method='del_send_as')
+        return self.manage_members(
+            add_method='add_send_as',
+            del_method='del_send_as',
+            list_method='list_send_as')
 
 
 class ContactViewSet(BasePropertyViewSet):

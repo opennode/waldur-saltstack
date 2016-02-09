@@ -195,6 +195,16 @@ class UserAPI(SaltStackBaseAPI):
             },
         )
 
+        list_send_on_behalf = dict(
+            name='UserDelegationList',
+            input={
+                'id': 'Id',
+                'send_on_behalf': 'SendOnBehalf',
+            },
+            many=True,
+            defaults={'send_on_behalf': None}, **_base
+        )
+
         add_send_on_behalf = dict(
             name='UserDelegationSB',
             input={
@@ -213,6 +223,16 @@ class UserAPI(SaltStackBaseAPI):
                 'del': 'Remove',
             },
             defaults={'del': None}, **_base
+        )
+
+        list_send_as = dict(
+            name='UserDelegationList',
+            input={
+                'id': 'Id',
+                'send_as': 'SendAs',
+            },
+            many=True,
+            defaults={'send_as': None}, **_base
         )
 
         add_send_as = dict(
@@ -401,6 +421,7 @@ class DistributionGroupAPI(SaltStackBaseAPI):
             input={
                 'id': 'Id',
             },
+            many=True,
             **_base
         )
 
