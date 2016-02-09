@@ -478,7 +478,7 @@ class ConferenceRoomAPI(SaltStackBaseAPI):
                 'Email Address': 'email',
                 'DisplayName': 'name',
                 'DistinguishedName': 'dn',
-                'alias': 'RoomAlias',
+                'RoomAlias': 'username',
                 'Location': 'location',
                 'Phone': 'phone',
                 'MailboxQuota': 'mailbox_size',

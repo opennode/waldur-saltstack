@@ -637,3 +637,85 @@ Example of a request:
             "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/"
         ]
     }
+
+
+List conference rooms
+---------------------
+
+To get a list of all conference rooms - issue GET request against **/api/exchange-conference-rooms/**.
+Only users with view access to tenant can view tenant conference rooms.
+
+Filtering and ordering is possible by:
+
+- ?name=XXX
+- ?username=XXX
+- ?phone=XXX
+- ?location=XXX
+- ?tenant_domain=XXX
+- ?tenant_uuid=XXX
+
+Response example:
+
+.. code-block:: javascript
+
+    [
+        {
+            "url": "http://example.com/api/exchange-conference-rooms/a4c1c77342f6461c8f219d44170baa86/",
+            "uuid": "a4c1c77342f6461c8f219d44170baa86",
+            "tenant": "http://example.com/api/exchange-tenants/3543fd6904c64626818a0a6d6c50a615/",
+            "tenant_uuid": "3543fd6904c64626818a0a6d6c50a615",
+            "tenant_domain": "example.com",
+            "name": "example-cr-1",
+            "username": "example-cr-1",
+            "email": "example-cr-1@example.com",
+            "location": "example-cr-1",
+            "mailbox_size": 50,
+            "phone": ""
+        }
+    ]
+
+
+Create conference room
+----------------------
+
+To create new conference room - issue POST request against **/api/exchange-conference-rooms/**.
+
+Request parameters:
+
+ - tenant - link to exchange tenant object;
+ - name - conference room display name;
+ - username - conference room username/alias;
+ - location - conference room location (optional);
+ - mailbox_size - mailbox size (Mb);
+ - phone - conference room phone (optional);
+
+Example of a request:
+
+.. code-block:: http
+
+    POST /api/exchange-conference-rooms/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "tenant": "http://example.com/api/exchange-tenants/3543fd6904c64626818a0a6d6c50a615/",
+        "name": "example",
+        "username": "example",
+        "location": "",
+        "mailbox_size": 100,
+        "phone": ""
+    }
+
+
+Update conference room
+----------------------
+
+To update conference room data - issue PUT or PATCH request against **/api/exchange-conference-rooms/<user_uuid>/**.
+
+
+Delete conference room
+----------------------
+
+To delete conference room - issue DELETE request against **/api/exchange-conference-rooms/<user_uuid>/**.

@@ -119,4 +119,4 @@ class ConferenceRoom(ExchangeProperty):
 
     @property
     def email(self):
-        return '{}@{}'.format(self.alias, self.tenant.domain)
+        return '{}@{}'.format(self.username, self.tenant.domain)

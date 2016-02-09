@@ -254,14 +254,13 @@ class ContactSerializer(BasePropertySerializer):
 
 class ConferenceRoomSerializer(BasePropertySerializer):
 
-    name = serializers.CharField()
-
     class Meta(BasePropertySerializer.Meta):
         model = models.ConferenceRoom
         view_name = 'exchange-conference-rooms-detail'
         fields = BasePropertySerializer.Meta.fields + (
             'name', 'username', 'email', 'location', 'mailbox_size', 'phone'
         )
+        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
 
     def validate_username(self, value):
         if value:
