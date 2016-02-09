@@ -99,12 +99,12 @@ class UserAPI(SaltStackBaseAPI):
                 'LastName': 'last_name',
                 'MailboxQuota': 'mailbox_size',
                 'DistinguishedName': 'dn',
-                "Office":  "office",
-                "Phone":  "phone",
-                "Department":  "department",
-                "Company":  "company",
-                "Manager":  "manager",
-                "Title":  "title",
+                'Office': 'office',
+                'Phone': 'phone',
+                'Department': 'department',
+                'Company': 'company',
+                'Manager': 'manager',
+                'Title': 'title',
             },
             clean={
                 'MailboxQuota': parse_size,
@@ -207,6 +207,66 @@ class UserAPI(SaltStackBaseAPI):
                 'Quota Limit': parse_size,
                 'MailboxUsage': parse_size,
             },
+        )
+
+        list_send_on_behalf = dict(
+            name='UserDelegationList',
+            input={
+                'id': 'Id',
+                'send_on_behalf': 'SendOnBehalf',
+            },
+            many=True,
+            defaults={'send_on_behalf': None}, **_base
+        )
+
+        add_send_on_behalf = dict(
+            name='UserDelegationSB',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'add': 'Add',
+            },
+            defaults={'add': None}, **_base
+        )
+
+        del_send_on_behalf = dict(
+            name='UserDelegationSB',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'del': 'Remove',
+            },
+            defaults={'del': None}, **_base
+        )
+
+        list_send_as = dict(
+            name='UserDelegationList',
+            input={
+                'id': 'Id',
+                'send_as': 'SendAs',
+            },
+            many=True,
+            defaults={'send_as': None}, **_base
+        )
+
+        add_send_as = dict(
+            name='UserDelegationSA',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'add': 'Add',
+            },
+            defaults={'add': None}, **_base
+        )
+
+        del_send_as = dict(
+            name='UserDelegationSA',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'del': 'Remove',
+            },
+            defaults={'del': None}, **_base
         )
 
 
@@ -367,6 +427,44 @@ class DistributionGroupAPI(SaltStackBaseAPI):
                 'manager_email': 'Id',
             },
             many=True,
+            **_base
+        )
+
+        list_delivery_members = dict(
+            name='DgDeliveryList',
+            input={
+                'id': 'Id',
+            },
+            many=True,
+            **_base
+        )
+
+        add_delivery_members = dict(
+            name='DgDeliveryMgmt',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'add': 'Add',
+            },
+            defaults={'add': None}, **_base
+        )
+
+        del_delivery_members = dict(
+            name='DgDeliveryMgmt',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'del': 'Remove',
+            },
+            defaults={'del': None}, **_base
+        )
+
+        set_delivery_options = dict(
+            name='DgDeliveryIO',
+            input={
+                'id': 'Id',
+                'senders_out': 'SendersOut',
+            },
             **_base
         )
 

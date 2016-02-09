@@ -157,6 +157,16 @@ class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedMo
         }
 
 
+class MemberSerializer(serializers.Serializer):
+
+    users = serializers.HyperlinkedRelatedField(
+        queryset=models.User.objects.all(),
+        view_name='exchange-users-detail',
+        lookup_field='uuid',
+        write_only=True,
+        many=True)
+
+
 class UserPasswordSerializer(serializers.ModelSerializer):
 
     notify = serializers.BooleanField(write_only=True, required=False)
@@ -244,11 +254,16 @@ class ContactSerializer(BasePropertySerializer):
 
 class GroupSerializer(BasePropertySerializer):
 
+    senders_out = serializers.BooleanField(
+        help_text="Delivery management for senders outside organizational unit",
+        write_only=True,
+        required=False)
+
     class Meta(BasePropertySerializer.Meta):
         model = models.Group
         view_name = 'exchange-groups-detail'
         fields = BasePropertySerializer.Meta.fields + (
-            'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email', 'members'
+            'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email', 'members', 'senders_out'
         )
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
         extra_kwargs = dict(
