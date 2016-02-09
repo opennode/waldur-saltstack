@@ -177,7 +177,7 @@ class SaltStackAPI(object):
             raise SaltStackBackendError(
                 "Cannot run command %s on %s: %s" % (
                     cmd, self.target, result.get('Message') or result.get('Output')),
-                result.get('Output'))
+                result.get('Message'))
 
 
 class SaltStackBaseAPI(SaltStackAPI):
