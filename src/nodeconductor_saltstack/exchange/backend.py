@@ -226,6 +226,7 @@ class UserAPI(SaltStackBaseAPI):
                 'user_id': 'MemberId',
                 'add': 'Add',
             },
+            many=True,
             defaults={'add': None}, **_base
         )
 
@@ -236,6 +237,7 @@ class UserAPI(SaltStackBaseAPI):
                 'user_id': 'MemberId',
                 'del': 'Remove',
             },
+            many=True,
             defaults={'del': None}, **_base
         )
 
@@ -256,6 +258,7 @@ class UserAPI(SaltStackBaseAPI):
                 'user_id': 'MemberId',
                 'add': 'Add',
             },
+            many=True,
             defaults={'add': None}, **_base
         )
 
@@ -266,6 +269,7 @@ class UserAPI(SaltStackBaseAPI):
                 'user_id': 'MemberId',
                 'del': 'Remove',
             },
+            many=True,
             defaults={'del': None}, **_base
         )
 
@@ -446,6 +450,7 @@ class DistributionGroupAPI(SaltStackBaseAPI):
                 'user_id': 'MemberId',
                 'add': 'Add',
             },
+            many=True,
             defaults={'add': None}, **_base
         )
 
@@ -456,6 +461,7 @@ class DistributionGroupAPI(SaltStackBaseAPI):
                 'user_id': 'MemberId',
                 'del': 'Remove',
             },
+            many=True,
             defaults={'del': None}, **_base
         )
 

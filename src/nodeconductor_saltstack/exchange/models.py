@@ -64,6 +64,8 @@ class User(ExchangeProperty):
     company = models.CharField(max_length=255, blank=True)
     manager = models.ForeignKey('User', blank=True, null=True)
     title = models.CharField(max_length=255, blank=True)
+    send_on_behalf_members = models.ManyToManyField('self', related_name='+')
+    send_as_members = models.ManyToManyField('self', related_name='+')
 
     tracker = FieldTracker()
 
@@ -102,7 +104,10 @@ class Contact(ExchangeProperty):
 class Group(ExchangeProperty):
     manager = models.ForeignKey(User, related_name='groups')
     username = models.CharField(max_length=255)
-    members = models.ManyToManyField(User)
+    members = models.ManyToManyField(User, related_name='+')
+    delivery_members = models.ManyToManyField(User, related_name='+')
+    senders_out = models.BooleanField(
+        default=False, help_text='Delivery management for senders outside organizational unit')
 
     @property
     def email(self):

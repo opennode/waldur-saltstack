@@ -157,16 +157,6 @@ class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedMo
         }
 
 
-class MemberSerializer(serializers.Serializer):
-
-    users = serializers.HyperlinkedRelatedField(
-        queryset=models.User.objects.all(),
-        view_name='exchange-users-detail',
-        lookup_field='uuid',
-        write_only=True,
-        many=True)
-
-
 class UserPasswordSerializer(serializers.ModelSerializer):
 
     notify = serializers.BooleanField(write_only=True, required=False)
@@ -186,12 +176,15 @@ class UserSerializer(BasePropertySerializer):
         view_name = 'exchange-users-detail'
         fields = BasePropertySerializer.Meta.fields + (
             'name', 'first_name', 'last_name', 'username', 'password', 'mailbox_size',
-            'office', 'phone', 'department', 'company', 'title', 'manager', 'email', 'notify'
+            'office', 'phone', 'department', 'company', 'title', 'manager', 'email', 'notify',
+            'send_on_behalf_members', 'send_as_members',
         )
         # password update is handled separately in views.py
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password', 'email')
         extra_kwargs = dict(
             manager={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
+            send_as_members={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
+            send_on_behalf_members={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
             **BasePropertySerializer.Meta.extra_kwargs
         )
         protected_fields = BasePropertySerializer.Meta.protected_fields + ('notify',)
@@ -304,24 +297,19 @@ class ConferenceRoomSerializer(BasePropertySerializer):
 
 class GroupSerializer(BasePropertySerializer):
 
-    senders_out = serializers.BooleanField(
-        help_text="Delivery management for senders outside organizational unit",
-        write_only=True,
-        required=False)
-
     class Meta(BasePropertySerializer.Meta):
         model = models.Group
         view_name = 'exchange-groups-detail'
         fields = BasePropertySerializer.Meta.fields + (
-            'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email', 'members', 'senders_out'
+            'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email',
+            'senders_out', 'members', 'delivery_members',
         )
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
         extra_kwargs = dict(
-            BasePropertySerializer.Meta.extra_kwargs.items() +
-            {
-                'manager': {'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
-                'members': {'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
-            }.items()
+            manager={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
+            members={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
+            delivery_members={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
+            **BasePropertySerializer.Meta.extra_kwargs
         )
         related_paths = dict(
             BasePropertySerializer.Meta.related_paths.items() +

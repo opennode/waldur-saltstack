@@ -1,4 +1,5 @@
 from functools import wraps
+from django.db import IntegrityError, transaction
 from rest_framework import exceptions, filters, permissions, viewsets
 
 from nodeconductor.core.exceptions import IncorrectStateException
@@ -15,7 +16,7 @@ def track_exceptions(view_fn):
     def wrapped(*args, **kwargs):
         try:
             return view_fn(*args, **kwargs)
-        except SaltStackBackendError as e:
+        except (SaltStackBackendError, IntegrityError) as e:
             raise exceptions.APIException(e.traceback_str)
     return wrapped
 
@@ -67,8 +68,9 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
         backend_obj = backend.create(
             **{k: v for k, v in serializer.validated_data.items() if k in valid_args and v is not None})
 
-        obj = serializer.save(backend_id=backend_obj.id)
-        self.post_create(obj, serializer, backend_obj)
+        with transaction.atomic():
+            obj = serializer.save(backend_id=backend_obj.id)
+            self.post_create(obj, serializer, backend_obj)
 
     @track_exceptions
     def perform_update(self, serializer):
@@ -76,12 +78,14 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
         backend = self.get_backend(obj.tenant)
         changed = {
             k: v for k, v in serializer.validated_data.items()
-            if v and k in backend.Methods.create['input'] and getattr(obj, k) != v}
+            if v and k in backend.Methods.change['input'] and getattr(obj, k) != v}
         if changed:
             backend.change(id=obj.backend_id, **changed)
-        self.pre_update(obj, serializer)
-        serializer.save()
-        self.post_update(obj, serializer)
+
+        with transaction.atomic():
+            self.pre_update(obj, serializer)
+            serializer.save()
+            self.post_update(obj, serializer)
 
     @track_exceptions
     def perform_destroy(self, obj):

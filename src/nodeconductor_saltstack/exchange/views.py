@@ -2,9 +2,8 @@ from cStringIO import StringIO
 from django.http import HttpResponse
 
 from rest_framework.decorators import detail_route
-from rest_framework.exceptions import APIException, NotAcceptable
 from rest_framework.response import Response
-from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT, HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 
 from nodeconductor.core.tasks import send_task
 from nodeconductor.core.csv import UnicodeDictReader, UnicodeDictWriter
@@ -62,7 +61,11 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
 
             reader = UnicodeDictReader(csvfile)
             tenant_url = self.get_serializer(instance=tenant).data['url']
-            data = [dict(tenant=tenant_url, **row) for row in reader]
+            data = [dict(
+                tenant=tenant_url,
+                send_as_members=[],
+                send_on_behalf_members=[],
+                **row) for row in reader]
 
             serializer = serializers.UserSerializer(data=data, many=True, context={'request': request})
             serializer.is_valid(raise_exception=True)
@@ -83,7 +86,8 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="%s_users.csv"' % tenant.backend_id
 
-            exclude = ('url', 'tenant', 'tenant_uuid', 'tenant_domain', 'manager', 'notify')
+            exclude = ('url', 'tenant', 'tenant_uuid', 'tenant_domain', 'manager',
+                       'notify', 'send_on_behalf_members', 'send_as_members')
             headers = [f for f in serializers.UserSerializer.Meta.fields if f not in exclude]
             writer = UnicodeDictWriter(response, fieldnames=headers)
             writer.writeheader()
@@ -110,65 +114,38 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         return Response('Tenant quotas were successfully changed.', status=HTTP_200_OK)
 
 
-# TODO: add some explanation for this mixin.
-class ExchangePropertyViewSet(BasePropertyViewSet):
+class PropertyWithMembersViewSet(BasePropertyViewSet):
 
-    # TODO: add explanation for this method. - it is too complex
-    def manage_members(self, add_method=None, del_method=None, list_method=None):
+    def members_create(self, obj, field_name='', add_method=None):
+        backend = self.get_backend(obj.tenant)
+        members = getattr(obj, field_name).values_list('backend_id', flat=True)
+        if members:
+            getattr(backend, add_method)(id=obj.backend_id, user_id=','.join(members))
+
+    def members_update(self, obj, field_name='', add_method=None, del_method=None, list_method=None, data=None):
+        backend = self.get_backend(obj.tenant)
+        if field_name in data:
+            cur_members = getattr(self, 'cur_%s' % field_name)
+            new_members = set(u.backend_id for u in data.get(field_name))
+
+            new_users = new_members - cur_members
+            if new_users:
+                getattr(backend, add_method)(id=obj.backend_id, user_id=','.join(new_users))
+
+            # TODO: replace it with single method deletion when implemented on backend
+            for old_user in cur_members - new_members:
+                getattr(backend, del_method)(id=obj.backend_id, user_id=old_user)
+
+    def members_list(self, field_name='', list_method=None):
         obj = self.get_object()
         request = self.request
-        backend = self.get_backend(obj.tenant)
+        entities = getattr(obj, field_name).all()
 
-        if request.method == 'GET':
-            if list_method is None:
-                raise APIException("List method is not defined")
-
-            ids = [u.id for u in getattr(backend, list_method)(id=obj.backend_id)]
-            users = models.User.objects.filter(backend_id__in=ids)
-            serializer = serializers.UserSerializer(
-                instance=users, context={'request': request}, many=True)
-
-            return Response(serializer.data, status=HTTP_200_OK)
-
-        serializer = serializers.MemberSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        users = ','.join(u.backend_id for u in serializer.validated_data['users'])
-
-        if not users:
-            raise NotAcceptable("Empty users list")
-
-        if request.method == 'POST':
-            if add_method is None:
-                raise APIException("Add method is not defined")
-
-            if list_method is not None and del_method is None:
-                raise APIException("Delete method is not defined")
-
-            if list_method:
-                cur_members = set(u.id for u in getattr(backend, list_method)(id=obj.backend_id))
-                new_members = set(users.split(','))
-
-                to_add = new_members - cur_members
-                if to_add:
-                    getattr(backend, add_method)(id=obj.backend_id, user_id=','.join(to_add))
-
-                to_del = cur_members - new_members
-                if to_del:
-                    getattr(backend, del_method)(id=obj.backend_id, user_id=','.join(to_del))
-            else:
-                getattr(backend, add_method)(id=obj.backend_id, user_id=users)
-
-            return Response({'status': 'Request accepted successfully'}, status=HTTP_202_ACCEPTED)
-
-        elif request.method == 'DELETE':
-            if del_method is None:
-                raise APIException("Delete method is not defined")
-
-            getattr(backend, del_method)(id=obj.backend_id, user_id=users)
-            return Response(status=HTTP_204_NO_CONTENT)
+        return Response(serializers.UserSerializer(
+            entities, many=True, context={'request': request}).data, status=HTTP_200_OK)
 
 
-class UserViewSet(ExchangePropertyViewSet):
+class UserViewSet(PropertyWithMembersViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
     filter_class = filters.UserFilter
@@ -184,8 +161,23 @@ class UserViewSet(ExchangePropertyViewSet):
         user.password = backend_user.password
         user.save()
 
+        self.members_create(user, 'send_on_behalf_members', 'add_send_on_behalf')
+        self.members_create(user, 'send_as_members', 'add_send_as')
+
         if serializer.validated_data.get('notify'):
             user.notify()
+
+    def pre_update(self, user, serializer):
+        self.cur_send_on_behalf_members = set(user.send_on_behalf_members.values_list('backend_id', flat=True))
+        self.cur_send_as_members = set(user.send_as_members.values_list('backend_id', flat=True))
+
+    def post_update(self, user, serializer):
+        self.members_update(
+            user, 'send_on_behalf_members', data=serializer.validated_data,
+            add_method='add_send_on_behalf', del_method='del_send_on_behalf', list_method='list_send_on_behalf')
+        self.members_update(
+            user, 'send_as_members', data=serializer.validated_data,
+            add_method='add_send_as', del_method='del_send_as', list_method='list_send_as')
 
     # XXX: put was added as portal has a temporary bug with widget update
     @detail_route(methods=['post', 'put'])
@@ -205,21 +197,13 @@ class UserViewSet(ExchangePropertyViewSet):
 
         return Response(serializer.data, status=HTTP_200_OK)
 
-    @detail_route(methods=['get', 'post'])
-    @track_exceptions
+    @detail_route(methods=['get'])
     def sendonbehalf(self, request, pk=None, **kwargs):
-        return self.manage_members(
-            add_method='add_send_on_behalf',
-            del_method='del_send_on_behalf',
-            list_method='list_send_on_behalf')
+        return self.members_list('send_on_behalf_members')
 
-    @detail_route(methods=['get', 'post'])
-    @track_exceptions
+    @detail_route(methods=['get'])
     def sendas(self, request, pk=None, **kwargs):
-        return self.manage_members(
-            add_method='add_send_as',
-            del_method='del_send_as',
-            list_method='list_send_as')
+        return self.members_list('send_as_members')
 
 
 class ContactViewSet(BasePropertyViewSet):
@@ -236,53 +220,40 @@ class ConferenceRoomViewSet(BasePropertyViewSet):
     backend_name = 'conference_rooms'
 
 
-class GroupViewSet(ExchangePropertyViewSet):
+class GroupViewSet(PropertyWithMembersViewSet):
     queryset = models.Group.objects.all()
     serializer_class = serializers.GroupSerializer
     filter_class = filters.GroupFilter
     backend_name = 'groups'
 
-    def post_create(self, group, serializer, backend_group):
+    def update_senders_out(self, group, serializer):
         backend = self.get_backend(group.tenant)
-        members = group.members.values_list('backend_id', flat=True)
-        if members:
-            backend.add_member(id=group.backend_id, user_id=','.join(members))
-
         senders_out = serializer.validated_data.get('senders_out', None)
-        if senders_out is not None:
+        if senders_out is not None and senders_out != group.senders_out:
             backend.set_delivery_options(id=group.backend_id, senders_out=senders_out)
+
+    def post_create(self, group, serializer, backend_group):
+        self.update_senders_out(group, serializer)
+        self.members_create(group, 'members', 'add_member')
+        self.members_create(group, 'delivery_members', 'add_delivery_members')
 
     def pre_update(self, group, serializer):
         self.cur_members = set(group.members.values_list('backend_id', flat=True))
+        self.cur_delivery_members = set(group.delivery_members.values_list('backend_id', flat=True))
 
     def post_update(self, group, serializer):
-        backend = self.get_backend(group.tenant)
-        if 'members' in serializer.validated_data:
-            new_members = set(u.backend_id for u in serializer.validated_data['members'])
-            cur_members = self.cur_members
-
-            new_users = new_members - cur_members
-            if new_users:
-                backend.add_member(id=group.backend_id, user_id=','.join(new_users))
-
-            for old_user in cur_members - new_members:
-                backend.del_member(id=group.backend_id, user_id=old_user)
-
-        senders_out = serializer.validated_data.get('senders_out', None)
-        if senders_out is not None:
-            backend.set_delivery_options(id=group.backend_id, senders_out=senders_out)
+        self.update_senders_out(group, serializer)
+        self.members_update(
+            group, 'members', data=serializer.validated_data,
+            add_method='add_member', del_method='del_member', list_method='list_members')
+        self.members_update(
+            group, 'delivery_members', data=serializer.validated_data,
+            add_method='add_delivery_members', del_method='del_delivery_members', list_method='list_delivery_members')
 
     @detail_route(methods=['get'])
     def members(self, request, pk=None, **kwargs):
-        group = self.get_object()
+        return self.members_list('members')
 
-        return Response(serializers.UserSerializer(
-            group.members.all(), many=True, context={'request': request}).data, status=HTTP_200_OK)
-
-    @detail_route(methods=['get', 'post'])
-    @track_exceptions
+    @detail_route(methods=['get'])
     def delivery_members(self, request, pk=None, **kwargs):
-        return self.manage_members(
-            add_method='add_delivery_members',
-            del_method='del_delivery_members',
-            list_method='list_delivery_members')
+        return self.members_list('delivery_members')
