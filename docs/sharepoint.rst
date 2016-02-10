@@ -223,6 +223,33 @@ Delete tenant
 To delete tenant - issue DELETE request against **/api/sharepoint-tenants/<tenant_uuid>/**.
 
 
+Change tenant quotas
+--------------------
+
+To update tenant quotas - issue POST request against **/api/sharepoint-tenants/<tenant_uuid>/change_quotas/** with
+parameters (at least one parameter should be defined):
+ - user_count
+ - storage
+
+On user_count update size of personal site collection will be changed automatically too.
+It is impossible to increase user_count quota if there is not enough space for all of them.
+
+
+Example of valid request:
+
+.. code-block:: http
+
+    POST /api/exchange-tenants/7693d9308e0641baa95720d0046e5696/change_quotas/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "storage": 200
+    }
+
+
 List users
 ----------
 

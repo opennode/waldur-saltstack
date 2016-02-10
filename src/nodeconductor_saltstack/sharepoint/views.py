@@ -57,16 +57,16 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
     def change_quotas(self, request, pk=None, **kwargs):
         tenant = self.get_object()
 
-        if tenant.initialization_status != models.SharepointTenant.InitializationStatuses.NOT_INITIALIZED:
+        if tenant.initialization_status != models.SharepointTenant.InitializationStatuses.INITIALIZED:
             raise IncorrectStateException("Tenant must be in 'Initialized' state to perform change quotas operation.")
 
-        serializer = serializers.SharepointTenant(data=request.data, context={'tenant': tenant})
+        serializer = serializers.TenantQuotaSerializer(data=request.data, context={'tenant': tenant})
         serializer.is_valid(raise_exception=True)
 
         # Update personal site collection size if user count was changed
         if 'user_count' in serializer.validated_data:
             backend = tenant.get_backend()
-            storage_per_user = models.SiteCollection.default.personal_site_collection['storage']
+            storage_per_user = models.SiteCollection.Defaults.personal_site_collection['storage']
             personal_site_collection_storage = serializer.validated_data['user_count'] * storage_per_user
             backend.site_collections.set_storage(
                 url=tenant.personal_site_collection.access_url,
@@ -77,6 +77,8 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
 
         for quota_name, value in serializer.validated_data.items():
             tenant.set_quota_limit(quota_name, value)
+
+        return response.Response('Quotas were successfully changed.', status=HTTP_200_OK)
 
 
 class TemplateViewSet(structure_views.BaseServicePropertyViewSet):
