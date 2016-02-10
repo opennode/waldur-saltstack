@@ -45,6 +45,9 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
     def post_create(self, obj, serializer, backend_obj):
         pass
 
+    def pre_update(self, obj, serializer):
+        pass
+
     def post_update(self, obj, serializer):
         pass
 
@@ -76,6 +79,7 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
             if v and k in backend.Methods.create['input'] and getattr(obj, k) != v}
         if changed:
             backend.change(id=obj.backend_id, **changed)
+        self.pre_update(obj, serializer)
         serializer.save()
         self.post_update(obj, serializer)
 
