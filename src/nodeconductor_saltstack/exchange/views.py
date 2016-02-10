@@ -158,7 +158,7 @@ class ExchangePropertyViewSet(BasePropertyViewSet):
             else:
                 getattr(backend, add_method)(id=obj.backend_id, user_id=users)
 
-            return Response(status=HTTP_202_ACCEPTED)
+            return Response({'status': 'Request accepted successfully'}, status=HTTP_202_ACCEPTED)
 
         elif request.method == 'DELETE':
             if del_method is None:
