@@ -196,7 +196,15 @@ Response example:
             "username": "joe.doe",
             "password": "?lU_YmOi_vO=",
             "mailbox_size": 5,
-            "email": "joe.doe@test.com"
+            "office": "",
+            "phone": "",
+            "department": "",
+            "company": "",
+            "title": "",
+            "manager": null,
+            "email": "joe.doe@test.com",
+            "send_on_behalf_members": [],
+            "send_as_members": []
         }
     ]
 
@@ -221,6 +229,8 @@ Request parameters:
  - company - user company name (optional);
  - title - user title (optional);
  - notify - whether to SMS temp password to user (optional);
+ - send_on_behalf_members - a list of members' links;
+ - send_as_members - a list of members' links;
 
 Example of a request:
 
@@ -238,14 +248,16 @@ Example of a request:
         "username": "joe.d",
         "first_name": "Joe",
         "last_name": "Doe",
-        "mailbox_size": "5"
+        "mailbox_size": "5",
         "office": "office",
-        "phone": "21323211,
+        "phone": "21323211",
         "department": "test department",
         "company": "test company",
         "title": "Joe",
         "notify": true,
-        "manager": "http://example.com/api/exchange-users/b5b164ffbc434bbaaad15d4ae8f6a979/"
+        "manager": "http://example.com/api/exchange-users/b5b164ffbc434bbaaad15d4ae8f6a979/",
+        "send_on_behalf_members": [],
+        "send_as_members": []
     }
 
 
@@ -298,38 +310,16 @@ Example of a valid request:
     }
 
 
-User delegation SendOnBehalf
-----------------------------
+View user delegations SendOnBehalf
+----------------------------------
 
 To get a list of delegations - issue GET request against **/api/exchange-users/<user_uuid>/sendonbehalf/**.
 
-To update delegations - issue POST request against **/api/exchange-users/<user_uuid>/sendonbehalf/**.
 
-Example of a valid request:
-
-.. code-block:: http
-
-    POST /api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/sendonbehalf/ HTTP/1.1
-    Content-Type: application/json
-    Accept: application/json
-    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
-    Host: example.com
-
-    {
-        "users": [
-            "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
-            "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/"
-        ]
-    }
-
-User delegation SendAs
-----------------------
+View user delegations SendAs
+----------------------------
 
 To get a list of delegations - issue GET request against **/api/exchange-users/<user_uuid>/sendas/**.
-
-To add or remove delegations - issue POST request against **/api/exchange-users/<user_uuid>/sendas/**.
-
-See usage example in delegation of SendOnBehalf.
 
 
 Delete user
@@ -445,10 +435,12 @@ Response example:
             "name": "My Group",
             "username": "grp",
             "email": "grp@test.com",
+            "senders_out": true,
             "members": [
                 "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
                 "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/"
-            ]
+            ],
+            "delivery_members": []
         }
     ]
 
@@ -465,6 +457,7 @@ Request parameters:
  - name - distribution group name;
  - username - group username;
  - members - a list of group members' links;
+ - delivery_members - a list of delivery members' links;
  - senders_out - flag for delivery management for senders outside organizational unit;
 
 Example of a request:
@@ -485,7 +478,8 @@ Example of a request:
         "senders_out": false,
         "members": [
             "http://example.com/api/exchange-users/ee6ca4b2929c46cb85bedb276a937ac2/"
-        ]
+        ],
+        "delivery_members": []
     }
 
 
@@ -561,6 +555,11 @@ Example of a requests:
         "members": []
     }
 
+Change delivery group members
+-----------------------------
+
+To change distribution group members - issue PUT or PATCH request against **/api/exchange-groups/<group_uuid>/**.
+
 
 List group members
 ------------------
@@ -614,29 +613,10 @@ Response example:
         }
     ]
 
-Manage distribution group delivery members
-------------------------------------------
+List delivery group members
+---------------------------
 
-To get a list of all delivery members - issue GET request against **/api/exchange-groups/<group_uuid>/delivery_members/**.
-
-To update a list of all delivery members - issue POST request against **/api/exchange-groups/<group_uuid>/delivery_members/**.
-
-Example of a request:
-
-.. code-block:: http
-
-    POST /api/exchange-groups/c39cc7f57fab499786609298019cf844/delivery_members/ HTTP/1.1
-    Content-Type: application/json
-    Accept: application/json
-    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
-    Host: example.com
-
-    {
-        "members": [
-            "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
-            "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/"
-        ]
-    }
+To get a list of all distribution group members - issue GET request against **/api/exchange-groups/<group_uuid>/delivery_members/**.
 
 
 List conference rooms
