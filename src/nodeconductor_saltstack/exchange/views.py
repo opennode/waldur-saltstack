@@ -125,8 +125,7 @@ class PropertyWithMembersViewSet(BasePropertyViewSet):
     def members_update(self, obj, field_name='', add_method=None, del_method=None, list_method=None, data=None):
         backend = self.get_backend(obj.tenant)
         if field_name in data:
-            # TODO: avoid extra query to backend
-            cur_members = set(u.id for u in getattr(backend, list_method)(id=obj.backend_id))
+            cur_members = getattr(self, 'cur_%s' % field_name)
             new_members = set(u.backend_id for u in data.get(field_name))
 
             new_users = new_members - cur_members
@@ -167,6 +166,10 @@ class UserViewSet(PropertyWithMembersViewSet):
 
         if serializer.validated_data.get('notify'):
             user.notify()
+
+    def pre_update(self, group, serializer):
+        self.cur_send_on_behalf_members = set(group.send_on_behalf_members.values_list('backend_id', flat=True))
+        self.cur_send_as_members = set(group.send_as_members.values_list('backend_id', flat=True))
 
     def post_update(self, user, serializer):
         self.members_update(
@@ -233,6 +236,10 @@ class GroupViewSet(PropertyWithMembersViewSet):
         self.update_senders_out(group, serializer)
         self.members_create(group, 'members', 'add_member')
         self.members_create(group, 'delivery_members', 'add_delivery_members')
+
+    def pre_update(self, group, serializer):
+        self.cur_members = set(group.members.values_list('backend_id', flat=True))
+        self.cur_delivery_members = set(group.delivery_members.values_list('backend_id', flat=True))
 
     def post_update(self, group, serializer):
         self.update_senders_out(group, serializer)
