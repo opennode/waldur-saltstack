@@ -252,11 +252,14 @@ class GroupViewSet(ExchangePropertyViewSet):
         if senders_out is not None:
             backend.set_delivery_options(id=group.backend_id, senders_out=senders_out)
 
+    def pre_update(self, group, serializer):
+        self.cur_members = set(group.members.values_list('backend_id', flat=True))
+
     def post_update(self, group, serializer):
         backend = self.get_backend(group.tenant)
         if 'members' in serializer.validated_data:
             new_members = set(u.backend_id for u in serializer.validated_data['members'])
-            cur_members = set(group.members.values_list('backend_id', flat=True))
+            cur_members = self.cur_members
 
             new_users = new_members - cur_members
             if new_users:
