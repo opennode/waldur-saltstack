@@ -167,9 +167,9 @@ class UserViewSet(PropertyWithMembersViewSet):
         if serializer.validated_data.get('notify'):
             user.notify()
 
-    def pre_update(self, group, serializer):
-        self.cur_send_on_behalf_members = set(group.send_on_behalf_members.values_list('backend_id', flat=True))
-        self.cur_send_as_members = set(group.send_as_members.values_list('backend_id', flat=True))
+    def pre_update(self, user, serializer):
+        self.cur_send_on_behalf_members = set(user.send_on_behalf_members.values_list('backend_id', flat=True))
+        self.cur_send_as_members = set(user.send_as_members.values_list('backend_id', flat=True))
 
     def post_update(self, user, serializer):
         self.members_update(
