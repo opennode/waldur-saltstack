@@ -71,6 +71,20 @@ class TenantAPI(SaltStackBaseAPI):
             },
         )
 
+        change_quotas = dict(
+            name='EditQuota',
+            input={
+                'tenant': 'TenantName',
+                'global_mailbox_size': 'MailboxDatabaseSize',
+            },
+            defaults={
+                'tenant': "{backend.tenant.backend_id}",
+            },
+            output={
+                'Mailbox Database Size': 'global_mailbox_size',
+            },
+        )
+
 
 class UserAPI(SaltStackBaseAPI):
 
@@ -85,12 +99,12 @@ class UserAPI(SaltStackBaseAPI):
                 'LastName': 'last_name',
                 'MailboxQuota': 'mailbox_size',
                 'DistinguishedName': 'dn',
-                "Office":  "office",
-                "Phone":  "phone",
-                "Department":  "department",
-                "Company":  "company",
-                "Manager":  "manager",
-                "Title":  "title",
+                'Office': 'office',
+                'Phone': 'phone',
+                'Department': 'department',
+                'Company': 'company',
+                'Manager': 'manager',
+                'Title': 'title',
             },
             clean={
                 'MailboxQuota': parse_size,
@@ -193,6 +207,66 @@ class UserAPI(SaltStackBaseAPI):
                 'Quota Limit': parse_size,
                 'MailboxUsage': parse_size,
             },
+        )
+
+        list_send_on_behalf = dict(
+            name='UserDelegationList',
+            input={
+                'id': 'Id',
+                'send_on_behalf': 'SendOnBehalf',
+            },
+            many=True,
+            defaults={'send_on_behalf': None}, **_base
+        )
+
+        add_send_on_behalf = dict(
+            name='UserDelegationSB',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'add': 'Add',
+            },
+            defaults={'add': None}, **_base
+        )
+
+        del_send_on_behalf = dict(
+            name='UserDelegationSB',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'del': 'Remove',
+            },
+            defaults={'del': None}, **_base
+        )
+
+        list_send_as = dict(
+            name='UserDelegationList',
+            input={
+                'id': 'Id',
+                'send_as': 'SendAs',
+            },
+            many=True,
+            defaults={'send_as': None}, **_base
+        )
+
+        add_send_as = dict(
+            name='UserDelegationSA',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'add': 'Add',
+            },
+            defaults={'add': None}, **_base
+        )
+
+        del_send_as = dict(
+            name='UserDelegationSA',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'del': 'Remove',
+            },
+            defaults={'del': None}, **_base
         )
 
 
@@ -356,6 +430,115 @@ class DistributionGroupAPI(SaltStackBaseAPI):
             **_base
         )
 
+        list_delivery_members = dict(
+            name='DgDeliveryList',
+            input={
+                'id': 'Id',
+            },
+            many=True,
+            **_base
+        )
+
+        add_delivery_members = dict(
+            name='DgDeliveryMgmt',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'add': 'Add',
+            },
+            defaults={'add': None}, **_base
+        )
+
+        del_delivery_members = dict(
+            name='DgDeliveryMgmt',
+            input={
+                'id': 'Id',
+                'user_id': 'MemberId',
+                'del': 'Remove',
+            },
+            defaults={'del': None}, **_base
+        )
+
+        set_delivery_options = dict(
+            name='DgDeliveryIO',
+            input={
+                'id': 'Id',
+                'senders_out': 'SendersOut',
+            },
+            **_base
+        )
+
+
+class ConferenceRoomAPI(SaltStackBaseAPI):
+
+    class Methods:
+        _base = dict(
+            output={
+                'Guid': 'id',
+                'Email Address': 'email',
+                'DisplayName': 'name',
+                'DistinguishedName': 'dn',
+                'RoomAlias': 'username',
+                'Location': 'location',
+                'Phone': 'phone',
+                'MailboxQuota': 'mailbox_size',
+
+            },
+            clean={
+                'MailboxQuota': parse_size,
+            },
+        )
+
+        create = dict(
+            name='AddConfRoom',
+            input={
+                'tenant': 'TenantName',
+                'domain': 'TenantDomain',
+                'name': 'DisplayName',
+                'username': 'Alias',
+                'location': 'Location',
+                'phone': 'Phone',
+                'mailbox_size': 'MailboxSize',
+            },
+            defaults={
+                'tenant': "{backend.tenant.backend_id}",
+                'domain': "{backend.tenant.domain}",
+            },
+            **_base
+        )
+
+        list = dict(
+            name='ConfRoomList',
+            input={
+                'tenant': 'TenantName',
+            },
+            defaults={
+                'tenant': "{backend.tenant.backend_id}",
+            },
+            many=True,
+            **_base
+        )
+
+        delete = dict(
+            name='DelConfRoom',
+            input={
+                'id': 'Id',
+            },
+        )
+
+        change = dict(
+            name='EditConfRoom',
+            input={
+                'id': 'Id',
+                'name': 'DisplayName',
+                'username': 'Alias',
+                'location': 'Location',
+                'phone': 'Phone',
+                'mailbox_size': 'MailboxSize'
+            },
+            **_base
+        )
+
 
 class ExchangeBackend(SaltStackBaseBackend):
 
@@ -366,6 +549,7 @@ class ExchangeBackend(SaltStackBaseBackend):
         'groups': DistributionGroupAPI,
         'tenants': TenantAPI,
         'users': UserAPI,
+        'conference_rooms': ConferenceRoomAPI,
     }
 
     def __init__(self, *args, **kwargs):

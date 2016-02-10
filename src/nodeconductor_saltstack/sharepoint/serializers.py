@@ -65,15 +65,6 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
                                 "than %s MB" % storage_left)
                 })
 
-            service_settings_storage_quota = spl.service.settings.quotas.get(
-                name=spl.service.settings.Quotas.sharepoint_storage)
-            if service_settings_storage_quota.is_exceeded(delta=attrs.get('storage')):
-                storage_left = service_settings_storage_quota.limit - service_settings_storage_quota.usage
-                raise serializers.ValidationError({
-                    'max_users': ("Service quota exceeded: Total tenant storage size should be lower than %s MB"
-                                  % storage_left)
-                })
-
             users_storage = attrs['user_count'] * SiteCollection.Defaults.personal_site_collection['storage']
             admin_storage = SiteCollection.Defaults.admin_site_collection['storage']
             if users_storage + admin_storage > attrs['storage']:
@@ -223,6 +214,49 @@ class SiteCollectionSerializer(MainSiteCollectionSerializer):
             raise serializers.ValidationError(
                 'Site collection with name "%s" already exists in such tenant' % attrs['name'])
 
+        return attrs
+
+
+# Should be initialized with tenant in context
+class TenantQuotaSerializer(serializers.Serializer):
+    storage = serializers.FloatField(min_value=1, write_only=True, required=False, help_text='Maximum storage size, MB')
+    user_count = serializers.FloatField(min_value=1, write_only=True, required=False, help_text='Maximum user count')
+
+    def validate_storage(self, value):
+        tenant = self.context['tenant']
+        old_quota = tenant.quotas.get(name=SharepointTenant.Quotas.storage)
+        if value < old_quota.usage:
+            raise serializers.ValidationError('New storage quota limit cannot be lower than current usage.')
+
+        diff = value - old_quota.limit
+        if diff > 0:
+            spl = tenant.service_project_link
+            spl_storage_quota = spl.quotas.get(name=spl.Quotas.sharepoint_storage)
+            if spl_storage_quota.is_exceeded(delta=diff):
+                storage_left = spl_storage_quota.limit - spl_storage_quota.usage
+                raise serializers.ValidationError(
+                    "Service project link quota exceeded: Tenant size cannot be increased by more "
+                    "than %s MB" % storage_left
+                )
+        return value
+
+    def validate_user_count(self, value):
+        tenant = self.context['tenant']
+        old_quota = tenant.quotas.get(name=SharepointTenant.Quotas.user_count)
+        if value < old_quota.usage:
+            raise serializers.ValidationError('New user_count quota limit cannot be lower than current usage.')
+
+        storage_quota = tenant.quotas.get(name=SharepointTenant.Quotas.storage)
+        new_users_storage = (value - old_quota.limit) * SiteCollection.Defaults.personal_site_collection['storage']
+        if storage_quota.is_exceeded(delta=new_users_storage):
+            storage_left = storage_quota.limit - storage_quota.usage
+            raise serializers.ValidationError('New users cannot consume more than %s MB' % storage_left)
+
+        return value
+
+    def validate(self, attrs):
+        if 'storage' not in attrs and 'user_count' not in attrs:
+            raise serializers.ValidationError('At least one quota should be defined.')
         return attrs
 
 

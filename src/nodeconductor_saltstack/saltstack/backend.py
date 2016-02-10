@@ -84,8 +84,9 @@ class SaltStackBaseBackend(six.with_metaclass(SaltStackMetaclass, ServiceBackend
         for cls in SaltStackBackend.backends:
             cls(self.settings).sync_backend()
 
-    def ping(self):
-        return all(cls(self.settings).base.ping() for cls in SaltStackBackend.backends)
+    def ping(self, raise_exception=False):
+        return all(cls(self.settings).base.ping(
+            raise_exception=raise_exception) for cls in SaltStackBackend.backends)
 
 
 class SaltStackAPI(object):
@@ -125,19 +126,33 @@ class SaltStackAPI(object):
             raise SaltStackBackendError(
                 "Request to salt API %s failed: %s %s" % (url, response.status_code, response.text))
 
-    def ping(self):
-        response = self.request('/run', {
-            'client': 'local',
-            'fun': 'test.ping',
-            'tgt': self.target,
-        })
+    def ping(self, raise_exception=False):
+        try:
+            response = self.request('/run', {
+                'client': 'local',
+                'fun': 'test.ping',
+                'tgt': self.target,
+            })
 
-        return all(response['return'][0].values())
+            return all(response['return'][0].values())
+
+        except Exception as e:
+            if raise_exception:
+                six.reraise(SaltStackBackendError, e)
+            return False
 
     def run_cmd(self, cmd, **kwargs):
-        command = self.COMMAND.format(
-            name=self.MAPPING.get(cmd) or cmd,
-            args=' '.join(['-%s "%s"' % (k, v) for k, v in kwargs.items()]))
+
+        def prepare_args():
+            for k, v in kwargs.iteritems():
+                if v is None:
+                    yield '-{}'.format(k)
+                elif isinstance(v, bool):
+                    yield '-{} {}'.format(k, str(v).lower())
+                else:
+                    yield '-{} "{}"'.format(k, v)
+
+        command = self.COMMAND.format(name=self.MAPPING.get(cmd) or cmd, args=' '.join(prepare_args()))
 
         logger.debug('Executing command: {}'.format(command))
 
@@ -260,6 +275,8 @@ class SaltStackBaseAPI(SaltStackAPI):
                             kwargs[opt] = fn.format(backend=self.backend, **kwargs)
                         elif isinstance(fn, types.FunctionType):
                             kwargs[opt] = fn(self.backend, **kwargs)
+                        elif isinstance(fn, (int, bool, float)) or fn is None:
+                            kwargs[opt] = fn
                         else:
                             raise NotImplementedError(
                                 "Unknown default argument '%s' for method %s.%s" % (opt, name, func))

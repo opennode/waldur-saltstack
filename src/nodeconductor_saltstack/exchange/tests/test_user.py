@@ -3,7 +3,7 @@ from mock import patch
 from rest_framework import status, test
 
 from nodeconductor.structure.tests import factories as structure_factories
-from nodeconductor_saltstack.exchange.tests.factories import ExchangeUserFactory, ExchangeTenantFactory
+from nodeconductor_saltstack.exchange.tests.factories import ExchangeTenantFactory
 
 
 @patch('nodeconductor_saltstack.exchange.models.ExchangeTenant.get_backend')

@@ -38,24 +38,10 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
         return super(ExchangeTenant, self).get_backend(backend_class=ExchangeBackend, tenant=self)
 
     def is_username_available(self, username):
-        for model in (User, Group):
+        for model in (User, Group, ConferenceRoom):
             if username in model.objects.filter(tenant=self).values_list('username', flat=True):
                 return False
         return True
-
-    def set_quota_limit(self, quota_name, limit):
-        # XXX: Increase service settings storage quota usage on tenant limit update.
-        #      This type of update logic should be moved to separate quota field. Issue NC-1149.
-        if str(quota_name) == self.Quotas.global_mailbox_size.name:
-            old_limit = self.quotas.get(name=quota_name).limit
-            if old_limit == -1:
-                diff = limit
-            else:
-                diff = limit - old_limit
-            if diff:
-                service_settings = self.service_project_link.service.settings
-                service_settings.add_quota_usage(service_settings.Quotas.exchange_storage, diff)
-        super(ExchangeTenant, self).set_quota_limit(quota_name, limit)
 
 
 class ExchangeProperty(SaltStackProperty):
@@ -117,6 +103,19 @@ class Group(ExchangeProperty):
     manager = models.ForeignKey(User, related_name='groups')
     username = models.CharField(max_length=255)
     members = models.ManyToManyField(User)
+
+    @property
+    def email(self):
+        return '{}@{}'.format(self.username, self.tenant.domain)
+
+
+class ConferenceRoom(ExchangeProperty):
+    username = models.CharField(max_length=255)
+    location = models.CharField(max_length=255, blank=True)
+    phone = models.CharField(max_length=255, blank=True)
+    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of conference room mailbox, MB')
+
+    tracker = FieldTracker()
 
     @property
     def email(self):
