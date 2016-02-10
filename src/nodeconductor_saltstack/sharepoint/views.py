@@ -25,12 +25,6 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         backend = tenant.get_backend()
         backend.provision(tenant)
 
-    def get_serializer_class(self):
-        serializer_class = super(TenantViewSet, self).get_serializer_class()
-        if self.action == 'initialize':
-            serializer_class = serializers.MainSiteCollectionSerializer
-        return serializer_class
-
     @decorators.detail_route(methods=['post'])
     def initialize(self, request, **kwargs):
         tenant = self.get_object()
@@ -38,8 +32,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             raise IncorrectStateException("Tenant must be in 'Not initialized' state to perform initialization operation.")
 
         # create main site collection
-        serializer_class = self.get_serializer_class()
-        serializer = serializer_class(data=request.data)
+        serializer = serializers.MainSiteCollectionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         storage = serializer.validated_data.pop('storage')
@@ -58,6 +51,34 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         tasks.initialize_tenant.delay(tenant.uuid.hex, template.uuid.hex, user.uuid.hex, storage, name, description)
 
         return response.Response({'status': 'Initialization was scheduled successfully.'}, status=status.HTTP_200_OK)
+
+    @decorators.detail_route(methods=['post', 'put'])
+    @track_exceptions
+    def change_quotas(self, request, pk=None, **kwargs):
+        tenant = self.get_object()
+
+        if tenant.initialization_status != models.SharepointTenant.InitializationStatuses.INITIALIZED:
+            raise IncorrectStateException("Tenant must be in 'Initialized' state to perform change quotas operation.")
+
+        serializer = serializers.TenantQuotaSerializer(data=request.data, context={'tenant': tenant})
+        serializer.is_valid(raise_exception=True)
+
+        # Update personal site collection size if user count was changed
+        if 'user_count' in serializer.validated_data:
+            backend = tenant.get_backend()
+            storage_per_user = models.SiteCollection.Defaults.personal_site_collection['storage']
+            personal_site_collection_storage = serializer.validated_data['user_count'] * storage_per_user
+            backend.site_collections.set_storage(
+                url=tenant.personal_site_collection.access_url,
+                storage=personal_site_collection_storage,
+            )
+            tenant.personal_site_collection.set_quota_limit(
+                models.SiteCollection.Quotas.storage, personal_site_collection_storage)
+
+        for quota_name, value in serializer.validated_data.items():
+            tenant.set_quota_limit(quota_name, value)
+
+        return response.Response('Quotas were successfully changed.', status=HTTP_200_OK)
 
 
 class TemplateViewSet(structure_views.BaseServicePropertyViewSet):
@@ -135,7 +156,6 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
                             mixins.DestroyModelMixin,
                             mixins.ListModelMixin,
                             viewsets.GenericViewSet):
-
     queryset = models.SiteCollection.objects.all()
     serializer_class = serializers.SiteCollectionSerializer
     filter_class = filters.SiteCollectionFilter
