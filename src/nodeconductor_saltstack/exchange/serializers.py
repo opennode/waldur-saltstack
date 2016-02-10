@@ -76,13 +76,6 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
                                   % storage_left)
                 })
 
-            service_settings_storage_quota = spl.service.settings.quotas.get(
-                name=spl.service.settings.Quotas.exchange_storage)
-            if service_settings_storage_quota.is_exceeded(delta=tenant_size):
-                storage_left = service_settings_storage_quota.limit - service_settings_storage_quota.usage
-                raise serializers.ValidationError({
-                    'max_users': "Service quota exceeded: Total mailbox size should be lower than %s MB" % storage_left})
-
             # generate a random name to be used as unique tenant id in MS Exchange
             # Example of formt: NC_28052BF28A
             attrs['backend_id'] = 'NC_%s' % binascii.b2a_hex(os.urandom(5)).upper()
@@ -111,6 +104,42 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         return fields
 
 
+# should be initialized with tenant in context
+class TenantQuotaSerializer(serializers.Serializer):
+    user_count = serializers.IntegerField(
+        min_value=1, write_only=True, required=False, help_text='Maximum users count.')
+    global_mailbox_size = serializers.FloatField(
+        min_value=1, write_only=True, required=False, help_text='Maximum mailbox storage size, MB.')
+
+    def validate_user_count(self, value):
+        tenant = self.context['tenant']
+        user_count_quota = tenant.quotas.get(name=models.ExchangeTenant.Quotas.user_count)
+        if value < user_count_quota.usage:
+            raise serializers.ValidationError('User count limit cannot be lower than current user count.')
+        return value
+
+    def validate_global_mailbox_size(self, value):
+        tenant = self.context['tenant']
+
+        global_mailbox_size_quota = tenant.quotas.get(name=models.ExchangeTenant.Quotas.global_mailbox_size)
+        if value < global_mailbox_size_quota.usage:
+            raise serializers.ValidationError('Global mailbox size limit cannot be lower than current usage.')
+
+        diff = value - global_mailbox_size_quota.limit
+        spl = tenant.service_project_link
+        spl_storage_quota = spl.quotas.get(name=spl.Quotas.exchange_storage)
+        if diff > 0 and spl_storage_quota.is_exceeded(delta=diff):
+            storage_left = spl_storage_quota.limit - spl_storage_quota.usage
+            raise serializers.ValidationError(
+                "Service project link quota exceeded: Total mailbox size should be lower than %s MB" % storage_left)
+        return value
+
+    def validate(self, attrs):
+        if 'user_count' not in attrs and 'global_mailbox_size' not in attrs:
+            raise serializers.ValidationError('At least one quota should be defined.')
+        return attrs
+
+
 class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
 
     class Meta(object):
@@ -126,6 +155,16 @@ class BasePropertySerializer(AugmentedSerializerMixin, serializers.HyperlinkedMo
         related_paths = {
             'tenant': ('uuid', 'domain')
         }
+
+
+class MemberSerializer(serializers.Serializer):
+
+    users = serializers.HyperlinkedRelatedField(
+        queryset=models.User.objects.all(),
+        view_name='exchange-users-detail',
+        lookup_field='uuid',
+        write_only=True,
+        many=True)
 
 
 class UserPasswordSerializer(serializers.ModelSerializer):
@@ -197,7 +236,7 @@ class UserSerializer(BasePropertySerializer):
         return attrs
 
     def create(self, validated_data):
-        notify = validated_data.pop('notify')
+        notify = validated_data.pop('notify', False)
         user = super(UserSerializer, self).create(validated_data)
         validated_data['notify'] = notify
         return user
@@ -213,13 +252,68 @@ class ContactSerializer(BasePropertySerializer):
         )
 
 
+class ConferenceRoomSerializer(BasePropertySerializer):
+
+    class Meta(BasePropertySerializer.Meta):
+        model = models.ConferenceRoom
+        view_name = 'exchange-conference-rooms-detail'
+        fields = BasePropertySerializer.Meta.fields + (
+            'name', 'username', 'email', 'location', 'mailbox_size', 'phone'
+        )
+        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
+
+    def validate_username(self, value):
+        if value:
+            if not re.match(r'[a-zA-Z0-9_.-]+$', value) or re.search(r'^\.|\.$', value):
+                raise serializers.ValidationError(
+                    "The username can contain only letters, numbers, hyphens, underscores and period.")
+        return value
+
+    def validate(self, attrs):
+        tenant = self.instance.tenant if self.instance else attrs['tenant']
+
+        phone = attrs.get('phone')
+        if phone:
+            options = tenant.service_project_link.service.settings.options or {}
+            phone_regex = options.get('phone_regex')
+            if phone_regex and not re.search(phone_regex, phone):
+                raise serializers.ValidationError('Invalid phone number.')
+
+        if not self.instance:
+            deltas = {
+                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'],
+                tenant.Quotas.user_count: 1,
+            }
+
+            if not tenant.is_username_available(attrs['username']):
+                raise serializers.ValidationError(
+                    {'username': "This username is already taken."})
+
+        else:
+            deltas = {
+                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'] - self.instance.mailbox_size,
+            }
+
+        try:
+            tenant.validate_quota_change(deltas, raise_exception=True)
+        except QuotaExceededException as e:
+            raise serializers.ValidationError(str(e))
+
+        return attrs
+
+
 class GroupSerializer(BasePropertySerializer):
+
+    senders_out = serializers.BooleanField(
+        help_text="Delivery management for senders outside organizational unit",
+        write_only=True,
+        required=False)
 
     class Meta(BasePropertySerializer.Meta):
         model = models.Group
         view_name = 'exchange-groups-detail'
         fields = BasePropertySerializer.Meta.fields + (
-            'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email', 'members'
+            'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email', 'members', 'senders_out'
         )
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
         extra_kwargs = dict(
@@ -234,6 +328,11 @@ class GroupSerializer(BasePropertySerializer):
             {'manager': ('uuid', 'name')}.items()
         )
 
+    def get_fields(self):
+        fields = super(GroupSerializer, self).get_fields()
+        fields['members'].required = False
+        return fields
+
     def validate(self, attrs):
         tenant = self.instance.tenant if self.instance else attrs['tenant']
 
@@ -246,9 +345,9 @@ class GroupSerializer(BasePropertySerializer):
                 raise serializers.ValidationError(
                     {'manager': "Manager user must be form the same tenant as group."})
 
-        for user in attrs['members']:
+        for user in attrs.get('members', []):
             if user.tenant != tenant:
                 raise serializers.ValidationError(
-                    "Users must be from the same tenat as group, can't add %s." % user)
+                    "Users must be from the same tenant as group, can't add %s." % user)
 
         return attrs
