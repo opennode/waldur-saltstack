@@ -61,11 +61,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
 
             reader = UnicodeDictReader(csvfile)
             tenant_url = self.get_serializer(instance=tenant).data['url']
-            data = [dict(
-                tenant=tenant_url,
-                send_as_members=[],
-                send_on_behalf_members=[],
-                **row) for row in reader]
+            data = [dict(tenant=tenant_url, **row) for row in reader]
 
             serializer = serializers.UserSerializer(data=data, many=True, context={'request': request})
             serializer.is_valid(raise_exception=True)

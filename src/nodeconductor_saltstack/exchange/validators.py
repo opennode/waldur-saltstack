@@ -1,6 +1,6 @@
 import re
 
-from django.core.validators import ValidationError, RegexValidator
+from django.core.validators import ValidationError
 
 
 # Based on: http://stackoverflow.com/questions/17821400/regex-match-for-domain-name-in-django-model
@@ -26,11 +26,3 @@ def domain_validator(hostname):
                 "The label '%(label)s' is too long (maximum is 63 characters)." % {'label': label})
         if not HOSTNAME_LABEL_PATTERN.match(label):
             raise ValidationError("Unallowed characters in label '%(label)s'." % {'label': label})
-
-
-# XXX: useless validator yet incorrect regex
-username_validator = RegexValidator(
-    regex="^[A-Z, a-z, 0-9, ., !, #, $, %, &, ', *, +, -, /, =, ?, ^, _, `]+$",
-    message=("Field value is not valid. Valid values are: Strings formed with characters from A to Z "
-             "(uppercase or lowercase), digits from 0 to 9, !, #, $, %, &, ', *, +, -, /, =, ?, ^, _, `")
-)
