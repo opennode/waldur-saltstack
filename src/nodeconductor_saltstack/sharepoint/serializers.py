@@ -235,7 +235,7 @@ class TenantQuotaSerializer(serializers.Serializer):
             if spl_storage_quota.is_exceeded(delta=diff):
                 storage_left = spl_storage_quota.limit - spl_storage_quota.usage
                 raise serializers.ValidationError(
-                    "Service project link quota exceeded: Tenant size cannot be increased on more "
+                    "Service project link quota exceeded: Tenant size cannot be increased by more "
                     "than %s MB" % storage_left
                 )
         return value
