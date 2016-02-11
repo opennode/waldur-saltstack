@@ -3,6 +3,9 @@ import re
 import binascii
 
 from rest_framework import serializers
+from rest_framework.utils import model_meta
+from rest_framework.compat import OrderedDict
+from gm2m.relations import GM2MTo
 
 from nodeconductor.core.serializers import AugmentedSerializerMixin
 from nodeconductor.quotas.exceptions import QuotaExceededException
@@ -12,6 +15,39 @@ from nodeconductor.structure import serializers as structure_serializers
 from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.models import SaltStackServiceProjectLink
 from . import models
+
+
+# XXX: hackish monkey patch for DRF in order to work with GM2M fields
+def _get_forward_relationships(opts):
+    """
+    Returns an `OrderedDict` of field names to `RelationInfo`.
+    """
+    forward_relations = OrderedDict()
+    for field in [field for field in opts.fields if field.serialize and field.rel]:
+        forward_relations[field.name] = model_meta.RelationInfo(
+            model_field=field,
+            related_model=model_meta._resolve_model(field.rel.to),
+            to_many=False,
+            has_through_model=False
+        )
+
+    # Deal with forward many-to-many relationships.
+    for field in [field for field in opts.many_to_many if field.serialize]:
+        if isinstance(field.rel.to, GM2MTo):
+            continue
+
+        forward_relations[field.name] = model_meta.RelationInfo(
+            model_field=field,
+            related_model=model_meta._resolve_model(field.rel.to),
+            to_many=True,
+            has_through_model=(
+                not field.rel.through._meta.auto_created
+            )
+        )
+
+    return forward_relations
+
+model_meta._get_forward_relationships = _get_forward_relationships
 
 
 class ExchangeDomainSerializer(serializers.ModelSerializer):
@@ -346,3 +382,36 @@ class GroupSerializer(UsernameValidationMixin, BasePropertySerializer):
                     "Users must be from the same tenant as group, can't add %s." % user)
 
         return attrs
+
+
+class DeliveryMembersSerializer(serializers.BaseSerializer):
+
+    SERIALIZERS = (UserSerializer, ContactSerializer)
+
+    def to_internal_value(self, data):
+        members = data.get('members', [])
+        result = []
+        for member in members:
+            for serializer in self.SERIALIZERS:
+                field = serializers.HyperlinkedRelatedField(
+                    queryset=serializer.Meta.model.objects.all(),
+                    view_name=serializer.Meta.view_name,
+                    lookup_field='uuid')
+
+                try:
+                    result.append(field.to_internal_value(member))
+                except serializers.ValidationError:
+                    continue
+                else:
+                    break
+            else:
+                raise serializers.ValidationError("Invalid hyperlink - Incorrect URL match.")
+
+        return OrderedDict(members=result)
+
+    def to_representation(self, instance):
+        for serializer in self.SERIALIZERS:
+            if isinstance(instance, serializer.Meta.model):
+                return serializer(instance, context=self.context).data
+
+        raise serializers.ValidationError('Unsupported object: %s' % instance)

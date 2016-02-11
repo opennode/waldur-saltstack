@@ -278,3 +278,32 @@ class GroupViewSet(PropertyWithMembersViewSet):
     @detail_route(methods=['get'])
     def members(self, request, pk=None, **kwargs):
         return self.members_list('members')
+
+    # XXX: put was added as portal has a temporary bug with widget update
+    @detail_route(methods=['get', 'post', 'put'])
+    def delivery_members(self, request, pk=None, **kwargs):
+        group = self.get_object()
+        backend = self.get_backend(group.tenant)
+        members_qs = group.delivery_members
+
+        if request.method in ('POST', 'PUT'):
+            serializer = serializers.DeliveryMembersSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            new_members = set(serializer.validated_data['members'])
+            cur_members = set(members_qs.all())
+
+            new_users = new_members - cur_members
+            if new_users:
+                backend.add_delivery_members(
+                    id=group.backend_id, user_id=','.join([u.backend_id for u in new_users]))
+                members_qs.add(*new_users)
+
+            old_users = cur_members - new_members
+            if old_users:
+                backend.del_delivery_members(
+                    id=group.backend_id, user_id=','.join([u.backend_id for u in old_users]))
+                members_qs.remove(*old_users)
+
+        return Response(serializers.DeliveryMembersSerializer(
+            members_qs.all(), many=True, context={'request': request}).data, status=HTTP_200_OK)

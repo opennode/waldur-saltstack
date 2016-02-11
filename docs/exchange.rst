@@ -439,8 +439,7 @@ Response example:
             "members": [
                 "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
                 "http://example.com/api/exchange-users/faf0ed086efd42c08e477797364a78f3/"
-            ],
-            "delivery_members": []
+            ]
         }
     ]
 
@@ -457,7 +456,6 @@ Request parameters:
  - name - distribution group name;
  - username - group username;
  - members - a list of group members' links;
- - delivery_members - a list of delivery members' links;
  - senders_out - flag for delivery management for senders outside organizational unit;
 
 Example of a request:
@@ -478,8 +476,7 @@ Example of a request:
         "senders_out": false,
         "members": [
             "http://example.com/api/exchange-users/ee6ca4b2929c46cb85bedb276a937ac2/"
-        ],
-        "delivery_members": []
+        ]
     }
 
 
@@ -555,11 +552,6 @@ Example of a requests:
         "members": []
     }
 
-Change delivery group members
------------------------------
-
-To change distribution group members - issue PUT or PATCH request against **/api/exchange-groups/<group_uuid>/**.
-
 
 List group members
 ------------------
@@ -617,6 +609,29 @@ List delivery group members
 ---------------------------
 
 To get a list of all distribution group members - issue GET request against **/api/exchange-groups/<group_uuid>/delivery_members/**.
+
+
+Change delivery group members
+-----------------------------
+
+To change distribution group members - issue POST request against **/api/exchange-groups/<group_uuid>/delivery_members/**.
+
+Links for users and contacts can be used for members.
+
+Example of a requests:
+
+    POST /api/exchange-groups/c39cc7f57fab499786609298019cf844/delivery_members/ HTTP/1.1
+    Content-Type: application/json
+    Accept: application/json
+    Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+    Host: example.com
+
+    {
+        "members": [
+            "http://example.com/api/exchange-users/db82a52368ba4957ac2cdb6a37d22dee/",
+            "http://example.com/api/exchange-contacts/b6086d0ff2ec4357bc5f34ec22e82b84/",
+        ]
+    }
 
 
 List conference rooms

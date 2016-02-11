@@ -2,6 +2,7 @@ from django.db import models
 from django.core.mail import send_mail
 from django.utils.encoding import python_2_unicode_compatible
 from model_utils import FieldTracker
+from gm2m import GM2MField
 
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.quotas.fields import QuotaField, CounterQuotaField
@@ -110,6 +111,7 @@ class Group(ExchangeProperty):
     manager = models.ForeignKey(User, related_name='groups')
     username = models.CharField(max_length=255)
     members = models.ManyToManyField(User, related_name='+')
+    delivery_members = GM2MField()
     senders_out = models.BooleanField(
         default=False, help_text='Delivery management for senders outside organizational unit')
 
