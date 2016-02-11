@@ -191,7 +191,7 @@ class UsernameValidationMixin(object):
         tenant = self.instance.tenant if self.instance else attrs['tenant']
         exclude = self.instance.username if self.instance else None
 
-        if not tenant.is_username_available(attrs['username'], exclude=exclude):
+        if 'username' in attrs and not tenant.is_username_available(attrs['username'], exclude=exclude):
             raise serializers.ValidationError(
                 {'username': "This username is already taken."})
 
