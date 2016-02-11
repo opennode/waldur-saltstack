@@ -313,13 +313,12 @@ class GroupSerializer(UsernameValidationMixin, BasePropertySerializer):
         view_name = 'exchange-groups-detail'
         fields = BasePropertySerializer.Meta.fields + (
             'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email',
-            'senders_out', 'members', 'delivery_members',
+            'senders_out', 'members',
         )
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
         extra_kwargs = dict(
             manager={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
             members={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
-            delivery_members={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
             **BasePropertySerializer.Meta.extra_kwargs
         )
         related_paths = dict(
@@ -330,7 +329,6 @@ class GroupSerializer(UsernameValidationMixin, BasePropertySerializer):
     def get_fields(self):
         fields = super(GroupSerializer, self).get_fields()
         fields['members'].required = False
-        fields['delivery_members'].required = False
         return fields
 
     def validate(self, attrs):

@@ -265,25 +265,16 @@ class GroupViewSet(PropertyWithMembersViewSet):
     def post_create(self, group, serializer, backend_group):
         self.update_senders_out(group, serializer)
         self.members_create(group, 'members', 'add_member')
-        self.members_create(group, 'delivery_members', 'add_delivery_members')
 
     def pre_update(self, group, serializer):
         self.cur_members = set(group.members.values_list('backend_id', flat=True))
-        self.cur_delivery_members = set(group.delivery_members.values_list('backend_id', flat=True))
 
     def post_update(self, group, serializer):
         self.update_senders_out(group, serializer)
         self.members_update(
             group, 'members', data=serializer.validated_data,
             add_method='add_member', del_method='del_member', list_method='list_members')
-        self.members_update(
-            group, 'delivery_members', data=serializer.validated_data,
-            add_method='add_delivery_members', del_method='del_delivery_members', list_method='list_delivery_members')
 
     @detail_route(methods=['get'])
     def members(self, request, pk=None, **kwargs):
         return self.members_list('members')
-
-    @detail_route(methods=['get'])
-    def delivery_members(self, request, pk=None, **kwargs):
-        return self.members_list('delivery_members')
