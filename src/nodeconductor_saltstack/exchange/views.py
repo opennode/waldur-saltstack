@@ -140,6 +140,28 @@ class PropertyWithMembersViewSet(BasePropertyViewSet):
         return Response(serializers.UserSerializer(
             entities, many=True, context={'request': request}).data, status=HTTP_200_OK)
 
+    # XXX: temporary method
+    def members_update_with_db(self, request, field_name='', add_method=None, del_method=None):
+        obj = self.get_object()
+        backend = self.get_backend(obj.tenant)
+        members_qs = getattr(obj, field_name)
+
+        serializer = serializers.MembersSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        new_members = set(u.backend_id for u in serializer.validated_data['members'])
+        cur_members = set(members_qs.values_list('backend_id', flat=True))
+
+        new_users = new_members - cur_members
+        if new_users:
+            getattr(backend, add_method)(id=obj.backend_id, user_id=','.join(new_users))
+            members_qs.add(*models.User.objects.filter(backend_id__in=new_users))
+
+        old_users = cur_members - new_members
+        if old_users:
+            getattr(backend, del_method)(id=obj.backend_id, user_id=','.join(old_users))
+            members_qs.remove(*models.User.objects.filter(backend_id__in=old_users))
+
 
 class UserViewSet(PropertyWithMembersViewSet):
     queryset = models.User.objects.all()
@@ -193,12 +215,24 @@ class UserViewSet(PropertyWithMembersViewSet):
 
         return Response(serializer.data, status=HTTP_200_OK)
 
-    @detail_route(methods=['get'])
+    # XXX: put was added as portal has a temporary bug with widget update
+    @detail_route(methods=['get', 'post', 'put'])
     def sendonbehalf(self, request, pk=None, **kwargs):
+        if request.method in ('POST', 'PUT'):
+            self.members_update_with_db(
+                request, 'send_on_behalf_members',
+                add_method='add_send_on_behalf', del_method='del_send_on_behalf')
+
         return self.members_list('send_on_behalf_members')
 
-    @detail_route(methods=['get'])
+    # XXX: put was added as portal has a temporary bug with widget update
+    @detail_route(methods=['get', 'post', 'put'])
     def sendas(self, request, pk=None, **kwargs):
+        if request.method in ('POST', 'PUT'):
+            self.members_update_with_db(
+                request, 'send_as_members',
+                add_method='add_send_as', del_method='del_send_as')
+
         return self.members_list('send_as_members')
 
 
