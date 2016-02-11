@@ -167,7 +167,68 @@ class UserPasswordSerializer(serializers.ModelSerializer):
         read_only_fields = ('password',)
 
 
-class UserSerializer(BasePropertySerializer):
+class UsernameValidationMixin(object):
+
+    def validate_username(self, value):
+        if value:
+            if not re.match(r'[a-zA-Z0-9_.-]+$', value) or re.search(r'^\.|\.$', value):
+                raise serializers.ValidationError(
+                    "The username can contain only letters, numbers, hyphens, underscores and period.")
+        return value
+
+    def validate(self, attrs):
+        attrs = super(UsernameValidationMixin, self).validate(attrs)
+        tenant = self.instance.tenant if self.instance else attrs['tenant']
+        exclude = self.instance.username if self.instance else None
+
+        if not tenant.is_username_available(attrs['username'], exclude=exclude):
+            raise serializers.ValidationError(
+                {'username': "This username is already taken."})
+
+        return attrs
+
+
+class PhoneValidationMixin(object):
+
+    def validate(self, attrs):
+        attrs = super(PhoneValidationMixin, self).validate(attrs)
+        tenant = self.instance.tenant if self.instance else attrs['tenant']
+
+        phone = attrs.get('phone')
+        if phone:
+            options = tenant.service_project_link.service.settings.options or {}
+            phone_regex = options.get('phone_regex')
+            if phone_regex and not re.search(phone_regex, phone):
+                raise serializers.ValidationError('Invalid phone number.')
+
+        return attrs
+
+
+class MailboxQuotaValidationMixin(object):
+
+    def validate(self, attrs):
+        attrs = super(MailboxQuotaValidationMixin, self).validate(attrs)
+        tenant = self.instance.tenant if self.instance else attrs['tenant']
+
+        if self.instance:
+            deltas = {
+                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'] - self.instance.mailbox_size,
+            }
+        else:
+            deltas = {
+                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'],
+            }
+
+        try:
+            tenant.validate_quota_change(deltas, raise_exception=True)
+        except QuotaExceededException as e:
+            raise serializers.ValidationError(str(e))
+
+        return attrs
+
+
+class UserSerializer(UsernameValidationMixin, PhoneValidationMixin,
+                     MailboxQuotaValidationMixin, BasePropertySerializer):
 
     notify = serializers.BooleanField(write_only=True, required=False)
 
@@ -189,50 +250,28 @@ class UserSerializer(BasePropertySerializer):
         )
         protected_fields = BasePropertySerializer.Meta.protected_fields + ('notify',)
 
-    def validate_username(self, value):
-        if value:
-            if not re.match(r'[a-zA-Z0-9_.-]+$', value) or re.search(r'^\.|\.$', value):
-                raise serializers.ValidationError(
-                    "The username can contain only letters, numbers, hyphens, underscores and period.")
-        return value
-
-    def validate(self, attrs):
-        tenant = self.instance.tenant if self.instance else attrs['tenant']
-
-        phone = attrs.get('phone')
-        if phone:
-            options = tenant.service_project_link.service.settings.options or {}
-            phone_regex = options.get('phone_regex')
-            if phone_regex and not re.search(phone_regex, phone):
-                raise serializers.ValidationError('Invalid phone number.')
-
-        if not self.instance:
-            deltas = {
-                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'],
-                tenant.Quotas.user_count: 1,
-            }
-
-            if not tenant.is_username_available(attrs['username']):
-                raise serializers.ValidationError(
-                    {'username': "This username is already taken."})
-
-        else:
-            deltas = {
-                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'] - self.instance.mailbox_size,
-            }
-
-        try:
-            tenant.validate_quota_change(deltas, raise_exception=True)
-        except QuotaExceededException as e:
-            raise serializers.ValidationError(str(e))
-
-        return attrs
+    def get_fields(self):
+        fields = super(UserSerializer, self).get_fields()
+        fields['send_as_members'].required = False
+        fields['send_on_behalf_members'].required = False
+        return fields
 
     def create(self, validated_data):
         notify = validated_data.pop('notify', False)
         user = super(UserSerializer, self).create(validated_data)
         validated_data['notify'] = notify
         return user
+
+    def validate(self, attrs):
+        attrs = super(UserSerializer, self).validate(attrs)
+        if not self.instance:
+            try:
+                tenant = attrs['tenant']
+                tenant.validate_quota_change(
+                    {tenant.Quotas.user_count: 1}, raise_exception=True)
+            except QuotaExceededException as e:
+                raise serializers.ValidationError(str(e))
+        return attrs
 
 
 class ContactSerializer(BasePropertySerializer):
@@ -245,7 +284,8 @@ class ContactSerializer(BasePropertySerializer):
         )
 
 
-class ConferenceRoomSerializer(BasePropertySerializer):
+class ConferenceRoomSerializer(UsernameValidationMixin, PhoneValidationMixin,
+                               MailboxQuotaValidationMixin, BasePropertySerializer):
 
     class Meta(BasePropertySerializer.Meta):
         model = models.ConferenceRoom
@@ -255,47 +295,8 @@ class ConferenceRoomSerializer(BasePropertySerializer):
         )
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
 
-    def validate_username(self, value):
-        if value:
-            if not re.match(r'[a-zA-Z0-9_.-]+$', value) or re.search(r'^\.|\.$', value):
-                raise serializers.ValidationError(
-                    "The username can contain only letters, numbers, hyphens, underscores and period.")
-        return value
 
-    def validate(self, attrs):
-        tenant = self.instance.tenant if self.instance else attrs['tenant']
-
-        phone = attrs.get('phone')
-        if phone:
-            options = tenant.service_project_link.service.settings.options or {}
-            phone_regex = options.get('phone_regex')
-            if phone_regex and not re.search(phone_regex, phone):
-                raise serializers.ValidationError('Invalid phone number.')
-
-        if not self.instance:
-            deltas = {
-                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'],
-                tenant.Quotas.user_count: 1,
-            }
-
-            if not tenant.is_username_available(attrs['username']):
-                raise serializers.ValidationError(
-                    {'username': "This username is already taken."})
-
-        else:
-            deltas = {
-                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'] - self.instance.mailbox_size,
-            }
-
-        try:
-            tenant.validate_quota_change(deltas, raise_exception=True)
-        except QuotaExceededException as e:
-            raise serializers.ValidationError(str(e))
-
-        return attrs
-
-
-class GroupSerializer(BasePropertySerializer):
+class GroupSerializer(UsernameValidationMixin, BasePropertySerializer):
 
     class Meta(BasePropertySerializer.Meta):
         model = models.Group
@@ -319,16 +320,14 @@ class GroupSerializer(BasePropertySerializer):
     def get_fields(self):
         fields = super(GroupSerializer, self).get_fields()
         fields['members'].required = False
+        fields['delivery_members'].required = False
         return fields
 
     def validate(self, attrs):
+        attrs = super(GroupSerializer, self).validate(attrs)
         tenant = self.instance.tenant if self.instance else attrs['tenant']
 
         if not self.instance:
-            if not tenant.is_username_available(attrs['username']):
-                raise serializers.ValidationError(
-                    {'username': "This username is already taken."})
-
             if attrs['manager'].tenant != tenant:
                 raise serializers.ValidationError(
                     {'manager': "Manager user must be form the same tenant as group."})
