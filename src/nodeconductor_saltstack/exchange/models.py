@@ -37,9 +37,14 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
         from .backend import ExchangeBackend
         return super(ExchangeTenant, self).get_backend(backend_class=ExchangeBackend, tenant=self)
 
-    def is_username_available(self, username):
+    def is_username_available(self, username, exclude=None):
+        if exclude is None:
+            exclude = []
+        if isinstance(exclude, basestring):
+            exclude = [exclude]
         for model in (User, Group, ConferenceRoom):
-            if username in model.objects.filter(tenant=self).values_list('username', flat=True):
+            users = set(model.objects.filter(tenant=self).values_list('username', flat=True))
+            if username in users - set(exclude):
                 return False
         return True
 

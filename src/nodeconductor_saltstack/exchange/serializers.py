@@ -179,8 +179,9 @@ class UsernameValidationMixin(object):
     def validate(self, attrs):
         attrs = super(UsernameValidationMixin, self).validate(attrs)
         tenant = self.instance.tenant if self.instance else attrs['tenant']
+        exclude = self.instance.username if self.instance else None
 
-        if not tenant.is_username_available(attrs['username']):
+        if not tenant.is_username_available(attrs['username'], exclude=exclude):
             raise serializers.ValidationError(
                 {'username': "This username is already taken."})
 
@@ -203,10 +204,10 @@ class PhoneValidationMixin(object):
         return attrs
 
 
-class QuotaValidationMixin(object):
+class MailboxQuotaValidationMixin(object):
 
     def validate(self, attrs):
-        attrs = super(QuotaValidationMixin, self).validate(attrs)
+        attrs = super(MailboxQuotaValidationMixin, self).validate(attrs)
         tenant = self.instance.tenant if self.instance else attrs['tenant']
 
         if self.instance:
@@ -216,7 +217,6 @@ class QuotaValidationMixin(object):
         else:
             deltas = {
                 tenant.Quotas.global_mailbox_size: attrs['mailbox_size'],
-                tenant.Quotas.user_count: 1,
             }
 
         try:
@@ -228,7 +228,7 @@ class QuotaValidationMixin(object):
 
 
 class UserSerializer(UsernameValidationMixin, PhoneValidationMixin,
-                     QuotaValidationMixin, BasePropertySerializer):
+                     MailboxQuotaValidationMixin, BasePropertySerializer):
 
     notify = serializers.BooleanField(write_only=True, required=False)
 
@@ -262,6 +262,17 @@ class UserSerializer(UsernameValidationMixin, PhoneValidationMixin,
         validated_data['notify'] = notify
         return user
 
+    def validate(self, attrs):
+        attrs = super(UserSerializer, self).validate(attrs)
+        if not self.instance:
+            try:
+                tenant = attrs['tenant']
+                tenant.validate_quota_change(
+                    {tenant.Quotas.user_count: 1}, raise_exception=True)
+            except QuotaExceededException as e:
+                raise serializers.ValidationError(str(e))
+        return attrs
+
 
 class ContactSerializer(BasePropertySerializer):
 
@@ -274,7 +285,7 @@ class ContactSerializer(BasePropertySerializer):
 
 
 class ConferenceRoomSerializer(UsernameValidationMixin, PhoneValidationMixin,
-                               QuotaValidationMixin, BasePropertySerializer):
+                               MailboxQuotaValidationMixin, BasePropertySerializer):
 
     class Meta(BasePropertySerializer.Meta):
         model = models.ConferenceRoom
