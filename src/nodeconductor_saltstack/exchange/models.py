@@ -110,7 +110,6 @@ class Group(ExchangeProperty):
     manager = models.ForeignKey(User, related_name='groups')
     username = models.CharField(max_length=255)
     members = models.ManyToManyField(User, related_name='+')
-    delivery_members = models.ManyToManyField(User, related_name='+')
     senders_out = models.BooleanField(
         default=False, help_text='Delivery management for senders outside organizational unit')
 
