@@ -3,6 +3,9 @@ import re
 import binascii
 
 from rest_framework import serializers
+from rest_framework.utils import model_meta
+from rest_framework.compat import OrderedDict
+from gm2m.relations import GM2MTo
 
 from nodeconductor.core.serializers import AugmentedSerializerMixin
 from nodeconductor.quotas.exceptions import QuotaExceededException
@@ -12,6 +15,16 @@ from nodeconductor.structure import serializers as structure_serializers
 from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.models import SaltStackServiceProjectLink
 from . import models
+
+
+# XXX: hackish monkey patch for DRF in order to work with GM2M fields
+def _resolve_model(obj):
+    if isinstance(obj, GM2MTo):
+        return None
+    return model_meta._old_resolve_model(obj)
+
+model_meta._old_resolve_model = model_meta._resolve_model
+model_meta._resolve_model = _resolve_model
 
 
 class ExchangeDomainSerializer(serializers.ModelSerializer):
@@ -346,3 +359,36 @@ class GroupSerializer(UsernameValidationMixin, BasePropertySerializer):
                     "Users must be from the same tenant as group, can't add %s." % user)
 
         return attrs
+
+
+class DeliveryMembersSerializer(serializers.BaseSerializer):
+
+    SERIALIZERS = (UserSerializer, ContactSerializer)
+
+    def to_internal_value(self, data):
+        members = data.get('members', [])
+        result = []
+        for member in members:
+            for serializer in self.SERIALIZERS:
+                field = serializers.HyperlinkedRelatedField(
+                    queryset=serializer.Meta.model.objects.all(),
+                    view_name=serializer.Meta.view_name,
+                    lookup_field='uuid')
+
+                try:
+                    result.append(field.to_internal_value(member))
+                except serializers.ValidationError:
+                    continue
+                else:
+                    break
+            else:
+                raise serializers.ValidationError("Invalid hyperlink - Incorrect URL match.")
+
+        return OrderedDict(members=result)
+
+    def to_representation(self, instance):
+        for serializer in self.SERIALIZERS:
+            if isinstance(instance, serializer.Meta.model):
+                return serializer(instance, context=self.context).data
+
+        raise serializers.ValidationError('Unsupported object: %s' % instance)
