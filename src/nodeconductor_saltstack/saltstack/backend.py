@@ -294,7 +294,12 @@ class SaltStackBaseAPI(SaltStackAPI):
 
             if isinstance(results, list):
                 entities = [create_entity(entity, fn_opts) for entity in results]
-                return entities if fn_opts.get('many') else entities[0]
+                if fn_opts.get('many'):
+                    return entities
+                elif len(entities) > 0:
+                    return entities[0]
+                else:
+                    return []
             elif isinstance(results, dict):
                 entity = create_entity(results, fn_opts)
                 if fn_opts.get('many'):
