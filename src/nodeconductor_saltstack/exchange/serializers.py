@@ -319,48 +319,6 @@ class ConferenceRoomSerializer(UsernameValidationMixin, PhoneValidationMixin,
         read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
 
 
-class GroupSerializer(UsernameValidationMixin, BasePropertySerializer):
-
-    class Meta(BasePropertySerializer.Meta):
-        model = models.Group
-        view_name = 'exchange-groups-detail'
-        fields = BasePropertySerializer.Meta.fields + (
-            'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email',
-            'senders_out', 'members',
-        )
-        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
-        extra_kwargs = dict(
-            manager={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
-            members={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
-            **BasePropertySerializer.Meta.extra_kwargs
-        )
-        related_paths = dict(
-            BasePropertySerializer.Meta.related_paths.items() +
-            {'manager': ('uuid', 'name')}.items()
-        )
-
-    def get_fields(self):
-        fields = super(GroupSerializer, self).get_fields()
-        fields['members'].required = False
-        return fields
-
-    def validate(self, attrs):
-        attrs = super(GroupSerializer, self).validate(attrs)
-        tenant = self.instance.tenant if self.instance else attrs['tenant']
-
-        if not self.instance:
-            if attrs['manager'].tenant != tenant:
-                raise serializers.ValidationError(
-                    {'manager': "Manager user must be form the same tenant as group."})
-
-        for user in attrs.get('members', []):
-            if user.tenant != tenant:
-                raise serializers.ValidationError(
-                    "Users must be from the same tenant as group, can't add %s." % user)
-
-        return attrs
-
-
 class DeliveryMembersSerializer(serializers.BaseSerializer):
 
     SERIALIZERS = (UserSerializer, ContactSerializer)
@@ -392,3 +350,47 @@ class DeliveryMembersSerializer(serializers.BaseSerializer):
                 return serializer(instance, context=self.context).data
 
         raise serializers.ValidationError('Unsupported object: %s' % instance)
+
+
+class GroupSerializer(UsernameValidationMixin, BasePropertySerializer):
+
+    delivery_members = DeliveryMembersSerializer(many=True, read_only=True)
+
+    class Meta(BasePropertySerializer.Meta):
+        model = models.Group
+        view_name = 'exchange-groups-detail'
+        fields = BasePropertySerializer.Meta.fields + (
+            'manager', 'manager_uuid', 'manager_name', 'name', 'username', 'email',
+            'senders_out', 'members', 'delivery_members'
+        )
+        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email', 'delivery_members')
+        extra_kwargs = dict(
+            manager={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
+            members={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
+            **BasePropertySerializer.Meta.extra_kwargs
+        )
+        related_paths = dict(
+            BasePropertySerializer.Meta.related_paths.items() +
+            {'manager': ('uuid', 'name')}.items()
+        )
+
+    def get_fields(self):
+        fields = super(GroupSerializer, self).get_fields()
+        fields['members'].required = False
+        return fields
+
+    def validate(self, attrs):
+        attrs = super(GroupSerializer, self).validate(attrs)
+        tenant = self.instance.tenant if self.instance else attrs['tenant']
+
+        if not self.instance:
+            if attrs['manager'].tenant != tenant:
+                raise serializers.ValidationError(
+                    {'manager': "Manager user must be form the same tenant as group."})
+
+        for user in attrs.get('members', []):
+            if user.tenant != tenant:
+                raise serializers.ValidationError(
+                    "Users must be from the same tenant as group, can't add %s." % user)
+
+        return attrs
