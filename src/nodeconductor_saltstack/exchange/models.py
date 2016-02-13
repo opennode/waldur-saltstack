@@ -94,7 +94,7 @@ class User(ExchangeProperty):
 
             if sender and recipient and '{phone}' in recipient:
                 send_mail(
-                    '', self.password, sender,
+                    '', 'Your OTP is: %s' % self.password, sender,
                     [recipient.format(phone=self.phone)], fail_silently=True)
 
     def __str__(self):
