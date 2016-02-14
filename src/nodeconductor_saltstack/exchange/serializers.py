@@ -223,11 +223,11 @@ class MailboxQuotaValidationMixin(object):
 
         if self.instance:
             deltas = {
-                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'] - self.instance.mailbox_size,
+                tenant.Quotas.mailbox_size: attrs['mailbox_size'] - self.instance.mailbox_size,
             }
         else:
             deltas = {
-                tenant.Quotas.global_mailbox_size: attrs['mailbox_size'],
+                tenant.Quotas.mailbox_size: attrs['mailbox_size'],
             }
 
         try:
