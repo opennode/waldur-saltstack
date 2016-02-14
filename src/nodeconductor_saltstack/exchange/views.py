@@ -19,9 +19,12 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
     filter_class = filters.TenantFilter
 
     def perform_provision(self, serializer):
+        mailbox_size = serializer.validated_data.pop('mailbox_size')
         resource = serializer.save()
+        resource.set_quota_limit(models.ExchangeTenant.Quotas.mailbox_size, mailbox_size)
+
         backend = resource.get_backend()
-        backend.provision(resource)
+        backend.provision(resource, mailbox_size)
 
     # XXX: put was added as portal has a temporary bug with widget update
     @detail_route(methods=['get', 'post', 'put'])
@@ -100,12 +103,10 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         serializer = serializers.TenantQuotaSerializer(data=request.data, context={'tenant': tenant})
         serializer.is_valid(raise_exception=True)
 
-        if 'user_count' in serializer.validated_data:
-            tenant.set_quota_limit(models.ExchangeTenant.Quotas.user_count, serializer.validated_data['user_count'])
-        if 'global_mailbox_size' in serializer.validated_data:
-            backend.tenants.change_quotas(global_mailbox_size=serializer.validated_data['global_mailbox_size'])
+        if 'mailbox_size' in serializer.validated_data:
+            backend.tenants.change_quotas(mailbox_size=serializer.validated_data['mailbox_size'])
             tenant.set_quota_limit(
-                models.ExchangeTenant.Quotas.global_mailbox_size, serializer.validated_data['global_mailbox_size'])
+                models.ExchangeTenant.Quotas.mailbox_size, serializer.validated_data['mailbox_size'])
 
         return Response('Tenant quotas were successfully changed.', status=HTTP_200_OK)
 

@@ -23,8 +23,7 @@ class TenantAPI(SaltStackBaseAPI):
             input={
                 'tenant': 'TenantName',
                 'domain': 'TenantDomain',
-                'mailbox_size': 'TenantMailboxSize',
-                'max_users': 'TenantMaxUsers',
+                'mailbox_size': 'TenantStorageSize',
             },
             defaults={
                 'tenant': "{backend.tenant.backend_id}",
@@ -75,13 +74,13 @@ class TenantAPI(SaltStackBaseAPI):
             name='EditQuota',
             input={
                 'tenant': 'TenantName',
-                'global_mailbox_size': 'MailboxDatabaseSize',
+                'mailbox_size': 'MailboxDatabaseSize',
             },
             defaults={
                 'tenant': "{backend.tenant.backend_id}",
             },
             output={
-                'Mailbox Database Size': 'global_mailbox_size',
+                'Mailbox Database Size': 'mailbox_size',
             },
         )
 
@@ -567,8 +566,8 @@ class ExchangeBackend(SaltStackBaseBackend):
         self.settings.set_quota_limit(self.settings.Quotas.exchange_storage, storage.used + storage.free)
         self.settings.set_quota_usage(self.settings.Quotas.exchange_storage, storage.used)
 
-    def provision(self, tenant):
-        send_task('exchange', 'provision')(tenant.uuid.hex)
+    def provision(self, tenant, mailbox_size):
+        send_task('exchange', 'provision')(tenant.uuid.hex, mailbox_size=mailbox_size)
 
     def destroy(self, tenant, force=False):
         if tenant.state != tenant.States.ERRED:

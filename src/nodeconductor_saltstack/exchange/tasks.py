@@ -63,9 +63,7 @@ def schedule_deletion(tenant_uuid):
 def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
     tenant = transition_entity
     backend = tenant.get_backend()
-    backent_tenant = backend.tenants.create(
-        mailbox_size=tenant.mailbox_size,
-        max_users=tenant.max_users)
+    backent_tenant = backend.tenants.create(mailbox_size=kwargs['mailbox_size'])
 
     tenant.backend_id = backent_tenant.id
     tenant.save()
@@ -95,7 +93,7 @@ def sync_tenant_quotas(tenant_uuid):
     tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
     users = list(User.objects.filter(tenant=tenant))
     tenant.set_quota_usage('user_count', len(users))
-    tenant.set_quota_usage('global_mailbox_size', sum(user.mailbox_size for user in users))
+    tenant.set_quota_usage('mailbox_size', sum(user.mailbox_size for user in users))
 
 
 @shared_task
