@@ -22,7 +22,7 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
 
     class Quotas(QuotaModelMixin.Quotas):
         user_count = CounterQuotaField(
-            target_models=lambda: [User],
+            target_models=lambda: [User, ConferenceRoom],
             path_to_scope='tenant',
             default_limit=lambda scope: scope.max_users,
         )
