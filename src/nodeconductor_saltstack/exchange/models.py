@@ -15,19 +15,20 @@ from .validators import domain_validator
 class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_models.PaidResource):
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='exchange_tenants', on_delete=models.PROTECT)
-
     domain = models.CharField(max_length=255, validators=[domain_validator])
-    max_users = models.PositiveSmallIntegerField(help_text='Maximum number of mailboxes')
-    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of single mailbox, MB')
 
     class Quotas(QuotaModelMixin.Quotas):
         user_count = CounterQuotaField(
-            target_models=lambda: [User, ConferenceRoom],
+            target_models=lambda: [User],
             path_to_scope='tenant',
-            default_limit=lambda scope: scope.max_users,
         )
-        global_mailbox_size = QuotaField(
-            default_limit=lambda scope: scope.mailbox_size * scope.max_users
+        conference_room_count = CounterQuotaField(
+            target_models=lambda: [ConferenceRoom],
+            path_to_scope='tenant',
+        )
+        # Maximum size of all mailboxes together, MB
+        mailbox_size = QuotaField(
+            default_limit=0,
         )
 
     @classmethod

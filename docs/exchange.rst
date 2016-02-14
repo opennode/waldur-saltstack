@@ -9,8 +9,7 @@ parameters:
  - description - Description (optional);
  - link to the service-project-link object;
  - domain - Domain name;
- - max_users - Maximum number of users;
- - mailbox_size - Average mailboxes size (GB);
+ - mailbox_size - Global mailboxes size for all users (MB);
 
 
  Example of a valid request:
@@ -27,8 +26,7 @@ parameters:
         "name": "TST",
         "service_project_link": "http://example.com/api/saltstack-service-project-link/1/",
         "domain": "test.com",
-        "max_users": "500",
-        "mailbox_size": "3"
+        "mailbox_size": 300
     }
 
 
@@ -85,10 +83,34 @@ Example rendering of the tenant object:
         "state": "Online",
         "created": "2015-10-20T10:35:19.146Z",
         "domain": "test.com",
-        "max_users": "500",
-        "mailbox_size": "3",
         "owa_url": "https://owa.example.com",
-        "ecp_url": "https://ecp.example.com"
+        "ecp_url": "https://ecp.example.com",
+        "quotas": [
+            {
+                "url": "http://example.com/api/quotas/4cd11b32339f41959120042ee53af984/",
+                "uuid": "4cd11b32339f41959120042ee53af984",
+                "name": "mailbox_size",
+                "limit": 500.0,
+                "usage": 0.0,
+                "scope": "http://example.com/api/exchange-tenants/7693d9308e0641baa95720d0046e5696/"
+            },
+            {
+                "url": "http://example.com/api/quotas/b69085e5a889475a9e02934374a01534/",
+                "uuid": "b69085e5a889475a9e02934374a01534",
+                "name": "user_count",
+                "limit": -1.0,
+                "usage": 0.0,
+                "scope": "http://example.com/api/exchange-tenants/7693d9308e0641baa95720d0046e5696/"
+            },
+            {
+                "url": "http://example.com/api/quotas/64625370735b43359c0c9985b168fb87/",
+                "uuid": "64625370735b43359c0c9985b168fb87",
+                "name": "conference_room_count",
+                "limit": -1.0,
+                "usage": 0.0,
+                "scope": "http://example.com/api/exchange-tenants/7693d9308e0641baa95720d0046e5696/"
+            }
+        ],
     }
 
 
@@ -137,9 +159,7 @@ Change tenant quotas
 --------------------
 
 To update tenant quotas - issue POST request against **/api/exchange-tenants/<tenant_uuid>/change_quotas/** with
-parameters (at least one parameter should be defined):
- - user_count
- - global_mailbox_size
+parameter mailbox_size (only mailbox_size can be updated).
 
 
 Example of valid request:
@@ -153,7 +173,7 @@ Example of valid request:
     Host: example.com
 
     {
-        "global_mailbox_size": 200
+        "mailbox_size": 200
     }
 
 
