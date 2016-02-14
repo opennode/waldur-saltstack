@@ -289,6 +289,8 @@ class UserSerializer(UsernameValidationMixin, PhoneValidationMixin,
 
 class ContactSerializer(BasePropertySerializer):
 
+    email = serializers.EmailField(required=True)
+
     class Meta(BasePropertySerializer.Meta):
         model = models.Contact
         view_name = 'exchange-contacts-detail'
