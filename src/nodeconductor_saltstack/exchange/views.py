@@ -52,7 +52,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
 
         if request.method in ('POST', 'PUT'):
             if 'csv' not in request.data:
-                return Response("Expecting 'csv' parameter as a file or JSON string",
+                return Response({'detail': "Expecting 'csv' parameter as a file or JSON string"},
                                 status=HTTP_400_BAD_REQUEST)
 
             csvfile = request.data['csv']
@@ -61,19 +61,27 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
 
             reader = UnicodeDictReader(csvfile)
             tenant_url = self.get_serializer(instance=tenant).data['url']
-            data = [dict(tenant=tenant_url, **row) for row in reader]
+            try:
+                data = [dict(tenant=tenant_url, **row) for row in reader]
+            except:
+                # A wide exception as CSV is such a great module
+                return Response({'detail': "Could not parse CSV payload"},
+                                status=HTTP_400_BAD_REQUEST)
 
             serializer = serializers.UserSerializer(data=data, many=True, context={'request': request})
             serializer.is_valid(raise_exception=True)
+
+            # check if global notification has been requested
+            notify_user = request.data.get('notify', False)
 
             for user in serializer.validated_data:
                 del user['tenant']
                 send_task('exchange', 'create_user')(
                     tenant_uuid=tenant.uuid.hex,
-                    notify=user.pop('notify'),
+                    notify=notify_user,
                     **user)
 
-            return Response("%s users scheduled for creation" % len(serializer.validated_data))
+            return Response({'status': "%s users scheduled for creation" % len(serializer.validated_data)})
 
         elif request.method == 'GET':
             users = models.User.objects.filter(tenant=tenant)

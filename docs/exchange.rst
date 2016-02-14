@@ -267,7 +267,10 @@ Create users in a bulk request
 In order to create several users at once - issue POST request against **/api/exchange-tenants/<tenant_uuid>/users/**.
 It could be either 'application/json' or 'multipart/form-data' with parameter called 'csv'.
 Valid CSV with a header and comma delimiter is expected, all parameters from ordinary user creation are accepted
-except: 'tenant' and 'manager'
+except: 'tenant', 'manager' and 'notify'.
+
+'Notify' can be set on the full import level, only for 'application/json' content type. In case it is true,
+an attempt will be made to send notifications to all the records.
 
 Example of a valid request:
 
@@ -280,7 +283,8 @@ Example of a valid request:
     Host: example.com
 
     {
-        "csv": "name,first_name,last_name,username,password,mailbox_size,office,phone,department,company,title,email\nIvan P,Ivan,Petrov,ivan.p,Y16j$Keub@G,2,,,,,,ivan.p@test.com\nZoe,Zoe,Chloe,zoe,pBo07@WZ-te,2,,,,,,zoe@test.com"
+        "csv": "name,first_name,last_name,username,mailbox_size,office,phone,department,company,title,email\nIvan P,Ivan,Petrov,ivan.p,2,,,,,,ivan.p@test.com\nZoe,Zoe,Chloe,zoe,2,,,,,,zoe@test.com"
+        "notify": true
     }
 
 
