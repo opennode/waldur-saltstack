@@ -240,6 +240,7 @@ class MailboxQuotaValidationMixin(object):
         else:
             deltas = {
                 tenant.Quotas.global_mailbox_size: attrs['mailbox_size'],
+                tenant.Quotas.user_count: 1,
             }
 
         try:
@@ -284,17 +285,6 @@ class UserSerializer(UsernameValidationMixin, PhoneValidationMixin,
         user = super(UserSerializer, self).create(validated_data)
         validated_data['notify'] = notify
         return user
-
-    def validate(self, attrs):
-        attrs = super(UserSerializer, self).validate(attrs)
-        if not self.instance:
-            try:
-                tenant = attrs['tenant']
-                tenant.validate_quota_change(
-                    {tenant.Quotas.user_count: 1}, raise_exception=True)
-            except QuotaExceededException as e:
-                raise serializers.ValidationError(str(e))
-        return attrs
 
 
 class ContactSerializer(BasePropertySerializer):
