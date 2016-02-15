@@ -13,8 +13,7 @@ class SaltStackConfig(AppConfig):
         SupportedServices.register_backend(SaltStackBackend)
 
         from nodeconductor.structure.models import ServiceSettings
-        from nodeconductor.quotas.fields import QuotaField, CounterQuotaField
-        from ..exchange.models import ExchangeTenant
+        from nodeconductor.quotas.fields import QuotaField
 
         ServiceSettings.add_quota_field(
             name='sharepoint_storage',
@@ -26,15 +25,6 @@ class SaltStackConfig(AppConfig):
         ServiceSettings.add_quota_field(
             name='exchange_storage',
             quota_field=QuotaField(
-                creation_condition=lambda service_settings: service_settings.type == SaltStackConfig.service_name,
-            ),
-        )
-
-        ServiceSettings.add_quota_field(
-            name='exchange_tenant_count',
-            quota_field=CounterQuotaField(
-                target_models=[ExchangeTenant],
-                path_to_scope='service_project_link.service.settings',
                 creation_condition=lambda service_settings: service_settings.type == SaltStackConfig.service_name,
             ),
         )
