@@ -224,15 +224,15 @@ class MailboxExchangePropertySerializer(BasePropertySerializer):
 
     class Meta(BasePropertySerializer.Meta):
         fields = BasePropertySerializer.Meta.fields + ('mailbox_size', 'quotas',)
-        protected_fields = BasePropertySerializer.Meta.protected_fields + ('mailbox_size',)
 
     def validate(self, attrs):
         attrs = super(MailboxExchangePropertySerializer, self).validate(attrs)
         tenant = self.instance.tenant if self.instance else attrs['tenant']
 
         if self.instance:
+            mailbox_size_quota = self.instance.quotas.get(name=models.MailboxExchangeProperty.Quotas.mailbox_size)
             deltas = {
-                tenant.Quotas.mailbox_size: attrs['mailbox_size'] - self.instance.mailbox_size,
+                tenant.Quotas.mailbox_size: attrs['mailbox_size'] - mailbox_size_quota.limit,
             }
         else:
             deltas = {
@@ -246,10 +246,19 @@ class MailboxExchangePropertySerializer(BasePropertySerializer):
 
         return attrs
 
+    def update(self, instance, validated_data):
+        mailbox_size = validated_data.pop('mailbox_size', None)
+        obj = super(MailboxExchangePropertySerializer, self).update(instance, validated_data)
+        if mailbox_size is not None:
+            obj.set_quota_limit(models.MailboxExchangeProperty.Quotas.mailbox_size, mailbox_size)
+            validated_data['mailbox_size'] = mailbox_size
+        return obj
+
     def create(self, validated_data):
         mailbox_size = validated_data.pop('mailbox_size')
         obj = super(MailboxExchangePropertySerializer, self).create(validated_data)
         obj.set_quota_limit(models.MailboxExchangeProperty.Quotas.mailbox_size, mailbox_size)
+        validated_data['mailbox_size'] = mailbox_size
         return obj
 
 
