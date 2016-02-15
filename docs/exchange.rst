@@ -91,24 +91,21 @@ Example rendering of the tenant object:
                 "uuid": "4cd11b32339f41959120042ee53af984",
                 "name": "mailbox_size",
                 "limit": 500.0,
-                "usage": 0.0,
-                "scope": "http://example.com/api/exchange-tenants/7693d9308e0641baa95720d0046e5696/"
+                "usage": 0.0
             },
             {
                 "url": "http://example.com/api/quotas/b69085e5a889475a9e02934374a01534/",
                 "uuid": "b69085e5a889475a9e02934374a01534",
                 "name": "user_count",
                 "limit": -1.0,
-                "usage": 0.0,
-                "scope": "http://example.com/api/exchange-tenants/7693d9308e0641baa95720d0046e5696/"
+                "usage": 0.0
             },
             {
                 "url": "http://example.com/api/quotas/64625370735b43359c0c9985b168fb87/",
                 "uuid": "64625370735b43359c0c9985b168fb87",
                 "name": "conference_room_count",
                 "limit": -1.0,
-                "usage": 0.0,
-                "scope": "http://example.com/api/exchange-tenants/7693d9308e0641baa95720d0046e5696/"
+                "usage": 0.0
             }
         ],
     }
@@ -196,7 +193,6 @@ Filtering and ordering is possible by:
 - ?username=XXX
 - ?first_name=XXX
 - ?last_name=XXX
-- ?mailbox_size=XXX
 - ?tenant_uuid=XXX
 
 Response example:
@@ -215,7 +211,6 @@ Response example:
             "last_name": "Doe",
             "username": "joe.doe",
             "password": "?lU_YmOi_vO=",
-            "mailbox_size": 5,
             "office": "",
             "phone": "",
             "department": "",
@@ -224,7 +219,16 @@ Response example:
             "manager": null,
             "email": "joe.doe@test.com",
             "send_on_behalf_members": [],
-            "send_as_members": []
+            "send_as_members": [].
+            "quotas": [
+                {
+                    "url": "http://example.com/api/quotas/4e0e4df02c2e4178a78cf2836328c599/",
+                    "uuid": "4e0e4df02c2e4178a78cf2836328c599",
+                    "name": "mailbox_size",
+                    "limit": 100.0,
+                    "usage": 0.0
+                }
+            ]
         }
     ]
 
@@ -688,8 +692,16 @@ Response example:
             "username": "example-cr-1",
             "email": "example-cr-1@example.com",
             "location": "example-cr-1",
-            "mailbox_size": 50,
-            "phone": ""
+            "phone": "",
+            "quotas": [
+                {
+                    "url": "http://example.com/api/quotas/caf816dd67d642b08b66a8ae3142d926/",
+                    "uuid": "caf816dd67d642b08b66a8ae3142d926",
+                    "name": "mailbox_size",
+                    "limit": 150.0,
+                    "usage": 0.0
+                }
+            ]
         }
     ]
 

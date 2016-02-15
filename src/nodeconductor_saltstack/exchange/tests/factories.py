@@ -42,8 +42,6 @@ class ExchangeTenantFactory(factory.DjangoModelFactory):
 
     service_project_link = factory.SubFactory(ServiceProjectLinkFactory)
     domain = factory.Sequence(lambda n: 'domain-%s' % n)
-    max_users = 10
-    mailbox_size = 100
     state = ExchangeTenant.States.ONLINE
 
     @classmethod
@@ -64,7 +62,6 @@ class ExchangeUserFactory(factory.DjangoModelFactory):
     first_name = 'Alice'
     last_name = 'Lebowski'
     password = 'secret'
-    mailbox_size = 100
 
     @classmethod
     def get_url(cls, user=None, action=None):

@@ -1,11 +1,11 @@
 from django.db import models
 from django.core.mail import send_mail
 from django.utils.encoding import python_2_unicode_compatible
-from model_utils import FieldTracker
 from gm2m import GM2MField
 
+from nodeconductor.core.models import DescendantMixin
 from nodeconductor.quotas.models import QuotaModelMixin
-from nodeconductor.quotas.fields import QuotaField, CounterQuotaField
+from nodeconductor.quotas.fields import QuotaField, CounterQuotaField, LimitAggregatorQuotaField
 from nodeconductor.structure import models as structure_models
 
 from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
@@ -27,8 +27,10 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
             path_to_scope='tenant',
         )
         # Maximum size of all mailboxes together, MB
-        mailbox_size = QuotaField(
+        mailbox_size = LimitAggregatorQuotaField(
             default_limit=0,
+            get_children=(lambda tenant:
+                          list(User.objects.filter(tenant=tenant)) + list(ConferenceRoom.objects.filter(tenant=tenant))),
         )
 
     @classmethod
@@ -58,13 +60,25 @@ class ExchangeProperty(SaltStackProperty):
         abstract = True
 
 
+class MailboxExchangeProperty(QuotaModelMixin, DescendantMixin, ExchangeProperty):
+
+    class Meta(object):
+        abstract = True
+
+    class Quotas(QuotaModelMixin.Quotas):
+        # Size of one mailbox, MB
+        mailbox_size = QuotaField(default_limit=0, is_backend=True)
+
+    def get_parents(self):
+        return [self.tenant]
+
+
 @python_2_unicode_compatible
-class User(ExchangeProperty):
+class User(MailboxExchangeProperty):
     username = models.CharField(max_length=255)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     password = models.CharField(max_length=255)
-    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of mailbox, MB')
     office = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=255, blank=True)
     department = models.CharField(max_length=255, blank=True)
@@ -73,8 +87,6 @@ class User(ExchangeProperty):
     title = models.CharField(max_length=255, blank=True)
     send_on_behalf_members = models.ManyToManyField('self', related_name='+')
     send_as_members = models.ManyToManyField('self', related_name='+')
-
-    tracker = FieldTracker()
 
     class Meta(object):
         unique_together = (('username', 'tenant'), ('name', 'tenant'))
@@ -101,6 +113,10 @@ class User(ExchangeProperty):
     def __str__(self):
         return '%s (%s)' % (self.name, self.tenant)
 
+    @classmethod
+    def get_url_name(cls):
+        return 'exchange-users'
+
 
 class Contact(ExchangeProperty):
     email = models.EmailField(max_length=255)
@@ -121,14 +137,15 @@ class Group(ExchangeProperty):
         return '{}@{}'.format(self.username, self.tenant.domain)
 
 
-class ConferenceRoom(ExchangeProperty):
+class ConferenceRoom(MailboxExchangeProperty):
     username = models.CharField(max_length=255)
     location = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=255, blank=True)
-    mailbox_size = models.PositiveSmallIntegerField(help_text='Maximum size of conference room mailbox, MB')
-
-    tracker = FieldTracker()
 
     @property
     def email(self):
         return '{}@{}'.format(self.username, self.tenant.domain)
+
+    @classmethod
+    def get_url_name(cls):
+        return 'exchange-conference-rooms'

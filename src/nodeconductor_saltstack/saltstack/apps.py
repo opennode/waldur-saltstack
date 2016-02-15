@@ -14,6 +14,7 @@ class SaltStackConfig(AppConfig):
 
         from nodeconductor.structure.models import ServiceSettings
         from nodeconductor.quotas.fields import QuotaField
+
         ServiceSettings.add_quota_field(
             name='sharepoint_storage',
             quota_field=QuotaField(
