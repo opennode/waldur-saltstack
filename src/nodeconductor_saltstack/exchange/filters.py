@@ -84,7 +84,6 @@ class UserFilter(django_filters.FilterSet):
             'username',
             'first_name',
             'last_name',
-            'mailbox_size',
             'tenant_uuid',
         ]
         order_by = [
@@ -93,12 +92,10 @@ class UserFilter(django_filters.FilterSet):
             'username',
             'first_name',
             'last_name',
-            'mailbox_size',
             # desc
             '-name',
             '-email',
             '-username',
             '-first_name',
             '-last_name',
-            '-mailbox_size',
         ]

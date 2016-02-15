@@ -9,7 +9,7 @@ from gm2m.relations import GM2MTo
 
 from nodeconductor.core.serializers import AugmentedSerializerMixin
 from nodeconductor.quotas.exceptions import QuotaExceededException
-from nodeconductor.quotas.serializers import QuotaSerializer
+from nodeconductor.quotas.serializers import BasicQuotaSerializer
 from nodeconductor.structure import serializers as structure_serializers
 
 from ..saltstack.backend import SaltStackBackendError
@@ -51,7 +51,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
     mailbox_size = serializers.IntegerField(
         min_value=1, write_only=True, help_text='Maximum storage size of all tenant mailboxes together, MB')
 
-    quotas = QuotaSerializer(many=True, read_only=True)
+    quotas = BasicQuotaSerializer(many=True, read_only=True)
 
     # Link to Outlook Web Access
     owa_url = serializers.SerializerMethodField()
@@ -88,8 +88,8 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
             if spl_storage_quota.is_exceeded(delta=attrs['mailbox_size']):
                 storage_left = spl_storage_quota.limit - spl_storage_quota.usage
                 raise serializers.ValidationError({
-                    'max_users': ("Service project link quota exceeded: Total mailbox size should be lower than %s MB"
-                                  % storage_left)
+                    'mailbox_size': ("Service project link quota exceeded: Total mailbox size should be lower than %s MB"
+                                     % storage_left)
                 })
 
             # generate a random name to be used as unique tenant id in MS Exchange
@@ -121,7 +121,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
 
 
 # should be initialized with tenant in context
-class TenantQuotaSerializer(serializers.Serializer):
+class TenantBasicQuotaSerializer(serializers.Serializer):
     mailbox_size = serializers.FloatField(min_value=1, write_only=True, help_text='Maximum mailbox storage size, MB.')
 
     def validate_mailbox_size(self, value):
@@ -215,10 +215,19 @@ class PhoneValidationMixin(object):
         return attrs
 
 
-class MailboxQuotaValidationMixin(object):
+class MailboxExchangePropertySerializer(BasePropertySerializer):
+
+    mailbox_size = serializers.IntegerField(
+        min_value=1, write_only=True, help_text='Maximum storage size of all tenant mailboxes together, MB')
+
+    quotas = BasicQuotaSerializer(many=True, read_only=True)
+
+    class Meta(BasePropertySerializer.Meta):
+        fields = BasePropertySerializer.Meta.fields + ('mailbox_size', 'quotas',)
+        protected_fields = BasePropertySerializer.Meta.protected_fields + ('mailbox_size',)
 
     def validate(self, attrs):
-        attrs = super(MailboxQuotaValidationMixin, self).validate(attrs)
+        attrs = super(MailboxExchangePropertySerializer, self).validate(attrs)
         tenant = self.instance.tenant if self.instance else attrs['tenant']
 
         if self.instance:
@@ -237,29 +246,34 @@ class MailboxQuotaValidationMixin(object):
 
         return attrs
 
+    def create(self, validated_data):
+        mailbox_size = validated_data.pop('mailbox_size')
+        obj = super(MailboxExchangePropertySerializer, self).create(validated_data)
+        obj.set_quota_limit(models.MailboxExchangeProperty.Quotas.mailbox_size, mailbox_size)
+        return obj
 
-class UserSerializer(UsernameValidationMixin, PhoneValidationMixin,
-                     MailboxQuotaValidationMixin, BasePropertySerializer):
+
+class UserSerializer(UsernameValidationMixin, PhoneValidationMixin, MailboxExchangePropertySerializer):
 
     notify = serializers.BooleanField(write_only=True, required=False)
 
-    class Meta(BasePropertySerializer.Meta):
+    class Meta(MailboxExchangePropertySerializer.Meta):
         model = models.User
         view_name = 'exchange-users-detail'
-        fields = BasePropertySerializer.Meta.fields + (
-            'name', 'first_name', 'last_name', 'username', 'password', 'mailbox_size',
+        fields = MailboxExchangePropertySerializer.Meta.fields + (
+            'name', 'first_name', 'last_name', 'username', 'password',
             'office', 'phone', 'department', 'company', 'title', 'manager', 'email', 'notify',
             'send_on_behalf_members', 'send_as_members',
         )
         # password update is handled separately in views.py
-        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('password', 'email')
+        read_only_fields = MailboxExchangePropertySerializer.Meta.read_only_fields + ('password', 'email')
         extra_kwargs = dict(
             manager={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
             send_as_members={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
             send_on_behalf_members={'lookup_field': 'uuid', 'view_name': 'exchange-users-detail'},
-            **BasePropertySerializer.Meta.extra_kwargs
+            **MailboxExchangePropertySerializer.Meta.extra_kwargs
         )
-        protected_fields = BasePropertySerializer.Meta.protected_fields + ('notify',)
+        protected_fields = MailboxExchangePropertySerializer.Meta.protected_fields + ('notify',)
 
     def get_fields(self):
         fields = super(UserSerializer, self).get_fields()
@@ -286,16 +300,15 @@ class ContactSerializer(BasePropertySerializer):
         )
 
 
-class ConferenceRoomSerializer(UsernameValidationMixin, PhoneValidationMixin,
-                               MailboxQuotaValidationMixin, BasePropertySerializer):
+class ConferenceRoomSerializer(UsernameValidationMixin, PhoneValidationMixin, MailboxExchangePropertySerializer):
 
-    class Meta(BasePropertySerializer.Meta):
+    class Meta(MailboxExchangePropertySerializer.Meta):
         model = models.ConferenceRoom
         view_name = 'exchange-conference-rooms-detail'
-        fields = BasePropertySerializer.Meta.fields + (
-            'name', 'username', 'email', 'location', 'mailbox_size', 'phone'
+        fields = MailboxExchangePropertySerializer.Meta.fields + (
+            'name', 'username', 'email', 'location', 'phone'
         )
-        read_only_fields = BasePropertySerializer.Meta.read_only_fields + ('email',)
+        read_only_fields = MailboxExchangePropertySerializer.Meta.read_only_fields + ('email',)
 
 
 class DeliveryMembersSerializer(serializers.BaseSerializer):

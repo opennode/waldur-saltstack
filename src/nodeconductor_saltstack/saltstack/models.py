@@ -2,7 +2,7 @@ from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 
 from nodeconductor.core import models as core_models
-from nodeconductor.quotas.fields import QuotaField, CounterQuotaField
+from nodeconductor.quotas.fields import QuotaField, CounterQuotaField, LimitAggregatorQuotaField
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
 
@@ -30,7 +30,12 @@ class SaltStackServiceProjectLink(QuotaModelMixin, structure_models.ServiceProje
         verbose_name_plural = 'SaltStack service project links'
 
     class Quotas(QuotaModelMixin.Quotas):
-        exchange_storage = QuotaField(default_limit=50 * 1024)
+        exchange_storage = LimitAggregatorQuotaField(
+            default_limit=50 * 1024,
+            get_children=lambda spl: spl.exchange_tenants.all(),
+            child_quota_name='mailbox_size'
+        )
+        # TODO: implement sharepoint_storage quota as LimitAggregatorQuotaField
         sharepoint_storage = QuotaField(default_limit=10 * 1024)
         sharepoint_tenant_number = CounterQuotaField(
             target_models=_get_sharepoint_tenant_model,

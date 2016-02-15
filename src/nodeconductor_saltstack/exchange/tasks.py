@@ -4,7 +4,6 @@ from django.utils import timezone
 from nodeconductor.core.tasks import save_error_message, transition, throttle
 from nodeconductor.structure.tasks import sync_service_project_links
 
-from ..saltstack.models import SaltStackServiceProjectLink
 from .models import ExchangeTenant, User
 
 
@@ -14,7 +13,6 @@ def provision(tenant_uuid, **kwargs):
     chain(
         sync_service_project_links.s(tenant.service_project_link.to_string(), initial=True),
         provision_tenant.si(tenant_uuid, **kwargs),
-        sync_tenant_quotas.si(tenant_uuid),
     ).apply_async(
         link=set_online.si(tenant_uuid),
         link_error=set_erred.si(tenant_uuid))
@@ -88,16 +86,18 @@ def delete(tenant_uuid):
     ExchangeTenant.objects.get(uuid=tenant_uuid).delete()
 
 
-@shared_task
-def sync_tenant_quotas(tenant_uuid):
-    tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
-    users = list(User.objects.filter(tenant=tenant))
-    tenant.set_quota_usage('user_count', len(users))
-    tenant.set_quota_usage('mailbox_size', sum(user.mailbox_size for user in users))
+# TODO: rewrite sync methods
+
+# @shared_task
+# def sync_tenant_quotas(tenant_uuid):
+#     tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
+#     users = list(User.objects.filter(tenant=tenant))
+#     tenant.set_quota_usage('user_count', len(users))
+#     tenant.set_quota_usage('mailbox_size', sum(user.mailbox_size for user in users))
 
 
-@shared_task
-def sync_spl_quotas(spl_id):
-    spl = SaltStackServiceProjectLink.objects.get(id=spl_id)
-    tenants = ExchangeTenant.objects.filter(service_project_link=spl)
-    spl.set_quota_usage('exchange_storage', sum([t.max_users * t.mailbox_size for t in tenants]))
+# @shared_task
+# def sync_spl_quotas(spl_id):
+#     spl = SaltStackServiceProjectLink.objects.get(id=spl_id)
+#     tenants = ExchangeTenant.objects.filter(service_project_link=spl)
+#     spl.set_quota_usage('exchange_storage', sum([t.max_users * t.mailbox_size for t in tenants]))
