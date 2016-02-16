@@ -121,7 +121,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
 
 
 # should be initialized with tenant in context
-class TenantBasicQuotaSerializer(serializers.Serializer):
+class TenantQuotaSerializer(serializers.Serializer):
     mailbox_size = serializers.FloatField(min_value=1, write_only=True, help_text='Maximum mailbox storage size, MB.')
 
     def validate_mailbox_size(self, value):
