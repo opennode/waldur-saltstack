@@ -218,7 +218,7 @@ class PhoneValidationMixin(object):
 class MailboxExchangePropertySerializer(BasePropertySerializer):
 
     mailbox_size = serializers.IntegerField(
-        min_value=1, write_only=True, help_text='Maximum storage size of all tenant mailboxes together, MB')
+        min_value=1, help_text='Maximum storage size of all tenant mailboxes together, MB')
 
     quotas = BasicQuotaSerializer(many=True, read_only=True)
 
@@ -229,37 +229,16 @@ class MailboxExchangePropertySerializer(BasePropertySerializer):
         attrs = super(MailboxExchangePropertySerializer, self).validate(attrs)
         tenant = self.instance.tenant if self.instance else attrs['tenant']
 
+        quota = attrs['mailbox_size']
         if self.instance:
-            mailbox_size_quota = self.instance.quotas.get(name=models.MailboxExchangeProperty.Quotas.mailbox_size)
-            deltas = {
-                tenant.Quotas.mailbox_size: attrs['mailbox_size'] - mailbox_size_quota.limit,
-            }
-        else:
-            deltas = {
-                tenant.Quotas.mailbox_size: attrs['mailbox_size'],
-            }
+            quota -= self.instance.mailbox_size
 
         try:
-            tenant.validate_quota_change(deltas, raise_exception=True)
+            tenant.validate_quota_change({tenant.Quotas.mailbox_size: quota}, raise_exception=True)
         except QuotaExceededException as e:
             raise serializers.ValidationError(str(e))
 
         return attrs
-
-    def update(self, instance, validated_data):
-        mailbox_size = validated_data.pop('mailbox_size', None)
-        obj = super(MailboxExchangePropertySerializer, self).update(instance, validated_data)
-        if mailbox_size is not None:
-            obj.set_quota_limit(models.MailboxExchangeProperty.Quotas.mailbox_size, mailbox_size)
-            validated_data['mailbox_size'] = mailbox_size
-        return obj
-
-    def create(self, validated_data):
-        mailbox_size = validated_data.pop('mailbox_size')
-        obj = super(MailboxExchangePropertySerializer, self).create(validated_data)
-        obj.set_quota_limit(models.MailboxExchangeProperty.Quotas.mailbox_size, mailbox_size)
-        validated_data['mailbox_size'] = mailbox_size
-        return obj
 
 
 class UserSerializer(UsernameValidationMixin, PhoneValidationMixin, MailboxExchangePropertySerializer):

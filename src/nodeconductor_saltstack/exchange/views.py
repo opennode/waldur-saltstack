@@ -94,7 +94,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             response['Content-Disposition'] = 'attachment; filename="%s_users.csv"' % tenant.backend_id
 
             exclude = ('url', 'tenant', 'tenant_uuid', 'tenant_domain', 'manager',
-                       'notify', 'send_on_behalf_members', 'send_as_members')
+                       'notify', 'send_on_behalf_members', 'send_as_members', 'quotas')
             headers = [f for f in serializers.UserSerializer.Meta.fields if f not in exclude]
             writer = UnicodeDictWriter(response, fieldnames=headers)
             writer.writeheader()
