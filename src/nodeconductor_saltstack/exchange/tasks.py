@@ -19,16 +19,10 @@ def provision(tenant_uuid, **kwargs):
 
 
 @shared_task(name='nodeconductor.exchange.destroy')
-def destroy(tenant_uuid, force=False):
-    if force:
-        error_callback = delete.si(tenant_uuid)
-    else:
-        error_callback = set_erred.si(tenant_uuid)
-        tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
-        tenant.begin_deleting()
-        tenant.save()
-
-    schedule_deletion.apply_async(
+@transition(ExchangeTenant, 'schedule_deletion')
+def destroy(tenant_uuid, force=False, transition_entity=None):
+    error_callback = delete.si(tenant_uuid) if force else set_erred.si(tenant_uuid)
+    destroy_tenant.apply_async(
         args=(tenant_uuid,),
         link=delete.si(tenant_uuid),
         link_error=error_callback,
@@ -48,8 +42,9 @@ def create_user(tenant_uuid, notify=False, **kwargs):
 
 
 @shared_task
+@transition(ExchangeTenant, 'begin_deleting')
 @save_error_message
-def schedule_deletion(tenant_uuid):
+def destroy_tenant(tenant_uuid, transition_entity=None):
     tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
     backend = tenant.get_backend()
     backend.tenants.delete()
