@@ -4,7 +4,7 @@ SaltStack service
 SaltStack service settings
 --------------------------
 
-SaltStack service settings have two additional quotas:
+SaltStack service settings have additional quotas:
 
 - exchange_storage - total disk space for Exchange installation.
 - sharepoint_storage - total disk space for SharePoint installation.
