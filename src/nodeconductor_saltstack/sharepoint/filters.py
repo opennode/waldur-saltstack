@@ -62,6 +62,9 @@ class SiteCollectionFilter(django_filters.FilterSet):
     template_name = django_filters.CharFilter(lookup_type='icontains', name='template__name')
     template_uuid = django_filters.CharFilter(name='template__uuid')
     tenant_uuid = django_filters.CharFilter(name='user__tenant__uuid')
+    type = django_filters.MultipleChoiceFilter(
+        choices=models.SiteCollection.Types.CHOICES,
+    )
 
     class Meta(object):
         model = models.SiteCollection
@@ -70,6 +73,7 @@ class SiteCollectionFilter(django_filters.FilterSet):
             'description',
             'access_url',
             'user_uuid',
+            'type',
             'template_uuid',
             'template_code',
             'template_name',

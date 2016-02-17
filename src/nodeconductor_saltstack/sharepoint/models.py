@@ -84,8 +84,8 @@ class User(SaltStackProperty):
             user=self,
             access_url=url,
         )
-        default_storage = models.SiteCollection.Defaults.personal_site_collection['storage']
-        self.personal_site_collection.set_quota_limit(models.SiteCollection.Quotas.storage, default_storage)
+        default_storage = SiteCollection.Defaults.personal_site_collection['storage']
+        self.personal_site_collection.set_quota_limit(SiteCollection.Quotas.storage, default_storage)
         self.save()
 
 
@@ -131,4 +131,4 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
 
     @property
     def deletable(self):
-        return self not in self.user.tenant.get_default_site_collections()
+        return self.type == self.Types.REGULAR

@@ -170,6 +170,18 @@ class SiteCollectionAPI(SaltStackBaseAPI):
             },
         )
 
+        check = dict(
+            name='CheckPersonalSiteCollection',
+            input={
+                'url': 'SiteUrl',
+            },
+            output={
+                'QuotaSize': 'quota_limit',
+                'SiteTemplate': 'template_code',
+                'QuotaUsage': 'quota_usage',
+            },
+        )
+
 
 class UserAPI(SaltStackBaseAPI):
 
