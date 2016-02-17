@@ -51,7 +51,9 @@ def schedule_deletion(tenant_uuid):
 @shared_task(is_heavy_task=True)
 @transition(SharepointTenant, 'begin_provisioning')
 @save_error_message
-def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
+def provision_tenant(tenant_uuid, transition_entity=None,
+                     site_name=None, site_description=None, template_uuid=None, **kwargs):
+    # Create tenant itself
     tenant = transition_entity
     backend = tenant.get_backend()
     # generate a random name to be used as unique tenant id in MS Exchange
@@ -63,6 +65,55 @@ def provision_tenant(tenant_uuid, transition_entity=None, **kwargs):
         domain=tenant.domain,
     )
     tenant.backend_id = tenant_backend_id
+    tenant.save()
+
+    # Create admin user
+    backend = tenant.get_backend()  # get backend again to mark admin user as available
+    admin_data = dict(email='admin@{}'.format(tenant.domain), **User.Defaults.admin)
+    backend_admin = backend.users.create(**admin_data)
+
+    admin = User.objects.create(
+        tenant=tenant,
+        admin_id=backend_admin.admin_id,
+        password=backend_admin.password,
+        **admin_data
+    )
+    tenant.admin = admin
+
+    # Initialize default site collections
+    template = Template.objects.get(uuid=template_uuid)
+    backend_collections_details = backend.site_collections.create_main(
+        admin_id=admin.admin_id,
+        name=site_name,
+        description=site_description,
+        template_code=template.code,
+        storage=SiteCollection.Defaults.main_site_collection['storage'],
+    )
+
+    main_sc = SiteCollection.objects.create(
+        name=site_name,
+        description=site_description,
+        template=template,
+        access_url=backend_collections_details.main_site_collection_url,
+        user=admin,
+    )
+    storage = backend_collections_details.main_site_collection_storage
+    main_sc.set_quota_limit(SiteCollection.Quotas.storage, storage)
+    tenant.main_site_collection = main_sc
+
+    template_code = backend_collections_details.admin_site_collection_template_code
+    admin_sc = SiteCollection.objects.create(
+        name=SiteCollection.Defaults.admin_site_collection['name'],
+        description=SiteCollection.Defaults.admin_site_collection['description'],
+        access_url=backend_collections_details.admin_site_collection_url,
+        user=admin,
+        template=Template.objects.filter(
+            code=template_code, settings=tenant.service_project_link.service.settings).first(),
+    )
+    storage = backend_collections_details.admin_site_collection_storage
+    admin_sc.set_quota_limit(SiteCollection.Quotas.storage, storage)
+    tenant.admin_site_collection = admin_sc
+
     tenant.save()
 
 

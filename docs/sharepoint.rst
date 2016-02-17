@@ -45,8 +45,10 @@ parameters:
  - link to the service-project-link object;
  - domain - domain name;
  - description - tenant description;
- - storage - tenant storage size (MB);
- - user_count - number of users;
+ - storage - tenant storage size (MB), should not be less than 1024;
+ - site_name - main site collection name;
+ - site_description - main site collection description;
+ - template - main site collection template;
 
 
  Example of a valid request:
@@ -65,55 +67,19 @@ parameters:
         "domain": "myspace.example.com",
         "description": "My space",
         "storage": 2048,
-        "user_count": 10
+        "site_name": "Main site",
+        "site_description": "Awesome main site",
+        "template": "http://example.com/api/sharepoint-templates/04e2a211df964967ad2e57796056bdb9/"
     }
 
-
-Tenant lifecycle
-----------------
-
-SharePoint tenant creation leads to setup of the basic pre-requisites for managing domain. However, for proper
-operation tenant needs to be initialized with a main, private and admin site collections. To do that, a user must
-first be created that can be assigned as a manager for those site collections.
-
-Before tenant is initialized, it is not possible to add additional site collections. To initialize a SharePoint tenant
-the following steps must be done:
-
- 1. Create at least one user that will have administrative privileges on the main site collection.
- 2. Request initialisation of the tenant by issuing POST request to **/api/sharepoint-tenants/<tenant_uuid>/initialize/**
-    with the payload defining:
-
-    - name - name of the main site collection;
-    - description - description of the main site collection;
-    - template - link to a site collection template;
-    - storage - size of a quota for the main site collection (in MBs);
-    - user - link to a user, who will be granted administrative privileges.
-
-
-    For example, the payload could look like:
-
-    .. code-block:: javascript
-
-        {
-            "template": "http://example.com/api/sharepoint-templates/6fce60a7f8094b7f8579024b41835d6f/",
-            "user": "http://akara.me/api/sharepoint-users/d1d5a5e24fe940c9aea9640e176684de/",
-            "storage": 100
-        }
-
-To track the status of the tenant use its **initialization_status** field. Possible values are:
-
- - Not initialized
- - Initializing
- - Initialized
- - Initialization failed
 
 Tenant display
 --------------
 
 To get tenant data - issue GET request against **/api/sharepoint-tenants/<tenant_uuid>/**.
 
-- access_url - Main site collection URL.
-- admin_url - Admin site collection URL.
+- admin - user that was automatically created on tenant initialization as admin.
+- main_site_collection, admin_site_collection - site collection that were created during tenant initialization.
 - management_ip - IP of the main site collection. Make sure it resolves to the domain. (Optional)
 
 Filtering is possible by:
@@ -142,11 +108,11 @@ Example rendering of the tenant object:
 .. code-block:: javascript
 
     {
-        "url": "http://example.com/api/sharepoint-tenants/178adb40c1a24a8ab95e4dbc1a0bc213/",
-        "uuid": "178adb40c1a24a8ab95e4dbc1a0bc213",
-        "name": "test-sharepoint-deployment",
-        "description": "",
-        "start_time": null,
+        "url": "http://example.com/api/sharepoint-tenants/35f3ee225c8343f582adb5fe387f8e94/",
+        "uuid": "35f3ee225c8343f582adb5fe387f8e94",
+        "name": "test-tenant",
+        "description": "test-tenant",
+        "start_time": "2016-02-17T06:24:12.350Z",
         "service": "http://example.com/api/saltstack/e21602aa438d4a1aa03cf5d43d101a63/",
         "service_name": "MS Services",
         "service_uuid": "e21602aa438d4a1aa03cf5d43d101a63",
@@ -161,32 +127,83 @@ Example rendering of the tenant object:
         "tags": [],
         "error_message": "",
         "resource_type": "SaltStack.SharepointTenant",
-        "state": "Provisioning Scheduled",
-        "created": "2016-01-25T14:11:55.567Z",
-        "backend_id": "",
-        "access_url": null,
-        "domain": "test-sharepoint-deployment.com",
+        "state": "Online",
+        "created": "2016-02-17T06:21:24.873Z",
+        "backend_id": "NC_2AC92770A6",
+        "access_url": "http://test-tenant.com",
+        "domain": "test-tenant.com",
         "quotas": [
             {
-                "url": "http://example.com/api/quotas/459e26dc90384c7296bf530af5b25858/",
-                "uuid": "459e26dc90384c7296bf530af5b25858",
+                "url": "http://example.com/api/quotas/707471368b8e415e8caf58cea3c3057a/",
+                "uuid": "707471368b8e415e8caf58cea3c3057a",
                 "name": "user_count",
-                "limit": 10.0,
-                "usage": 0.0,
-                "scope": "http://example.com/api/sharepoint-tenants/178adb40c1a24a8ab95e4dbc1a0bc213/"
+                "limit": -1.0,
+                "usage": 1.0
             },
             {
-                "url": "http://example.com/api/quotas/f5f78821bee8463397f4cc63a648d84d/",
-                "uuid": "f5f78821bee8463397f4cc63a648d84d",
+                "url": "http://example.com/api/quotas/66401ba4737d43cc96c4f85da88ea19b/",
+                "uuid": "66401ba4737d43cc96c4f85da88ea19b",
                 "name": "storage",
-                "limit": 200.0,
-                "usage": 0.0,
-                "scope": "http://example.com/api/sharepoint-tenants/178adb40c1a24a8ab95e4dbc1a0bc213/"
+                "limit": 1025.0,
+                "usage": 0.0
             }
         ],
-        "initialization_status": "Not initialized",
-        "admin_url": null,
-        "management_ip": "10.1.10.1"
+        "management_ip": "Unknown",
+        "admin": {
+            "url": "http://example.com/api/sharepoint-users/9a0394f7fe064fb4bdc15c89a2462ae9/",
+            "uuid": "9a0394f7fe064fb4bdc15c89a2462ae9",
+            "tenant": "http://example.com/api/sharepoint-tenants/35f3ee225c8343f582adb5fe387f8e94/",
+            "tenant_uuid": "35f3ee225c8343f582adb5fe387f8e94",
+            "tenant_domain": "test-tenant.com",
+            "name": "Admin",
+            "email": "admin@test-tenant.com",
+            "first_name": "Admin",
+            "last_name": "Admin",
+            "username": "admin",
+            "password": "b-6#urx@8149"
+        },
+        "admin_site_collection": {
+            "url": "http://example.com/api/sharepoint-site-collections/271ae2431188428b9ce8e66122385938/",
+            "uuid": "271ae2431188428b9ce8e66122385938",
+            "template": "http://example.com/api/sharepoint-templates/34a623ba82fb4662b95452da1d74e167/",
+            "template_code": "TENANTADMIN#0",
+            "template_name": "Tenant Admin Site",
+            "user": "http://example.com/api/sharepoint-users/9a0394f7fe064fb4bdc15c89a2462ae9/",
+            "name": "Admin",
+            "description": "Admin site collection",
+            "quotas": [
+                {
+                    "url": "http://example.com/api/quotas/087780fb1860433db3cdb78e8095dc3f/",
+                    "uuid": "087780fb1860433db3cdb78e8095dc3f",
+                    "name": "storage",
+                    "limit": 50.0,
+                    "usage": 0.0
+                }
+            ],
+            "site_url": "",
+            "access_url": "http://test-tenant.com/admin"
+        },
+        "main_site_collection": {
+            "url": "http://example.com/api/sharepoint-site-collections/f1ae7366c9b14bfb8e2ff5f0cfbe9a99/",
+            "uuid": "f1ae7366c9b14bfb8e2ff5f0cfbe9a99",
+            "template": "http://example.com/api/sharepoint-templates/452482cd1d024b5fbb6a09b38b0280af/",
+            "template_code": "STS#0",
+            "template_name": "Team Site",
+            "user": "http://example.com/api/sharepoint-users/9a0394f7fe064fb4bdc15c89a2462ae9/",
+            "name": "test-tenant-main-sc",
+            "description": "test-tenant-main-sc-description",
+            "quotas": [
+                {
+                    "url": "http://example.com/api/quotas/7c7e0f4ac38240b99a01e02ef03175e0/",
+                    "uuid": "7c7e0f4ac38240b99a01e02ef03175e0",
+                    "name": "storage",
+                    "limit": 500.0,
+                    "usage": 0.0
+                }
+            ],
+            "site_url": "",
+            "access_url": "http://test-tenant.com"
+        }
     }
 
 
@@ -227,13 +244,7 @@ Change tenant quotas
 --------------------
 
 To update tenant quotas - issue POST request against **/api/sharepoint-tenants/<tenant_uuid>/change_quotas/** with
-parameters (at least one parameter should be defined):
- - user_count
- - storage
-
-On user_count update size of personal site collection will be changed automatically too.
-It is impossible to increase user_count quota if there is not enough space for all of them.
-
+parameters storage, (user_count quota is not editable).
 
 Example of valid request:
 
@@ -246,7 +257,7 @@ Example of valid request:
     Host: example.com
 
     {
-        "storage": 200
+        "storage": 2048
     }
 
 

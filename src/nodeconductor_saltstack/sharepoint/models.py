@@ -8,25 +8,14 @@ from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
 
 
 class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_models.PaidResource):
-    class InitializationStatuses(object):
-        NOT_INITIALIZED = 'Not initialized'
-        INITIALIZING = 'Initializing'
-        INITIALIZED = 'Initialized'
-        FAILED = 'Initialization failed'
-
-        CHOICES = ((NOT_INITIALIZED, NOT_INITIALIZED), (INITIALIZING, INITIALIZING),
-                   (INITIALIZED, INITIALIZED), (FAILED, FAILED))
-
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='sharepoint_tenants', on_delete=models.PROTECT)
 
     domain = models.CharField(max_length=255)
-    initialization_status = models.CharField(
-        max_length=30, choices=InitializationStatuses.CHOICES, default=InitializationStatuses.NOT_INITIALIZED)
 
+    admin = models.ForeignKey('User', related_name='+', blank=True, null=True)
     main_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
     admin_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
-    personal_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
 
     class Quotas(QuotaModelMixin.Quotas):
         storage = QuotaField(
@@ -35,7 +24,6 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
         user_count = CounterQuotaField(
             target_models=lambda: [User],
             path_to_scope='tenant',
-            default_limit=0,
         )
 
     @classmethod
@@ -78,6 +66,14 @@ class User(SaltStackProperty):
     admin_id = models.CharField(max_length=255)
     password = models.CharField(max_length=255)
 
+    class Defaults(object):
+        admin = {
+            'name': 'Admin',
+            'username': 'admin',
+            'first_name': 'Admin',
+            'last_name': 'Admin',
+        }
+
 
 class SiteCollection(QuotaModelMixin, SaltStackProperty):
     user = models.ForeignKey(User, related_name='site_collections')
@@ -98,12 +94,15 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
         personal_site_collection = {
             'name': 'Personal',
             'description': 'Personal site collection',
-            'storage': 100,  # storage per user
+            'storage': 5,  # storage per user
         }
         admin_site_collection = {
             'name': 'Admin',
             'description': 'Admin site collection',
-            'storage': 100,
+            'storage': 50,
+        }
+        main_site_collection = {
+            'storage': 500,
         }
 
     @property

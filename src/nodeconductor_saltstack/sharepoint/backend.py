@@ -117,8 +117,7 @@ class SiteCollectionAPI(SaltStackBaseAPI):
                 'name': 'SiteName',
                 'description': 'SiteDesc',
                 'template_code': 'SiteTemplate',
-                'storage': 'SiteQuotaSize',
-                'user_count': 'MaxNumberOfUsers',
+                'storage': 'StorageQuotaSize',
             },
             defaults={
                 'domain': "{backend.tenant.domain}",
@@ -218,7 +217,10 @@ class UserAPI(SaltStackBaseAPI):
                 'backend_id': "{backend.tenant.backend_id}",
                 'domain': "{backend.tenant.domain}",
             },
-            **_base
+            output=dict(
+                PersonalSiteCollection='personal_site_collection_url',
+                **_base['output']
+            ),
         )
 
         reset_password = dict(
@@ -228,7 +230,7 @@ class UserAPI(SaltStackBaseAPI):
             },
             output={
                 'UserPassword': 'password',
-            }
+            },
         )
 
         delete = dict(

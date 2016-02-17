@@ -1,101 +1,11 @@
 from rest_framework import serializers
 
 from nodeconductor.core.serializers import AugmentedSerializerMixin
-from nodeconductor.quotas.serializers import QuotaSerializer
+from nodeconductor.quotas.serializers import BasicQuotaSerializer
 from nodeconductor.structure import serializers as structure_serializers
 
 from ..saltstack.models import SaltStackServiceProjectLink
 from .models import SharepointTenant, Template, User, SiteCollection
-
-
-class TenantSerializer(structure_serializers.BaseResourceSerializer):
-    service = serializers.HyperlinkedRelatedField(
-        source='service_project_link.service',
-        view_name='saltstack-detail',
-        read_only=True,
-        lookup_field='uuid')
-
-    service_project_link = serializers.HyperlinkedRelatedField(
-        view_name='saltstack-spl-detail',
-        queryset=SaltStackServiceProjectLink.objects.all(),
-        write_only=True)
-
-    user_count = serializers.IntegerField(min_value=1, write_only=True, initial=10)
-    storage = serializers.IntegerField(min_value=1, write_only=True, initial=5*1024)
-
-    # IP of the Sharepoint management server. admin_url/site_url should be resolving to it.
-    management_ip = serializers.SerializerMethodField()
-    quotas = QuotaSerializer(many=True, read_only=True)
-    admin_url = serializers.SerializerMethodField()
-
-    def get_management_ip(self, tenant):
-        return tenant.service_project_link.service.settings.options.get('sharepoint_management_ip', 'Unknown')
-
-    def get_admin_url(self, tenant):
-        if tenant.admin_site_collection:
-            return tenant.admin_site_collection.access_url
-        return
-
-    class Meta(structure_serializers.BaseResourceSerializer.Meta):
-        model = SharepointTenant
-        view_name = 'sharepoint-tenants-detail'
-        fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
-            'domain', 'quotas', 'user_count', 'storage', 'initialization_status', 'admin_url', 'management_ip',
-        )
-        read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
-            'initialization_status',
-        )
-        protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
-            'domain', 'user_count', 'storage',
-        )
-
-    def validate(self, attrs):
-        if not self.instance:
-            spl = attrs.get('service_project_link')
-
-            sharepoint_tenant_number_quota = spl.quotas.get(name=spl.Quotas.sharepoint_tenant_number)
-            if sharepoint_tenant_number_quota.is_exceeded(delta=1):
-                raise serializers.ValidationError("You have reached the maximum number of allowed tenants.")
-
-            spl_storage_quota = spl.quotas.get(name=spl.Quotas.sharepoint_storage)
-            if spl_storage_quota.is_exceeded(delta=attrs.get('storage')):
-                storage_left = spl_storage_quota.limit - spl_storage_quota.usage
-                raise serializers.ValidationError({
-                    'storage': ("Service project link quota exceeded: Total tenant storage size should be lower "
-                                "than %s MB" % storage_left)
-                })
-
-            users_storage = attrs['user_count'] * SiteCollection.Defaults.personal_site_collection['storage']
-            admin_storage = SiteCollection.Defaults.admin_site_collection['storage']
-            if users_storage + admin_storage > attrs['storage']:
-                raise serializers.ValidationError(
-                    'Tenant storage size should be bigger than %s MB, if it needs to support %s users.' %
-                    (users_storage + admin_storage, attrs['user_count'])
-                )
-
-            kwargs = dict(domain=attrs['domain'], service_project_link__service__settings=spl.service.settings)
-            if SharepointTenant.objects.filter(**kwargs).exists():
-                raise serializers.ValidationError({'domain': 'Tenant domain should be unique.'})
-
-        return attrs
-
-
-class TemplateSerializer(structure_serializers.BasePropertySerializer):
-
-    class Meta(object):
-        model = Template
-        view_name = 'sharepoint-templates-detail'
-        fields = ('url', 'uuid', 'name', 'code')
-        extra_kwargs = {
-            'url': {'lookup_field': 'uuid'},
-        }
-
-
-class UserPasswordSerializer(serializers.ModelSerializer):
-
-    class Meta(object):
-        model = User
-        fields = ('password',)
 
 
 class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
@@ -123,6 +33,7 @@ class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSeria
         return tenant
 
     def validate(self, attrs):
+        # TODO: replace this with storage quota validation
         if not self.instance:
             tenant = attrs['tenant']
             user_count_quota = tenant.quotas.get(name=tenant.Quotas.user_count)
@@ -184,7 +95,7 @@ class MainSiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
 class SiteCollectionSerializer(MainSiteCollectionSerializer):
 
     storage = serializers.IntegerField(write_only=True, help_text='Site collection size limit, MB')
-    quotas = QuotaSerializer(many=True, read_only=True)
+    quotas = BasicQuotaSerializer(many=True, read_only=True)
 
     class Meta(MainSiteCollectionSerializer.Meta):
         fields = MainSiteCollectionSerializer.Meta.fields + ('quotas', 'site_url', 'access_url', 'deletable')
@@ -217,10 +128,102 @@ class SiteCollectionSerializer(MainSiteCollectionSerializer):
         return attrs
 
 
+class TenantSerializer(structure_serializers.BaseResourceSerializer):
+    MINIMUM_TENANT_STORAGE_SIZE = 1024
+
+    service = serializers.HyperlinkedRelatedField(
+        source='service_project_link.service',
+        view_name='saltstack-detail',
+        read_only=True,
+        lookup_field='uuid')
+
+    service_project_link = serializers.HyperlinkedRelatedField(
+        view_name='saltstack-spl-detail',
+        queryset=SaltStackServiceProjectLink.objects.all(),
+        write_only=True)
+
+    storage = serializers.IntegerField(min_value=MINIMUM_TENANT_STORAGE_SIZE, write_only=True, initial=5*1024)
+    site_name = serializers.CharField(help_text='Main site collection name.', write_only=True)
+    site_description = serializers.CharField(help_text='Main site collection description.', write_only=True)
+    template = serializers.HyperlinkedRelatedField(
+        view_name='sharepoint-templates-detail',
+        queryset=Template.objects.all(),
+        lookup_field='uuid',
+        write_only=True,
+    )
+
+    # IP of the Sharepoint management server. admin_url/site_url should be resolving to it.
+    management_ip = serializers.SerializerMethodField()
+
+    quotas = BasicQuotaSerializer(many=True, read_only=True)
+    admin = UserSerializer(read_only=True)
+    admin_site_collection = SiteCollectionSerializer(read_only=True)
+    main_site_collection = SiteCollectionSerializer(read_only=True)
+
+    def get_management_ip(self, tenant):
+        return tenant.service_project_link.service.settings.options.get('sharepoint_management_ip', 'Unknown')
+
+    def get_admin_site_collection_url(self, tenant):
+        if tenant.admin_site_collection:
+            return tenant.admin_site_collection.access_url
+        return
+
+    class Meta(structure_serializers.BaseResourceSerializer.Meta):
+        model = SharepointTenant
+        view_name = 'sharepoint-tenants-detail'
+        fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
+            'domain', 'quotas', 'storage', 'management_ip', 'site_name', 'site_description', 'template',
+            'admin', 'admin_site_collection', 'main_site_collection'
+        )
+        protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
+            'domain', 'storage', 'site_name', 'site_description', 'template',
+        )
+
+    def validate(self, attrs):
+        if not self.instance:
+            spl = attrs.get('service_project_link')
+
+            sharepoint_tenant_number_quota = spl.quotas.get(name=spl.Quotas.sharepoint_tenant_number)
+            if sharepoint_tenant_number_quota.is_exceeded(delta=1):
+                raise serializers.ValidationError("You have reached the maximum number of allowed tenants.")
+
+            spl_storage_quota = spl.quotas.get(name=spl.Quotas.sharepoint_storage)
+            if spl_storage_quota.is_exceeded(delta=attrs.get('storage')):
+                storage_left = spl_storage_quota.limit - spl_storage_quota.usage
+                raise serializers.ValidationError({
+                    'storage': ("Service project link quota exceeded: Total tenant storage size should be lower "
+                                "than %s MB" % storage_left)
+                })
+
+            kwargs = dict(domain=attrs['domain'], service_project_link__service__settings=spl.service.settings)
+            if SharepointTenant.objects.filter(**kwargs).exists():
+                raise serializers.ValidationError({'domain': 'Tenant domain should be unique.'})
+
+        return attrs
+
+
+class TemplateSerializer(structure_serializers.BasePropertySerializer):
+
+    class Meta(object):
+        model = Template
+        view_name = 'sharepoint-templates-detail'
+        fields = ('url', 'uuid', 'name', 'code')
+        extra_kwargs = {
+            'url': {'lookup_field': 'uuid'},
+        }
+
+
+class UserPasswordSerializer(serializers.ModelSerializer):
+
+    class Meta(object):
+        model = User
+        fields = ('password',)
+
+
 # Should be initialized with tenant in context
 class TenantQuotaSerializer(serializers.Serializer):
-    storage = serializers.FloatField(min_value=1, write_only=True, required=False, help_text='Maximum storage size, MB')
-    user_count = serializers.FloatField(min_value=1, write_only=True, required=False, help_text='Maximum user count')
+    storage = serializers.FloatField(
+        min_value=TenantSerializer.MINIMUM_TENANT_STORAGE_SIZE, write_only=True, help_text='Maximum storage size, MB')
 
     def validate_storage(self, value):
         tenant = self.context['tenant']
@@ -239,25 +242,6 @@ class TenantQuotaSerializer(serializers.Serializer):
                     "than %s MB" % storage_left
                 )
         return value
-
-    def validate_user_count(self, value):
-        tenant = self.context['tenant']
-        old_quota = tenant.quotas.get(name=SharepointTenant.Quotas.user_count)
-        if value < old_quota.usage:
-            raise serializers.ValidationError('New user_count quota limit cannot be lower than current usage.')
-
-        storage_quota = tenant.quotas.get(name=SharepointTenant.Quotas.storage)
-        new_users_storage = (value - old_quota.limit) * SiteCollection.Defaults.personal_site_collection['storage']
-        if storage_quota.is_exceeded(delta=new_users_storage):
-            storage_left = storage_quota.limit - storage_quota.usage
-            raise serializers.ValidationError('New users cannot consume more than %s MB' % storage_left)
-
-        return value
-
-    def validate(self, attrs):
-        if 'storage' not in attrs and 'user_count' not in attrs:
-            raise serializers.ValidationError('At least one quota should be defined.')
-        return attrs
 
 
 # Should be initialized with site_collection in context
