@@ -466,6 +466,7 @@ The following filtering options are present (**?field_name=...**):
 - template_name
 - template_uuid
 - tenant_uuid
+- type - can be list. Choices: main, admin, personal, regular.
 
 
 Site collection display
@@ -498,7 +499,8 @@ Example rendering of the site object:
         ],
         "site_url": "",
         "access_url": "http://ilja-test-780.com/",
-        "deletable": false
+        "deletable": false,
+        "type": "regular"
      }
 
 
@@ -514,6 +516,8 @@ Change storage quota
 
 To change storage quota - issue POST or PUT request against
 **/api/sharepoint-site-collections/<site_collection_uuid>/change_quotas/** with "storage" as parameter.
+
+Endpoint will return error with status 409 if personal site collection was not initialized.
 
 Example of valid request:
 

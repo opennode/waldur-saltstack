@@ -1,5 +1,5 @@
 from rest_framework import decorators, exceptions, mixins, response, viewsets
-from rest_framework.status import HTTP_200_OK
+from rest_framework.status import HTTP_200_OK, HTTP_409_CONFLICT
 
 from nodeconductor.core.exceptions import IncorrectStateException
 from nodeconductor.structure import views as structure_views
@@ -91,12 +91,6 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
     filter_class = filters.SiteCollectionFilter
     lookup_field = 'uuid'
 
-    def get_serializer_class(self):
-        serializer_class = super(SiteCollectionViewSet, self).get_serializer_class()
-        if self.action == 'change_quotas':
-            serializer_class = serializers.SiteCollectionQuotaSerializer
-        return serializer_class
-
     def perform_create(self, serializer):
         user = serializer.validated_data['user']
         template = serializer.validated_data['template']
@@ -141,17 +135,28 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
     @track_exceptions
     def change_quotas(self, request, pk=None, **kwargs):
         site_collection = self.get_object()
-        backend = site_collection.user.tenant.get_backend()
-        serializer_class = self.get_serializer_class()
-        serializer = serializer_class(data=request.data, context={'site_collection': site_collection})
+        tenant = site_collection.user.tenant
+        backend = tenant.get_backend()
+
+        serializer = serializers.SiteCollectionQuotaSerializer(
+            data=request.data, context={'site_collection': site_collection})
         serializer.is_valid(raise_exception=True)
 
-        new_storage = serializer.validated_data['storage']
-        old_storage = site_collection.quotas.get(name=models.SiteCollection.Quotas.storage).limit
+        # If personal site collection was not initialized - check if it exists
+        # XXX: identification via template is not logical. Need to handle backend_id for site collections.
+        if site_collection.type == models.SiteCollection.Types.PERSONAL and site_collection.template is None:
+            try:
+                check_result = backend.site_collections.check(url=site_collection.access_url)
+            except SaltStackBackendError:
+                return response.Response(
+                    {'detail': 'User personal site collection is not initialized'}, status=HTTP_409_CONFLICT)
+            else:
+                site_collection.template = models.Template.objects.filter(
+                    code=check_result.template_code, settings=tenant.service_project_link.service.settings).first()
+                site_collection.save()
 
-        backend.site_collections.set_storage(url=site_collection.access_url, storage=new_storage)
-        site_collection.set_quota_limit(models.SiteCollection.Quotas.storage, new_storage)
-        tenant = site_collection.user.tenant
-        tenant.add_quota_usage(models.SharepointTenant.Quotas.storage, new_storage - old_storage)
+        storage = serializer.validated_data['storage']
+        backend.site_collections.set_storage(url=site_collection.access_url, storage=storage)
+        site_collection.set_quota_limit(models.SiteCollection.Quotas.storage, storage)
 
-        return response.Response('Storage quota was successfully changed.', status=HTTP_200_OK)
+        return response.Response({'status': 'Storage quota was successfully changed.'}, status=HTTP_200_OK)

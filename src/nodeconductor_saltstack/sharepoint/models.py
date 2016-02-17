@@ -131,4 +131,4 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
 
     @property
     def deletable(self):
-        return self not in self.user.tenant.get_default_site_collections()
+        return self.type == self.Types.REGULAR

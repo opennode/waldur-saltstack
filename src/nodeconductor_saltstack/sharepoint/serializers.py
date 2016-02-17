@@ -9,29 +9,30 @@ from ..saltstack.serializers import PhoneValidationMixin
 from .models import SharepointTenant, Template, User, SiteCollection
 
 
-class MainSiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
+class SiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
+
+    storage = serializers.IntegerField(write_only=True, help_text='Site collection size limit, MB')
 
     template = serializers.HyperlinkedRelatedField(
         view_name='sharepoint-templates-detail',
         queryset=Template.objects.all(),
         lookup_field='uuid')
-
-    storage = serializers.IntegerField(write_only=True, help_text='Main site collection size limit, MB')
     template_code = serializers.ReadOnlyField(source='template.code')
     template_name = serializers.ReadOnlyField(source='template.name')
+    quotas = BasicQuotaSerializer(many=True, read_only=True)
 
     class Meta(object):
         model = SiteCollection
         view_name = 'sharepoint-site-collections-detail'
-        fields = (
-            'url', 'uuid', 'template', 'template_code', 'template_name', 'user', 'storage', 'name', 'description',
-        )
-        read_only_fields = ('uuid',)
-        protected_fields = ('template',)
+        fields = ('url', 'uuid', 'template', 'template_code', 'template_name', 'user', 'storage', 'name', 'description',
+                  'type', 'quotas', 'site_url', 'access_url', 'deletable')
         extra_kwargs = {
             'url': {'lookup_field': 'uuid'},
             'user': {'lookup_field': 'uuid', 'view_name': 'sharepoint-users-detail'},
+            'tenant': {'lookup_field': 'uuid', 'view_name': 'sharepoint-tenants-detail'},
         }
+        read_only_fields = ('uuid', 'access_url', 'type')
+        protected_fields = ('template',)
 
     def validate_user(self, user):
         if user.tenant.state != SharepointTenant.States.ONLINE:
@@ -40,46 +41,7 @@ class MainSiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
         return user
 
     def validate(self, attrs):
-        user = attrs['user']
-        tenant = user.tenant
-        storage_quota = tenant.quotas.get(name=tenant.Quotas.storage)
-        # With main site collection we also creating admin and personal collections - we need to count their quotas too.
-        main_site_collection_storage = attrs['storage']
-        admin_site_collection_storage = SiteCollection.Defaults.admin_site_collection['storage']
-        user_count = tenant.quotas.get(name=tenant.Quotas.user_count).limit
-        personal_site_collection_storage = SiteCollection.Defaults.personal_site_collection['storage'] * user_count
-        storage = main_site_collection_storage + admin_site_collection_storage + personal_site_collection_storage
-        if storage_quota.is_exceeded(delta=storage):
-            max_storage = (storage_quota.limit - storage_quota.usage -
-                           admin_site_collection_storage - personal_site_collection_storage)
-            raise serializers.ValidationError(
-                'Storage quota is over limit. Site collection cannot be greater then %s MB.' % max_storage)
-        return attrs
-
-    # TODO: Check that template belong to the same service settings.
-
-
-class SiteCollectionSerializer(MainSiteCollectionSerializer):
-
-    storage = serializers.IntegerField(write_only=True, help_text='Site collection size limit, MB')
-    quotas = BasicQuotaSerializer(many=True, read_only=True)
-
-    class Meta(MainSiteCollectionSerializer.Meta):
-        fields = MainSiteCollectionSerializer.Meta.fields + ('quotas', 'site_url', 'access_url', 'deletable')
-        extra_kwargs = dict(
-            tenant={'lookup_field': 'uuid', 'view_name': 'sharepoint-tenants-detail'},
-            **MainSiteCollectionSerializer.Meta.extra_kwargs
-        )
-        read_only_fields = MainSiteCollectionSerializer.Meta.read_only_fields + ('access_url',)
-
-    def validate_user(self, user):
-        user = super(SiteCollectionSerializer, self).validate_user(user)
-        if user.tenant.initialization_status != SharepointTenant.InitializationStatuses.INITIALIZED:
-            raise serializers.ValidationError(
-                'It is impossible to create site collection if user tenant is not initialized.')
-        return user
-
-    def validate(self, attrs):
+        # TODO: Check that template belong to the same service settings.
         user = attrs['user']
         tenant = user.tenant
         storage_quota = tenant.quotas.get(name=tenant.Quotas.storage)
