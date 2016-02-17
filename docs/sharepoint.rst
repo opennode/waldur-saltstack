@@ -49,6 +49,8 @@ parameters:
  - site_name - main site collection name;
  - site_description - main site collection description;
  - template - main site collection template;
+ - notify - True if SMS with admin user should be send on its creation.
+ - phone - phone number, required if "notify" is True;
 
 
  Example of a valid request:
@@ -303,6 +305,7 @@ Create user
 -----------
 
 To create new SharePoint user - issue POST request against **/api/sharepoint-users/**.
+Not initialized personal site collection will be automatically created on user creation.
 
  - name - Display name;
  - email;
@@ -310,6 +313,8 @@ To create new SharePoint user - issue POST request against **/api/sharepoint-use
  - last_name;
  - first_name;
  - link to a tenant;
+ - notify - True if user has to be notified with SMS on creation.
+ - phone (required if "notify" is True);
 
  Example of a valid request:
 
@@ -327,7 +332,9 @@ To create new SharePoint user - issue POST request against **/api/sharepoint-use
         "email": "joe@email.com",
         "first_name": "Joe",
         "last_name": "Doe",
-        "username": "joe.doe"
+        "username": "joe.doe",
+        "notify": True,
+        "phone": "123456789"
     }
 
 
@@ -351,7 +358,28 @@ Example rendering of the user object:
         "first_name": "Joe",
         "last_name": "Doe",
         "username": "joe.doe",
-        "password": "l1LJ7UK2YZt0"
+        "password": "l1LJ7UK2YZt0",
+        "personal_site_collection": {
+            "url": "http://127.0.0.1:8000/api/sharepoint-site-collections/7f6d8bdfe23549c597c9797bb995b8a3/",
+            "uuid": "7f6d8bdfe23549c597c9797bb995b8a3",
+            "template": null,
+            "template_code": null,
+            "template_name": null,
+            "user": "http://127.0.0.1:8000/api/sharepoint-users/5f093dfd31f64e6eaaf5724cd02c61f1/",
+            "name": "Personal",
+            "description": "Personal site collection",
+            "quotas": [
+                {
+                    "url": "http://127.0.0.1:8000/api/quotas/c7649c8b3091412090b5f475f69d68a3/",
+                    "uuid": "c7649c8b3091412090b5f475f69d68a3",
+                    "name": "storage",
+                    "limit": 5.0,
+                    "usage": 0.0
+                }
+            ],
+            "site_url": "",
+            "access_url": "http://pavel-test-sharepoint-706.com/my/personal/42dfa946621ba8b26b7c"
+        }
     }
 
 

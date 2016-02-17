@@ -1,4 +1,4 @@
-from rest_framework import decorators, exceptions, mixins, response, viewsets, status
+from rest_framework import decorators, exceptions, mixins, response, viewsets
 from rest_framework.status import HTTP_200_OK
 
 from nodeconductor.core.exceptions import IncorrectStateException
@@ -6,7 +6,7 @@ from nodeconductor.structure import views as structure_views
 from nodeconductor_saltstack.saltstack.views import track_exceptions
 
 from ..saltstack.backend import SaltStackBackendError
-from . import models, serializers, tasks, filters
+from . import models, serializers, filters
 
 
 class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
@@ -19,40 +19,16 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         site_name = serializer.validated_data.pop('site_name')
         site_description = serializer.validated_data.pop('site_description')
         template = serializer.validated_data.pop('template')
-        tenant = serializer.save()
+        phone = serializer.validated_data.pop('phone', None)
+        notify = serializer.validated_data.pop('notify', None)
 
+        tenant = serializer.save()
         tenant.set_quota_limit(tenant.Quotas.storage, storage)
 
         backend = tenant.get_backend()
         backend.provision(
-            tenant, site_name=site_name, site_description=site_description, template_uuid=template.uuid.hex)
-
-    @decorators.detail_route(methods=['post'])
-    def initialize(self, request, **kwargs):
-        tenant = self.get_object()
-        if tenant.initialization_status != models.SharepointTenant.InitializationStatuses.NOT_INITIALIZED:
-            raise IncorrectStateException("Tenant must be in 'Not initialized' state to perform initialization operation.")
-
-        # create main site collection
-        serializer = serializers.MainSiteCollectionSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        storage = serializer.validated_data.pop('storage')
-        template = serializer.validated_data.pop('template')
-        user = serializer.validated_data.pop('user')
-        name = serializer.validated_data.pop('name')
-        description = serializer.validated_data.pop('description')
-
-        if user.tenant != tenant:
-            return response.Response(
-                {'user': 'User has to be from initializing tenant'}, status=status.HTTP_400_BAD_REQUEST)
-
-        tenant.initialization_status = models.SharepointTenant.InitializationStatuses.INITIALIZING
-        tenant.save()
-
-        tasks.initialize_tenant.delay(tenant.uuid.hex, template.uuid.hex, user.uuid.hex, storage, name, description)
-
-        return response.Response({'status': 'Initialization was scheduled successfully.'}, status=status.HTTP_200_OK)
+            tenant, site_name=site_name, site_description=site_description, template_uuid=template.uuid.hex,
+            phone=phone, notify=notify)
 
     @decorators.detail_route(methods=['post', 'put'])
     @track_exceptions
@@ -80,9 +56,6 @@ class UserViewSet(viewsets.ModelViewSet):
         tenant = serializer.validated_data['tenant']
         backend = tenant.get_backend()
 
-        if tenant.state != models.SharepointTenant.States.ONLINE:
-            raise IncorrectStateException("Tenant must be online to perform user creation")
-
         try:
             backend_user = backend.users.create(
                 first_name=serializer.validated_data['first_name'],
@@ -94,11 +67,13 @@ class UserViewSet(viewsets.ModelViewSet):
         except SaltStackBackendError as e:
             raise exceptions.APIException(e.traceback_str)
         else:
+            # create user
             user = serializer.save()
             user.password = backend_user.password
             user.admin_id = backend_user.admin_id
             user.backend_id = backend_user.id
-            user.save()
+            # create initial site collection
+            user.init_personal_site_collection(backend_user.personal_site_collection_url)
 
     def perform_update(self, serializer):
         user = self.get_object()

@@ -35,7 +35,7 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
         return super(SharepointTenant, self).get_backend(backend_class=SharepointBackend, tenant=self)
 
     def get_default_site_collections(self):
-        return [self.main_site_collection, self.admin_site_collection, self.personal_site_collection]
+        return [self.main_site_collection, self.admin_site_collection]
 
     def get_access_url(self):
         if self.main_site_collection:
@@ -65,6 +65,8 @@ class User(SaltStackProperty):
     last_name = models.CharField(max_length=255)
     admin_id = models.CharField(max_length=255)
     password = models.CharField(max_length=255)
+    phone = models.CharField(max_length=255, blank=True)
+    personal_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
 
     class Defaults(object):
         admin = {
@@ -74,8 +76,30 @@ class User(SaltStackProperty):
             'last_name': 'Admin',
         }
 
+    def init_personal_site_collection(self, url):
+        self.personal_site_collection = SiteCollection.objects.create(
+            name=SiteCollection.Defaults.personal_site_collection['name'],
+            description=SiteCollection.Defaults.personal_site_collection['description'],
+            type=SiteCollection.Types.PERSONAL,
+            user=self,
+            access_url=url,
+        )
+        default_storage = models.SiteCollection.Defaults.personal_site_collection['storage']
+        self.personal_site_collection.set_quota_limit(models.SiteCollection.Quotas.storage, default_storage)
+        self.save()
+
 
 class SiteCollection(QuotaModelMixin, SaltStackProperty):
+
+    class Types(object):
+        MAIN = 'main'
+        ADMIN = 'admin'
+        PERSONAL = 'personal'
+        REGULAR = 'regular'
+
+        CHOICES = ((MAIN, MAIN), (ADMIN, ADMIN), (PERSONAL, PERSONAL), (REGULAR, REGULAR))
+
+    type = models.CharField(max_length=30, choices=Types.CHOICES, default=Types.REGULAR)
     user = models.ForeignKey(User, related_name='site_collections')
     site_url = models.CharField(max_length=255, blank=True)
     description = models.CharField(max_length=500)
