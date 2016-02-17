@@ -1,5 +1,4 @@
 from django.db import models
-from django.core.mail import send_mail
 from django.utils.encoding import python_2_unicode_compatible
 from gm2m import GM2MField
 
@@ -100,17 +99,6 @@ class User(MailboxExchangeProperty):
     def get_stats(self):
         backend = self.tenant.get_backend()
         return backend.users.stats(id=self.backend_id)
-
-    def notify(self):
-        if self.phone:
-            options = self.tenant.service_project_link.service.settings.options or {}
-            sender = options.get('sms_email_from')
-            recipient = options.get('sms_email_rcpt')
-
-            if sender and recipient and '{phone}' in recipient:
-                send_mail(
-                    '', 'Your OTP is: %s' % self.password, sender,
-                    [recipient.format(phone=self.phone)], fail_silently=True)
 
     def __str__(self):
         return '%s (%s)' % (self.name, self.tenant)

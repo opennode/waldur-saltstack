@@ -5,6 +5,7 @@ from nodeconductor.quotas.serializers import BasicQuotaSerializer
 from nodeconductor.structure import serializers as structure_serializers
 
 from ..saltstack.models import SaltStackServiceProjectLink
+from ..saltstack.serializers import PhoneValidationMixin
 from .models import SharepointTenant, Template, User, SiteCollection
 
 
@@ -94,7 +95,7 @@ class SiteCollectionSerializer(MainSiteCollectionSerializer):
         return attrs
 
 
-class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
+class UserSerializer(AugmentedSerializerMixin, PhoneValidationMixin, serializers.HyperlinkedModelSerializer):
     notify = serializers.BooleanField(write_only=True, required=False)
 
     personal_site_collection = SiteCollectionSerializer(read_only=True)
@@ -126,7 +127,7 @@ class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSeria
         return tenant
 
 
-class TenantSerializer(structure_serializers.BaseResourceSerializer):
+class TenantSerializer(PhoneValidationMixin, structure_serializers.BaseResourceSerializer):
     MINIMUM_TENANT_STORAGE_SIZE = 1024
 
     service = serializers.HyperlinkedRelatedField(
@@ -140,7 +141,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         queryset=SaltStackServiceProjectLink.objects.all(),
         write_only=True)
 
-    storage = serializers.IntegerField(min_value=MINIMUM_TENANT_STORAGE_SIZE, write_only=True, initial=5*1024)
+    storage = serializers.IntegerField(min_value=MINIMUM_TENANT_STORAGE_SIZE, write_only=True, initial=5 * 1024)
     site_name = serializers.CharField(help_text='Main site collection name.', write_only=True)
     site_description = serializers.CharField(help_text='Main site collection description.', write_only=True)
     template = serializers.HyperlinkedRelatedField(
@@ -157,7 +158,7 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
     admin = UserSerializer(read_only=True)
     admin_site_collection = SiteCollectionSerializer(read_only=True)
     main_site_collection = SiteCollectionSerializer(read_only=True)
-    phone = serializers.CharField(write_only=True, required=False)
+    phone = serializers.CharField(write_only=True, allow_blank=True, required=False)
     notify = serializers.BooleanField(write_only=True, required=False)
 
     def get_management_ip(self, tenant):
@@ -180,6 +181,8 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         )
 
     def validate(self, attrs):
+        attrs = super(TenantSerializer, self).validate(attrs)
+
         if not self.instance:
             spl = attrs.get('service_project_link')
 
@@ -215,9 +218,12 @@ class TemplateSerializer(structure_serializers.BasePropertySerializer):
 
 class UserPasswordSerializer(serializers.ModelSerializer):
 
+    notify = serializers.BooleanField(write_only=True, required=False)
+
     class Meta(object):
         model = User
-        fields = ('password',)
+        fields = ('password', 'notify')
+        read_only_fields = ('password',)
 
 
 # Should be initialized with tenant in context

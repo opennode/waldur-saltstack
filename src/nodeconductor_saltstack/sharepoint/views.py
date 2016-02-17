@@ -5,8 +5,10 @@ from nodeconductor.core.exceptions import IncorrectStateException
 from nodeconductor.structure import views as structure_views
 from nodeconductor_saltstack.saltstack.views import track_exceptions
 
-from ..saltstack.backend import SaltStackBackendError
 from . import models, serializers, filters
+from ..saltstack.backend import SaltStackBackendError
+from ..saltstack.views import BasePropertyViewSet
+from ..saltstack.utils import sms_user_password
 
 
 class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
@@ -46,67 +48,37 @@ class TemplateViewSet(structure_views.BaseServicePropertyViewSet):
     lookup_field = 'uuid'
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(BasePropertyViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
     filter_class = filters.UserFilter
-    lookup_field = 'uuid'
+    backend_name = 'users'
+    backend_name = 'users'
 
-    def perform_create(self, serializer):
-        tenant = serializer.validated_data['tenant']
-        backend = tenant.get_backend()
+    def post_create(self, user, serializer, backend_user):
+        user.password = backend_user.password
+        user.save()
 
-        try:
-            backend_user = backend.users.create(
-                first_name=serializer.validated_data['first_name'],
-                last_name=serializer.validated_data['last_name'],
-                username=serializer.validated_data['username'],
-                name=serializer.validated_data['name'],
-                email=serializer.validated_data['email'])
-
-        except SaltStackBackendError as e:
-            raise exceptions.APIException(e.traceback_str)
-        else:
-            # create user
-            user = serializer.save()
-            user.password = backend_user.password
-            user.admin_id = backend_user.admin_id
-            user.backend_id = backend_user.id
-            # create initial site collection
-            user.init_personal_site_collection(backend_user.personal_site_collection_url)
-
-    def perform_update(self, serializer):
-        user = self.get_object()
-        backend = user.tenant.get_backend()
-
-        try:
-            changed = {k: v for k, v in serializer.validated_data.items() if v and getattr(user, k) != v}
-            backend.users.change(admin_id=user.admin_id, **changed)
-        except SaltStackBackendError as e:
-            raise exceptions.APIException(e.traceback_str)
-        else:
-            serializer.save()
-
-    def perform_destroy(self, user):
-        backend = user.tenant.get_backend()
-        try:
-            backend.users.delete(id=user.backend_id)
-        except SaltStackBackendError as e:
-            raise exceptions.APIException(e.traceback_str)
-        else:
-            user.delete()
+        if serializer.validated_data.get('notify'):
+            sms_user_password(user)
 
     # XXX: put was added as portal has a temporary bug with widget update
     @decorators.detail_route(methods=['post', 'put'])
     @track_exceptions
     def password(self, request, pk=None, **kwargs):
         user = self.get_object()
-        backend = user.tenant.get_backend()
-        new_password = backend.users.reset_password(id=user.backend_id)
-        user.password = new_password.password
+        backend = self.get_backend(user.tenant)
+        response = backend.reset_password(id=user.backend_id)
+        user.password = response.password
         user.save()
-        data = serializers.UserPasswordSerializer(instance=user, context={'request': request}).data
-        return response.Response(data, status=HTTP_200_OK)
+
+        serializer_class = serializers.UserPasswordSerializer
+        serializer = serializer_class(instance=user, data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        if serializer.validated_data.get('notify'):
+            sms_user_password(user)
+
+        return response.Response(serializer.data, status=HTTP_200_OK)
 
 
 class SiteCollectionViewSet(mixins.CreateModelMixin,
