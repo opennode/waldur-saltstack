@@ -1,6 +1,10 @@
-from . import models
+import re
+
+from rest_framework import serializers
 from nodeconductor.quotas import serializers as quotas_serializers
 from nodeconductor.structure import serializers as structure_serializers
+
+from . import models
 
 
 class ServiceSerializer(structure_serializers.BaseServiceSerializer):
@@ -39,3 +43,28 @@ class ServiceProjectLinkSerializer(structure_serializers.BaseServiceProjectLinkS
             'service': {'lookup_field': 'uuid', 'view_name': 'saltstack-detail'},
         }
         fields = structure_serializers.BaseServiceProjectLinkSerializer.Meta.fields + ('quotas',)
+
+
+class PhoneValidationMixin(object):
+
+    def validate(self, attrs):
+        attrs = super(PhoneValidationMixin, self).validate(attrs)
+        if self.instance:
+            try:
+                tenant = self.instance.tenant
+            except AttributeError:
+                tenant = self.instance
+        else:
+            tenant = attrs.get('tenant') or attrs['service_project_link']
+
+        phone = attrs.get('phone')
+        if phone:
+            options = tenant.service_project_link.service.settings.options or {}
+            phone_regex = options.get('phone_regex')
+            if phone_regex and not re.search(phone_regex, phone):
+                raise serializers.ValidationError({'phone': "Invalid phone number."})
+
+        if attrs.get('notify', False) and not phone:
+            raise serializers.ValidationError({'phone': "Missed phone number for notification."})
+
+        return attrs

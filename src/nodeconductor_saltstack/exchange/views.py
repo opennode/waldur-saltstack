@@ -10,6 +10,7 @@ from nodeconductor.core.csv import UnicodeDictReader, UnicodeDictWriter
 from nodeconductor.structure import views as structure_views
 
 from . import filters, models, serializers
+from ..saltstack.utils import sms_user_password
 from ..saltstack.views import BasePropertyViewSet, track_exceptions
 
 
@@ -178,12 +179,6 @@ class UserViewSet(PropertyWithMembersViewSet):
     filter_class = filters.UserFilter
     backend_name = 'users'
 
-    def get_serializer_class(self):
-        serializer_class = super(UserViewSet, self).get_serializer_class()
-        if self.action == 'password':
-            serializer_class = serializers.UserPasswordSerializer
-        return serializer_class
-
     def post_create(self, user, serializer, backend_user):
         user.password = backend_user.password
         user.save()
@@ -192,7 +187,7 @@ class UserViewSet(PropertyWithMembersViewSet):
         self.members_create(user, 'send_as_members', 'add_send_as')
 
         if serializer.validated_data.get('notify'):
-            user.notify()
+            sms_user_password(user)
 
     def pre_update(self, user, serializer):
         self.cur_send_on_behalf_members = set(user.send_on_behalf_members.values_list('backend_id', flat=True))
@@ -220,7 +215,7 @@ class UserViewSet(PropertyWithMembersViewSet):
         serializer = serializer_class(instance=user, data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         if serializer.validated_data.get('notify'):
-            user.notify()
+            sms_user_password(user)
 
         return Response(serializer.data, status=HTTP_200_OK)
 

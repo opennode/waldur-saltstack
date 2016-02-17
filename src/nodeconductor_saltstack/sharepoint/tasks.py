@@ -11,6 +11,7 @@ from nodeconductor.structure.tasks import sync_service_project_links
 from .models import SharepointTenant, SiteCollection, Template, User
 from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.models import SaltStackServiceProjectLink
+from ..saltstack.utils import sms_user_password
 
 
 @shared_task(name='nodeconductor.sharepoint.provision')
@@ -81,6 +82,7 @@ def provision_tenant(tenant_uuid, transition_entity=None,
     )
     tenant.admin = admin
     admin.init_personal_site_collection(backend_admin.personal_site_collection_url)
+    sms_user_password(admin)
 
     # Initialize default site collections
     template = Template.objects.get(uuid=template_uuid)

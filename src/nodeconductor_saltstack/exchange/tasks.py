@@ -4,6 +4,7 @@ from django.utils import timezone
 from nodeconductor.core.tasks import save_error_message, transition, throttle
 from nodeconductor.structure.tasks import sync_service_project_links
 
+from ..saltstack.utils import sms_user_password
 from .models import ExchangeTenant, User
 
 
@@ -38,7 +39,7 @@ def create_user(tenant_uuid, notify=False, **kwargs):
 
         user = User.objects.create(tenant=tenant, backend_id=backend_user.id, **kwargs)
         if notify:
-            user.notify()
+            sms_user_password(user)
 
 
 @shared_task

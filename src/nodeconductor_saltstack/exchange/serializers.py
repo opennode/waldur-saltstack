@@ -14,6 +14,7 @@ from nodeconductor.structure import serializers as structure_serializers
 
 from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.models import SaltStackServiceProjectLink
+from ..saltstack.serializers import PhoneValidationMixin
 from . import models
 
 
@@ -195,22 +196,6 @@ class UsernameValidationMixin(object):
         if 'username' in attrs and not tenant.is_username_available(attrs['username'], exclude=exclude):
             raise serializers.ValidationError(
                 {'username': "This username is already taken."})
-
-        return attrs
-
-
-class PhoneValidationMixin(object):
-
-    def validate(self, attrs):
-        attrs = super(PhoneValidationMixin, self).validate(attrs)
-        tenant = self.instance.tenant if self.instance else attrs['tenant']
-
-        phone = attrs.get('phone')
-        if phone:
-            options = tenant.service_project_link.service.settings.options or {}
-            phone_regex = options.get('phone_regex')
-            if phone_regex and not re.search(phone_regex, phone):
-                raise serializers.ValidationError('Invalid phone number.')
 
         return attrs
 
