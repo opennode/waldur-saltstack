@@ -73,26 +73,13 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
             obj = serializer.save(backend_id=backend_obj.id)
             self.post_create(obj, serializer, backend_obj)
 
-    def get_changed_data(self, serializer):
-        obj = self.get_object()
-        backend = self.get_backend(obj.tenant)
-
-        def is_object_field_changed(field, new_value):
-            if hasattr(obj, field):
-                return getattr(obj, field) != new_value
-            if isinstance(obj, QuotaModelMixin) and obj.quotas.filter(name=field).exists():
-                return obj.quotas.get(name=field).limit != new_value
-
-        return {
-            k: v for k, v in serializer.validated_data.items()
-            if v and k in backend.Methods.change['input'] and is_object_field_changed(k, v)
-        }
-
     @track_exceptions
     def perform_update(self, serializer):
         obj = self.get_object()
         backend = self.get_backend(obj.tenant)
-        changed = self.get_changed_data(serializer)
+        changed = {
+            k: v for k, v in serializer.validated_data.items()
+            if v and k in backend.Methods.change['input'] and getattr(obj, k) != v}
         if changed:
             backend.change(id=obj.backend_id, **changed)
 

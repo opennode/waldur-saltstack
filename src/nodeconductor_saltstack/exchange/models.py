@@ -5,7 +5,7 @@ from gm2m import GM2MField
 
 from nodeconductor.core.models import DescendantMixin
 from nodeconductor.quotas.models import QuotaModelMixin
-from nodeconductor.quotas.fields import QuotaField, CounterQuotaField, LimitAggregatorQuotaField
+from nodeconductor.quotas.fields import QuotaLimitField, QuotaField, CounterQuotaField, LimitAggregatorQuotaField
 from nodeconductor.structure import models as structure_models
 
 from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
@@ -68,6 +68,8 @@ class MailboxExchangeProperty(QuotaModelMixin, DescendantMixin, ExchangeProperty
     class Quotas(QuotaModelMixin.Quotas):
         # Size of one mailbox, MB
         mailbox_size = QuotaField(default_limit=0, is_backend=True)
+
+    mailbox_size = QuotaLimitField(quota_field=Quotas.mailbox_size)
 
     def get_parents(self):
         return [self.tenant]
