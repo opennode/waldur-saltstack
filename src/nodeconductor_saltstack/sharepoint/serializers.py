@@ -8,40 +8,6 @@ from ..saltstack.models import SaltStackServiceProjectLink
 from .models import SharepointTenant, Template, User, SiteCollection
 
 
-class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
-
-    class Meta(object):
-        model = User
-        view_name = 'sharepoint-users-detail'
-        fields = (
-            'url', 'uuid', 'tenant', 'tenant_uuid', 'tenant_domain', 'name', 'email',
-            'first_name', 'last_name', 'username', 'password',
-        )
-        read_only_fields = ('uuid', 'password')
-        protected_fields = ('tenant',)
-        extra_kwargs = {
-            'url': {'lookup_field': 'uuid'},
-            'tenant': {'lookup_field': 'uuid', 'view_name': 'sharepoint-tenants-detail'},
-        }
-        related_paths = {
-            'tenant': ('uuid', 'domain')
-        }
-
-    def validate_tenant(self, tenant):
-        if tenant.state != SharepointTenant.States.ONLINE:
-            raise serializers.ValidationError('It is impossible to create site collection if tenant is not online.')
-        return tenant
-
-    def validate(self, attrs):
-        # TODO: replace this with storage quota validation
-        if not self.instance:
-            tenant = attrs['tenant']
-            user_count_quota = tenant.quotas.get(name=tenant.Quotas.user_count)
-            if user_count_quota.is_exceeded(delta=1):
-                raise serializers.ValidationError('Cannot add new users to tenant. Its user_count quota is over limit.')
-        return attrs
-
-
 class MainSiteCollectionSerializer(serializers.HyperlinkedModelSerializer):
 
     template = serializers.HyperlinkedRelatedField(
@@ -128,6 +94,38 @@ class SiteCollectionSerializer(MainSiteCollectionSerializer):
         return attrs
 
 
+class UserSerializer(AugmentedSerializerMixin, serializers.HyperlinkedModelSerializer):
+    notify = serializers.BooleanField(write_only=True, required=False)
+
+    personal_site_collection = SiteCollectionSerializer(read_only=True)
+
+    class Meta(object):
+        model = User
+        view_name = 'sharepoint-users-detail'
+        fields = (
+            'url', 'uuid', 'tenant', 'tenant_uuid', 'tenant_domain', 'name', 'email',
+            'first_name', 'last_name', 'username', 'password', 'phone', 'notify',
+            'personal_site_collection',
+        )
+        read_only_fields = ('uuid', 'password')
+        protected_fields = ('tenant', 'notify')
+        extra_kwargs = {
+            'url': {'lookup_field': 'uuid'},
+            'tenant': {'lookup_field': 'uuid', 'view_name': 'sharepoint-tenants-detail'},
+        }
+        related_paths = {
+            'tenant': ('uuid', 'domain')
+        }
+
+    def validate_tenant(self, tenant):
+        if tenant.state != SharepointTenant.States.ONLINE:
+            raise serializers.ValidationError('It is impossible to create site collection if tenant is not online.')
+        storage_quota = tenant.quotas.get(name=SharepointTenant.Quotas.storage)
+        if storage_quota.is_exceeded(delta=SiteCollection.Defaults.personal_site_collection['storage']):
+            raise serializers.ValidationError('Tenant has not enough space for user creation.')
+        return tenant
+
+
 class TenantSerializer(structure_serializers.BaseResourceSerializer):
     MINIMUM_TENANT_STORAGE_SIZE = 1024
 
@@ -159,6 +157,8 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
     admin = UserSerializer(read_only=True)
     admin_site_collection = SiteCollectionSerializer(read_only=True)
     main_site_collection = SiteCollectionSerializer(read_only=True)
+    phone = serializers.CharField(write_only=True, required=False)
+    notify = serializers.BooleanField(write_only=True, required=False)
 
     def get_management_ip(self, tenant):
         return tenant.service_project_link.service.settings.options.get('sharepoint_management_ip', 'Unknown')
@@ -173,10 +173,10 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
         view_name = 'sharepoint-tenants-detail'
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
             'domain', 'quotas', 'storage', 'management_ip', 'site_name', 'site_description', 'template',
-            'admin', 'admin_site_collection', 'main_site_collection'
+            'admin', 'admin_site_collection', 'main_site_collection', 'phone', 'notify',
         )
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
-            'domain', 'storage', 'site_name', 'site_description', 'template',
+            'domain', 'storage', 'site_name', 'site_description', 'template', 'phone', 'notify',
         )
 
     def validate(self, attrs):

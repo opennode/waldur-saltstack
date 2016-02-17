@@ -52,7 +52,7 @@ def schedule_deletion(tenant_uuid):
 @transition(SharepointTenant, 'begin_provisioning')
 @save_error_message
 def provision_tenant(tenant_uuid, transition_entity=None,
-                     site_name=None, site_description=None, template_uuid=None, **kwargs):
+                     site_name=None, site_description=None, template_uuid=None, phone=None, notify=None, **kwargs):
     # Create tenant itself
     tenant = transition_entity
     backend = tenant.get_backend()
@@ -76,9 +76,11 @@ def provision_tenant(tenant_uuid, transition_entity=None,
         tenant=tenant,
         admin_id=backend_admin.admin_id,
         password=backend_admin.password,
+        phone=phone,
         **admin_data
     )
     tenant.admin = admin
+    admin.init_personal_site_collection(backend_admin.personal_site_collection_url)
 
     # Initialize default site collections
     template = Template.objects.get(uuid=template_uuid)
@@ -96,6 +98,7 @@ def provision_tenant(tenant_uuid, transition_entity=None,
         template=template,
         access_url=backend_collections_details.main_site_collection_url,
         user=admin,
+        type=SiteCollection.Types.MAIN,
     )
     storage = backend_collections_details.main_site_collection_storage
     main_sc.set_quota_limit(SiteCollection.Quotas.storage, storage)
@@ -109,6 +112,7 @@ def provision_tenant(tenant_uuid, transition_entity=None,
         user=admin,
         template=Template.objects.filter(
             code=template_code, settings=tenant.service_project_link.service.settings).first(),
+        type=SiteCollection.Types.ADMIN,
     )
     storage = backend_collections_details.admin_site_collection_storage
     admin_sc.set_quota_limit(SiteCollection.Quotas.storage, storage)
