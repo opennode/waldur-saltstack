@@ -99,7 +99,7 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
         admin_site_collection = {
             'name': 'Admin',
             'description': 'Admin site collection',
-            'storage': 30,
+            'storage': 50,
         }
         main_site_collection = {
             'storage': 500,
