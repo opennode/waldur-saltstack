@@ -49,6 +49,8 @@ parameters:
  - site_name - main site collection name;
  - site_description - main site collection description;
  - template - main site collection template;
+ - notify - True if SMS with admin user should be send on its creation.
+ - phone - phone number, required if "notify" is True;
 
 
  Example of a valid request:
