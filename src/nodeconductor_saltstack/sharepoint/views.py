@@ -177,7 +177,7 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
                 check_result = backend.site_collections.check(url=site_collection.access_url)
             except SaltStackBackendError:
                 return response.Response(
-                    {'error': 'User personal site collection is not initialized'}, status=HTTP_409_CONFLICT)
+                    {'detail': 'User personal site collection is not initialized'}, status=HTTP_409_CONFLICT)
             else:
                 site_collection.template = models.Template.objects.filter(
                     code=check_result.template_code, settings=tenant.service_project_link.service.settings).first()
