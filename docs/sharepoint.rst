@@ -517,6 +517,8 @@ Change storage quota
 To change storage quota - issue POST or PUT request against
 **/api/sharepoint-site-collections/<site_collection_uuid>/change_quotas/** with "storage" as parameter.
 
+Endpoint will return error with status 409 if personal site collection was not initialized.
+
 Example of valid request:
 
 .. code-block:: http
