@@ -170,7 +170,7 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
             data=request.data, context={'site_collection': site_collection})
         serializer.is_valid(raise_exception=True)
 
-        # If personal site collection was not initialized - check does it exists
+        # If personal site collection was not initialized - check if it exists
         # XXX: identification via template is not logical. Need to handle backend_id for site collections.
         if site_collection.type == models.SiteCollection.Types.PERSONAL and site_collection.template is None:
             try:
