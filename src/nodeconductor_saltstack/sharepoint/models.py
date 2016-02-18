@@ -1,5 +1,6 @@
 from django.db import models
 
+from nodeconductor.core.models import DescendantMixin
 from nodeconductor.quotas.fields import QuotaField, CounterQuotaField, LimitAggregatorQuotaField
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
@@ -85,7 +86,7 @@ class User(SaltStackProperty):
         self.save()
 
 
-class SiteCollection(QuotaModelMixin, SaltStackProperty):
+class SiteCollection(QuotaModelMixin, SaltStackProperty, DescendantMixin):
 
     class Types(object):
         MAIN = 'main'
@@ -107,7 +108,7 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
         return 'sharepoint-site-collections'
 
     class Quotas(QuotaModelMixin.Quotas):
-        storage = QuotaField()
+        storage = QuotaField(default_limit=0)
 
     class Defaults(object):
         """ Default parameters for initial tenant site collections """
@@ -128,3 +129,6 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty):
     @property
     def deletable(self):
         return self.type == self.Types.REGULAR
+
+    def get_parents(self):
+        return [self.user.tenant]

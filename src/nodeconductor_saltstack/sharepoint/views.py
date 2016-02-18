@@ -58,6 +58,7 @@ class UserViewSet(BasePropertyViewSet):
         self.notify = serializer.validated_data.pop('notify', False)
 
     def post_create(self, user, serializer, backend_user):
+        user.admin_id = backend_user.admin_id
         user.password = backend_user.password
         user.save()
         user.init_personal_site_collection(backend_user.personal_site_collection_url)

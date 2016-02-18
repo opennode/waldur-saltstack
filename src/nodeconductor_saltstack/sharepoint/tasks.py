@@ -75,6 +75,7 @@ def provision_tenant(tenant_uuid, transition_entity=None,
 
     admin = User.objects.create(
         tenant=tenant,
+        backend_id=backend_admin.id,
         admin_id=backend_admin.admin_id,
         password=backend_admin.password,
         phone=phone or '',  # hotfix - phone cannot be None
