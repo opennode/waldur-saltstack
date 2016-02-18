@@ -53,13 +53,16 @@ class UserViewSet(BasePropertyViewSet):
     serializer_class = serializers.UserSerializer
     filter_class = filters.UserFilter
     backend_name = 'users'
-    backend_name = 'users'
+
+    def pre_create(self, serializer):
+        self.notify = serializer.validated_data.pop('notify', False)
 
     def post_create(self, user, serializer, backend_user):
         user.password = backend_user.password
         user.save()
+        user.init_personal_site_collection(backend_user.personal_site_collection_url)
 
-        if serializer.validated_data.get('notify'):
+        if self.notify:
             sms_user_password(user)
 
     # XXX: put was added as portal has a temporary bug with widget update

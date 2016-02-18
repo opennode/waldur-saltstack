@@ -44,6 +44,9 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
         backend = tenant.get_backend()
         return getattr(backend, self.backend_name)
 
+    def pre_create(self, serializer):
+        pass
+
     def post_create(self, obj, serializer, backend_obj):
         pass
 
@@ -70,6 +73,7 @@ class BasePropertyViewSet(viewsets.ModelViewSet):
             **{k: v for k, v in serializer.validated_data.items() if k in valid_args and v is not None})
 
         with transaction.atomic():
+            self.pre_create(serializer)
             obj = serializer.save(backend_id=backend_obj.id)
             self.post_create(obj, serializer, backend_obj)
 
