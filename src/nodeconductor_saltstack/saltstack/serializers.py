@@ -49,17 +49,19 @@ class PhoneValidationMixin(object):
 
     def validate(self, attrs):
         attrs = super(PhoneValidationMixin, self).validate(attrs)
+        # XXX: This code is fragile and tricky we need at to separate phone validator for different serializers.
         if self.instance:
             try:
                 tenant = self.instance.tenant
             except AttributeError:
                 tenant = self.instance
         else:
-            tenant = attrs.get('tenant') or attrs['service_project_link']
+            tenant = attrs.get('tenant')
 
         phone = attrs.get('phone')
+        spl = tenant.service_project_link if tenant is not None else attrs['service_project_link']
         if phone:
-            options = tenant.service_project_link.service.settings.options or {}
+            options = spl.service.settings.options or {}
             phone_regex = options.get('phone_regex')
             if phone_regex and not re.search(phone_regex, phone):
                 raise serializers.ValidationError({'phone': "Invalid phone number."})
