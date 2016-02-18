@@ -72,8 +72,8 @@ class UserViewSet(BasePropertyViewSet):
     def password(self, request, pk=None, **kwargs):
         user = self.get_object()
         backend = self.get_backend(user.tenant)
-        response = backend.reset_password(id=user.backend_id)
-        user.password = response.password
+        reset_response = backend.reset_password(id=user.backend_id)
+        user.password = reset_response.password
         user.save()
 
         serializer_class = serializers.UserPasswordSerializer
