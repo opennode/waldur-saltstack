@@ -1,6 +1,6 @@
 from django.db import models
 
-from nodeconductor.quotas.fields import QuotaField, CounterQuotaField
+from nodeconductor.quotas.fields import QuotaField, CounterQuotaField, LimitAggregatorQuotaField
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
 
@@ -18,8 +18,8 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
     admin_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
 
     class Quotas(QuotaModelMixin.Quotas):
-        storage = QuotaField(
-            default_limit=0,
+        storage = LimitAggregatorQuotaField(
+            get_children=lambda tenant: SiteCollection.objects.filter(user__tenant=tenant)
         )
         user_count = CounterQuotaField(
             target_models=lambda: [User],
@@ -36,10 +36,6 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
 
     def get_default_site_collections(self):
         return [self.main_site_collection, self.admin_site_collection]
-
-    def get_access_url(self):
-        if self.main_site_collection:
-            return self.main_site_collection.access_url
 
 
 class Template(structure_models.ServiceProperty):

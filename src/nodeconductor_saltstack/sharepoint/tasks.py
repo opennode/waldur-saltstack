@@ -77,7 +77,7 @@ def provision_tenant(tenant_uuid, transition_entity=None,
         tenant=tenant,
         admin_id=backend_admin.admin_id,
         password=backend_admin.password,
-        phone=phone,
+        phone=phone or '',  # hotfix - phone cannot be None
         **admin_data
     )
     tenant.admin = admin
