@@ -120,7 +120,6 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
             site_collection.access_url = backend_site.url
             site_collection.save()
             site_collection.set_quota_limit(site_collection.Quotas.storage, storage)
-            user.tenant.add_quota_usage(models.SharepointTenant.Quotas.storage, storage)
 
     def perform_destroy(self, site_collection):
         if not site_collection.deletable:
