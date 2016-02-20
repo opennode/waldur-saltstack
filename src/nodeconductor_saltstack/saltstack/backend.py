@@ -12,6 +12,18 @@ from .. import __version__
 logger = logging.getLogger(__name__)
 
 
+def parse_size(size_str):
+    """ Convert string notation of size to a number in MB """
+    MAPPING = {
+        'KB': lambda s: float(s) / 1024,
+        'MB': lambda s: float(s),
+        'GB': lambda s: int(ServiceBackend.gb2mb(float(s))),
+    }
+
+    size, unit = size_str.split()
+    return MAPPING[unit](size)
+
+
 class SaltStackBackendError(ServiceBackendError):
 
     def __init__(self, message, traceback=None):
