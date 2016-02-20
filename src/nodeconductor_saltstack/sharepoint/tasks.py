@@ -156,17 +156,24 @@ def sync_spl_quotas(spl_id):
 def sync_tenants():
     tenants = SharepointTenant.objects.filter(state=SharepointTenant.States.ONLINE)
     for tenant in tenants:
-        sync_site_collection_quotas.delay(tenant.uuid)
+        sync_site_collection_quotas.delay([tenant.uuid])
 
 
 @shared_task(name='nodeconductor.sharepoint.sync_site_collection_quotas')
-def sync_site_collection_quotas(tenant_uuid):
-    tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
-    backend = tenant.get_backend()
-    site_collections_data = backend.site_collections.list()
-    for sc in site_collections_data:
-        registered_site_collection = SiteCollection.objects.filter(access_url=sc.url).first()
-        if registered_site_collection:
-            registered_site_collection.set_quota_usage(SiteCollection.Quotas.storage, sc.storage_usage)
-            registered_site_collection.set_quota_limit(SiteCollection.Quotas.storage, sc.storage_limit)
+def sync_site_collection_quotas(tenant_uuids):
+    """Sync site collection quotas of one or more tenants"""
+
+    if not isinstance(tenant_uuids, (list, tuple)):
+        tenant_uuids = [tenant_uuids]
+
+    tenants = SharepointTenant.objects.filter(uuid__in=tenant_uuids)
+
+    for tenant in tenants:
+        backend = tenant.get_backend()
+        site_collections_data = backend.site_collections.list()
+        for sc in site_collections_data:
+            registered_site_collection = SiteCollection.objects.filter(access_url=sc.url).first()
+            if registered_site_collection:
+                registered_site_collection.set_quota_usage(SiteCollection.Quotas.storage, sc.storage_usage)
+                registered_site_collection.set_quota_limit(SiteCollection.Quotas.storage, sc.storage_limit)
 
