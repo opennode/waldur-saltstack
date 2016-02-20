@@ -40,6 +40,11 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
     def get_default_site_collections(self):
         return [self.main_site_collection, self.admin_site_collection]
 
+    def get_access_url(self):
+        if self.main_site_collection:
+            return self.main_site_collection.access_url
+        return
+
 
 class Template(structure_models.ServiceProperty):
     code = models.CharField(max_length=255)
