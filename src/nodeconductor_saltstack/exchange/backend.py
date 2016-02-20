@@ -1,18 +1,6 @@
 from nodeconductor.core.tasks import send_task
 
-from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend
-
-
-def parse_size(size_str):
-    """ Convert string notation of size to a number in MB """
-    MAPPING = {
-        'KB': lambda s: float(s) / 1024,
-        'MB': lambda s: float(s),
-        'GB': lambda s: int(ExchangeBackend.gb2mb(float(s))),
-    }
-
-    size, unit = size_str.split()
-    return MAPPING[unit](size)
+from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend, parse_size
 
 
 class TenantAPI(SaltStackBaseAPI):

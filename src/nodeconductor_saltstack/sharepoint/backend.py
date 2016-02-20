@@ -1,6 +1,7 @@
 from nodeconductor.core.tasks import send_task
 
-from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend
+from ..saltstack.backend import SaltStackBaseAPI, SaltStackBaseBackend, parse_size
+
 from .models import Template
 
 
@@ -83,9 +84,12 @@ class SiteCollectionAPI(SaltStackBaseAPI):
         _base = dict(
             output={
                 'URL': 'url',
-                'StorageMax MB': 'max_quota',
-                'StorageWarning MB': 'warn_quota',
-                'StorageUsage MB': 'usage',
+                'Quota Usage [MB]': 'storage_usage',
+                'Quota Size [MB]': 'storage_limit',
+            },
+            clean={
+                'Quota Usage [MB]': int,
+                'Quota Size [MB]': int,
             },
         )
 
@@ -144,11 +148,9 @@ class SiteCollectionAPI(SaltStackBaseAPI):
         list = dict(
             name='ListAllTenantSites',
             input={
-                'tenant': 'TenantName',
                 'domain': 'TenantDomain',
             },
             defaults={
-                'tenant': "{backend.tenant.backend_id}",
                 'domain': "{backend.tenant.domain}",
             },
             many=True,

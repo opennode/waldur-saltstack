@@ -150,3 +150,23 @@ def sync_spl_quotas(spl_id):
     storage = sum([t.quotas.get(name=SharepointTenant.Quotas.storage).limit for t in tenants])
     spl.set_quota_usage('sharepoint_storage', storage)
     spl.set_quota_usage('sharepoint_tenant_number', tenants.count())
+
+
+@shared_task(name='nodeconductor.sharepoint.sync_tenants')
+def sync_tenants():
+    tenants = SharepointTenant.objects.filter(state=SharepointTenant.States.ONLINE)
+    for tenant in tenants:
+        sync_site_collection_quotas.delay(tenant.uuid)
+
+
+@shared_task(name='nodeconductor.sharepoint.sync_site_collection_quotas')
+def sync_site_collection_quotas(tenant_uuid):
+    tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
+    backend = tenant.get_backend()
+    site_collections_data = backend.site_collections.list()
+    for sc in site_collections_data:
+        registered_site_collection = SiteCollection.objects.filter(access_url=sc.url).first()
+        if registered_site_collection:
+            registered_site_collection.set_quota_usage(SiteCollection.Quotas.storage, sc.storage_usage)
+            registered_site_collection.set_quota_limit(SiteCollection.Quotas.storage, sc.storage_limit)
+
