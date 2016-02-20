@@ -260,7 +260,7 @@ class UserAPI(SaltStackBaseAPI):
             input={
                 'backend_id': 'TenantName',
                 'domain': 'TenantDomain',
-                'admin_id': 'Id',
+                'id': 'Id',
                 'name': 'DisplayName',
                 'username': 'UserName',
                 'first_name': 'UserFirstName',
