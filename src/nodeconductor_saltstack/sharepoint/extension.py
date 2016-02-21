@@ -18,7 +18,7 @@ class SharepointExtension(NodeConductorExtension):
         return {
             'sharepoint-sync-tenants': {
                 'task': 'nodeconductor.sharepoint.sync_tenants',
-                'schedule': timedelta(minutes=30),
+                'schedule': timedelta(minutes=10),
                 'args': ()
             },
         }
