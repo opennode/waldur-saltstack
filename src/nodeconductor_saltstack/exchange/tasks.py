@@ -49,6 +49,14 @@ def destroy_tenant(tenant_uuid, transition_entity=None):
     tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
     backend = tenant.get_backend()
     backend.tenants.delete()
+    event_logger.exchange_tenant.info(
+        'Tenant {tenant_name} has been created.',
+        event_type='exchange_tenant_creation_succeeded',
+        event_context={
+            'tenant': tenant
+        }
+    )
+
 
 
 @shared_task(is_heavy_task=True)

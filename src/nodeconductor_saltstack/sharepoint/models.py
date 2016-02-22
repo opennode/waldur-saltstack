@@ -45,6 +45,9 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
             return self.main_site_collection.access_url
         return
 
+    def get_log_fields(self):
+        return ('uuid', 'name', 'domain', 'service_project_link')
+
 
 class Template(structure_models.ServiceProperty):
     code = models.CharField(max_length=255)

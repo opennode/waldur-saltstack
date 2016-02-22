@@ -12,6 +12,7 @@ from nodeconductor.structure import views as structure_views
 from . import filters, models, serializers
 from ..saltstack.utils import sms_user_password
 from ..saltstack.views import BasePropertyViewSet, track_exceptions
+from log import event_logger
 
 
 class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
@@ -216,6 +217,13 @@ class UserViewSet(PropertyWithMembersViewSet):
         serializer.is_valid(raise_exception=True)
         if serializer.validated_data.get('notify'):
             sms_user_password(user)
+
+        event_logger.exchange_user.info(
+            'Exchange user {affected_user_name} password has been reset.',
+            event_type='exchange_user_password_reset',
+            event_context={
+                'affected_user': user,
+            })
 
         return Response(serializer.data, status=HTTP_200_OK)
 
