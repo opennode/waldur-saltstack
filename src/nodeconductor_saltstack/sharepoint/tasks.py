@@ -156,7 +156,7 @@ def sync_spl_quotas(spl_id):
 def sync_tenants():
     tenants = SharepointTenant.objects.filter(state=SharepointTenant.States.ONLINE)
     for tenant in tenants:
-        sync_site_collection_quotas.delay([tenant.uuid])
+        sync_site_collection_quotas.delay([tenant.uuid.hex])
 
 
 @shared_task(name='nodeconductor.sharepoint.sync_site_collection_quotas')
