@@ -37,7 +37,11 @@ def create_user(tenant_uuid, notify=False, **kwargs):
         backend = tenant.get_backend()
         backend_user = backend.users.create(**kwargs)
 
-        user = User.objects.create(tenant=tenant, backend_id=backend_user.id, **kwargs)
+        user = User.objects.create(
+            tenant=tenant,
+            backend_id=backend_user.id,
+            password=backend_user.password,
+            **kwargs)
         if notify:
             sms_user_password(user)
 
