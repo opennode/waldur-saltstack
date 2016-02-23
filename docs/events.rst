@@ -1,7 +1,7 @@
 Events
 ++++++
 
-SaltStack application is emitting several events messages documented below.
+SaltStack application emits several events messages documented below.
 
 Generic
 =======
