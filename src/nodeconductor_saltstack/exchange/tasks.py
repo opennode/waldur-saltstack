@@ -5,7 +5,7 @@ from nodeconductor.core.tasks import save_error_message, transition, throttle
 from nodeconductor.structure.tasks import sync_service_project_links
 
 from ..saltstack.utils import sms_user_password
-from .models import ExchangeTenant, User
+from .models import ExchangeTenant, ConferenceRoom, User
 
 
 @shared_task(name='nodeconductor.exchange.provision')
@@ -86,18 +86,36 @@ def delete(tenant_uuid):
     ExchangeTenant.objects.get(uuid=tenant_uuid).delete()
 
 
-# TODO: rewrite sync methods
-
-# @shared_task
-# def sync_tenant_quotas(tenant_uuid):
-#     tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
-#     users = list(User.objects.filter(tenant=tenant))
-#     tenant.set_quota_usage('user_count', len(users))
-#     tenant.set_quota_usage('mailbox_size', sum(user.mailbox_size for user in users))
+@shared_task(name='nodeconductor.exchange.sync_tenants')
+def sync_tenants():
+    tenants = ExchangeTenant.objects.filter(state=ExchangeTenant.States.ONLINE)
+    for tenant in tenants:
+        sync_tenant_quotas.delay(tenant.uuid.hex)
 
 
-# @shared_task
-# def sync_spl_quotas(spl_id):
-#     spl = SaltStackServiceProjectLink.objects.get(id=spl_id)
-#     tenants = ExchangeTenant.objects.filter(service_project_link=spl)
-#     spl.set_quota_usage('exchange_storage', sum([t.max_users * t.mailbox_size for t in tenants]))
+def sync_tenant_quotas(tenant_uuids):
+    if not isinstance(tenant_uuids, (list, tuple)):
+        tenant_uuids = [tenant_uuids]
+
+    tenants = ExchangeTenant.objects.filter(uuid__in=tenant_uuids)
+    stats = {User: {}, ConferenceRoom: {}}
+
+    for tenant in tenants:
+        backend = tenant.get_backend()
+        counts = {User: 0, ConferenceRoom: 0}
+        for data in backend.stats.mailbox():
+            if data.type == 'UserMailbox':
+                stats[User][data.user_id] = data
+                counts[User] += 1
+            elif data.type == 'RoomMailbox':
+                stats[ConferenceRoom][data.user_id] = data
+                counts[ConferenceRoom] += 1
+
+        tenant.set_quota_usage(ExchangeTenant.Quotas.user_count, counts[User])
+        tenant.set_quota_usage(ExchangeTenant.Quotas.conference_room_count, counts[ConferenceRoom])
+
+    for model in (User, ConferenceRoom):
+        for obj in model.objects.filter(backend_id__in=stats[model].keys()):
+            data = stats[model][obj.backend_id]
+            obj.set_quota_usage(model.Quotas.mailbox_size, data.usage)
+            obj.set_quota_limit(model.Quotas.mailbox_size, data.limit)
