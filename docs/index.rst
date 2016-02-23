@@ -11,6 +11,8 @@ Guide
    :maxdepth: 1
 
    installation
+   events
+
 
 API
 ---
