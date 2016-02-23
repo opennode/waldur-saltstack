@@ -21,7 +21,7 @@ def log_saltstack_property_created(sender, instance, created=False, **kwargs):
     else:
         event_logger.saltstack_property.info(
             '%s {property_name} has been updated.' % property_type,
-            event_type='saltstack_property_creation_succeeded',
+            event_type='saltstack_property_update_succeeded',
             event_context={
                 'property': instance,
             })
