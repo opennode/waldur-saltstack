@@ -1,9 +1,12 @@
 from __future__ import unicode_literals
 
+from django.apps import apps
 from django.db import models
+from django.utils.lru_cache import lru_cache
 from django.utils.encoding import python_2_unicode_compatible
 
 from nodeconductor.core import models as core_models
+from nodeconductor.logging.log import LoggableMixin
 from nodeconductor.quotas.fields import CounterQuotaField, LimitAggregatorQuotaField
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
@@ -54,7 +57,7 @@ class SaltStackServiceProjectLink(QuotaModelMixin, structure_models.ServiceProje
 
 
 @python_2_unicode_compatible
-class SaltStackProperty(core_models.UuidMixin, core_models.NameMixin, models.Model):
+class SaltStackProperty(core_models.UuidMixin, core_models.NameMixin, LoggableMixin, models.Model):
     backend_id = models.CharField(max_length=255, db_index=True)
 
     class Meta(object):
@@ -62,3 +65,8 @@ class SaltStackProperty(core_models.UuidMixin, core_models.NameMixin, models.Mod
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    @lru_cache(maxsize=1)
+    def get_all_models(cls):
+        return [model for model in apps.get_models() if issubclass(model, cls)]

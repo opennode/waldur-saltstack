@@ -9,6 +9,7 @@ from . import models, serializers, filters
 from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.views import BasePropertyViewSet
 from ..saltstack.utils import sms_user_password
+from log import event_logger
 
 
 class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
@@ -81,6 +82,13 @@ class UserViewSet(BasePropertyViewSet):
         serializer.is_valid(raise_exception=True)
         if serializer.validated_data.get('notify'):
             sms_user_password(user)
+
+        event_logger.sharepoint_user.info(
+            'Sharepoint user {affected_user_name} password has been reset.',
+            event_type='sharepoint_user_password_reset',
+            event_context={
+                'affected_user': user,
+            })
 
         return response.Response(serializer.data, status=HTTP_200_OK)
 
@@ -161,5 +169,12 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
         storage = serializer.validated_data['storage']
         backend.site_collections.set_storage(url=site_collection.access_url, storage=storage)
         site_collection.set_quota_limit(models.SiteCollection.Quotas.storage, storage)
+
+        event_logger.sharepoint_site_collection.info(
+            'Sharepoint site collection {site_collection_name} quota has been updated.',
+            event_type='sharepoint_site_collection_quota_update',
+            event_context={
+                'site_collection': site_collection,
+            })
 
         return response.Response({'status': 'Storage quota was successfully changed.'}, status=HTTP_200_OK)
