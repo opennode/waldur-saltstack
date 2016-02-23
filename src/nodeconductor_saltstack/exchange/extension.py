@@ -18,7 +18,7 @@ class ExchangeExtension(NodeConductorExtension):
         return {
             'exchange-sync-tenants': {
                 'task': 'nodeconductor.exchange.sync_tenants',
-                'schedule': timedelta(minutes=30),
+                'schedule': timedelta(minutes=60),
                 'args': ()
             },
         }
