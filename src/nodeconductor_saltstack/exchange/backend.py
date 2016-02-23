@@ -533,7 +533,7 @@ class ConferenceRoomAPI(SaltStackBaseAPI):
         )
 
 
-class StastAPI(SaltStackBaseAPI):
+class StatsAPI(SaltStackBaseAPI):
 
     class Methods:
 
@@ -569,7 +569,7 @@ class ExchangeBackend(SaltStackBaseBackend):
         'groups': DistributionGroupAPI,
         'tenants': TenantAPI,
         'users': UserAPI,
-        'stats': StastAPI,
+        'stats': StatsAPI,
         'conference_rooms': ConferenceRoomAPI,
     }
 
