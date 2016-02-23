@@ -533,6 +533,33 @@ class ConferenceRoomAPI(SaltStackBaseAPI):
         )
 
 
+class StatsAPI(SaltStackBaseAPI):
+
+    class Methods:
+
+        mailbox = dict(
+            name='MailboxStatList',
+            input={
+                'tenant': 'TenantName',
+            },
+            defaults={
+                'tenant': "{backend.tenant.backend_id}",
+            },
+            output={
+                'Guid': 'user_id',
+                'Quota Limit': 'limit',
+                'MailboxUsage': 'usage',
+                'EmailAddress': 'user_email',
+                'Type': 'type',
+            },
+            clean={
+                'Quota Limit': parse_size,
+                'MailboxUsage': parse_size,
+            },
+            many=True,
+        )
+
+
 class ExchangeBackend(SaltStackBaseBackend):
 
     TARGET_OPTION_NAME = 'exchange_target'
@@ -542,6 +569,7 @@ class ExchangeBackend(SaltStackBaseBackend):
         'groups': DistributionGroupAPI,
         'tenants': TenantAPI,
         'users': UserAPI,
+        'stats': StatsAPI,
         'conference_rooms': ConferenceRoomAPI,
     }
 
