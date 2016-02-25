@@ -3,13 +3,15 @@ from __future__ import unicode_literals
 from django.apps import apps
 from django.db import models
 from django.utils.lru_cache import lru_cache
-from django.utils.encoding import python_2_unicode_compatible
+from django.utils.encoding import python_2_unicode_compatible, force_text
 
 from nodeconductor.core import models as core_models
 from nodeconductor.logging.log import LoggableMixin
 from nodeconductor.quotas.fields import CounterQuotaField, LimitAggregatorQuotaField
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
+
+from .apps import SaltStackConfig
 
 
 class SaltStackService(structure_models.Service):
@@ -65,6 +67,15 @@ class SaltStackProperty(core_models.UuidMixin, core_models.NameMixin, LoggableMi
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def get_type_display_name(cls):
+        return '%s.%s' % (SaltStackConfig.service_name, cls._meta.verbose_name.title())
+
+    def _get_log_context(self, entity_name):
+        context = super(SaltStackProperty, self)._get_log_context(entity_name)
+        context['property_type'] = self.get_type_display_name()
+        return context
 
     @classmethod
     @lru_cache(maxsize=1)
