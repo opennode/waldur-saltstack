@@ -11,6 +11,8 @@ from nodeconductor.quotas.fields import CounterQuotaField, LimitAggregatorQuotaF
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
 
+from .apps import SaltStackConfig
+
 
 class SaltStackService(structure_models.Service):
     projects = models.ManyToManyField(
@@ -65,6 +67,15 @@ class SaltStackProperty(core_models.UuidMixin, core_models.NameMixin, LoggableMi
 
     def __str__(self):
         return self.name
+
+    @classmethod
+    def get_type_display_name(cls):
+        return '%s.%s' % (SaltStackConfig.service_name, cls._meta.verbose_name.title())
+
+    def _get_log_context(self, entity_name):
+        context = super(SaltStackProperty, self)._get_log_context(entity_name)
+        context['property_type'] = self.get_type_display_name()
+        return context
 
     @classmethod
     @lru_cache(maxsize=1)
