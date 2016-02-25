@@ -57,13 +57,6 @@ class Template(structure_models.ServiceProperty):
         return 'sharepoint-templates'
 
 
-class SharepointProperty(SaltStackProperty):
-    tenant = models.ForeignKey(SharepointTenant, related_name='+')
-
-    class Meta(object):
-        abstract = True
-
-
 class User(SaltStackProperty):
     tenant = models.ForeignKey(SharepointTenant, related_name='users')
     email = models.EmailField(max_length=255)
@@ -94,6 +87,9 @@ class User(SaltStackProperty):
         default_storage = SiteCollection.Defaults.personal_site_collection['storage']
         self.personal_site_collection.set_quota_limit(SiteCollection.Quotas.storage, default_storage)
         self.save()
+
+    def get_log_fields(self):
+        return super(User, self).get_log_fields() + ('tenant',)
 
 
 class SiteCollection(QuotaModelMixin, SaltStackProperty, DescendantMixin):
@@ -142,3 +138,6 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty, DescendantMixin):
 
     def get_parents(self):
         return [self.user.tenant]
+
+    def get_log_fields(self):
+        return super(SiteCollection, self).get_log_fields() + ('user',)
