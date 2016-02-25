@@ -93,6 +93,7 @@ def sync_tenants():
         sync_tenant_quotas.delay(tenant.uuid.hex)
 
 
+@shared_task
 def sync_tenant_quotas(tenant_uuids):
     if not isinstance(tenant_uuids, (list, tuple)):
         tenant_uuids = [tenant_uuids]
