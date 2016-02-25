@@ -60,6 +60,9 @@ class ExchangeProperty(SaltStackProperty):
     class Meta(object):
         abstract = True
 
+    def get_log_fields(self):
+        return super(ExchangeProperty, self).get_log_fields() + ('tenant',)
+
 
 class MailboxExchangeProperty(QuotaModelMixin, DescendantMixin, ExchangeProperty):
 
