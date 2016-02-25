@@ -2,8 +2,6 @@ from __future__ import unicode_literals
 
 import logging
 
-from nodeconductor.structure import SupportedServices
-
 from .log import event_logger
 
 logger = logging.getLogger(__name__)
