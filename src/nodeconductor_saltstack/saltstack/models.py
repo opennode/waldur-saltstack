@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from django.apps import apps
 from django.db import models
 from django.utils.lru_cache import lru_cache
-from django.utils.encoding import python_2_unicode_compatible, force_text
+from django.utils.encoding import python_2_unicode_compatible
 
 from nodeconductor.core import models as core_models
 from nodeconductor.logging.log import LoggableMixin
