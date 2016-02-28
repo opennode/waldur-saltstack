@@ -36,6 +36,9 @@ Each event message contains in the context a **property_type** parameter specify
     **exchange_user_password_reset**
         Exchange user password has been reset.
 
+    **exchange_tenant_quota_update**
+        Exchange tenant quota has been updated.
+
 ------------
 
 .. glossary::
@@ -45,3 +48,6 @@ Each event message contains in the context a **property_type** parameter specify
 
     **sharepoint_site_collection_quota_update**
         SharePoint site collection quota has been updated.
+
+    **sharepoint_tenant_quota_update**
+        SharePoint tenant quota has been updated.
