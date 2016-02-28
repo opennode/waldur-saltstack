@@ -218,11 +218,18 @@ class SiteCollectionQuotaSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         site_collection = self.context['site_collection']
-        old_storage = site_collection.quotas.get(name=SiteCollection.Quotas.storage).limit
-        new_storage = attrs['storage']
+        site_collection_quota = site_collection.quotas.get(name=SiteCollection.Quotas.storage)
+
+        old_limit = site_collection_quota.limit
+        new_limit = attrs['storage']
         storage_quota = site_collection.user.tenant.quotas.get(name=SharepointTenant.Quotas.storage)
-        if new_storage > old_storage and storage_quota.is_exceeded(delta=new_storage-old_storage):
-            max_storage = storage_quota.limit - storage_quota.usage + old_storage
+        if new_limit > old_limit and storage_quota.is_exceeded(delta=new_limit-old_limit):
+            max_storage = storage_quota.limit - storage_quota.usage + old_limit
             raise serializers.ValidationError(
                 'Storage quota is over limit. Site collection cannot be greater then %s MB' % max_storage)
+
+        current_usage = site_collection_quota.usage
+        if new_limit < current_usage:
+            raise serializers.ValidationError('New limit cannot be lower than current usage.')
+
         return attrs
