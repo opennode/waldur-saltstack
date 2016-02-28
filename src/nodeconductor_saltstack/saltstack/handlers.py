@@ -27,7 +27,7 @@ def log_saltstack_property_created(sender, instance, created=False, **kwargs):
 def log_saltstack_property_deleted(sender, instance, **kwargs):
     event_logger.saltstack_property.info(
         '%s {property_name} has been deleted.' % instance.get_type_display_name(),
-        event_type='saltstack_property_deletion_succeeded.',
+        event_type='saltstack_property_deletion_succeeded',
         event_context={
             'property': instance,
         })
