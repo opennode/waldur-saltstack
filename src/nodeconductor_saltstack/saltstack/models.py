@@ -69,12 +69,16 @@ class SaltStackProperty(core_models.UuidMixin, core_models.NameMixin, LoggableMi
         return self.name
 
     @classmethod
+    def get_type_name(cls):
+        return '%s.%s' % (cls._meta.app_label, cls._meta.model_name)
+
+    @classmethod
     def get_type_display_name(cls):
-        return '%s.%s' % (SaltStackConfig.service_name, cls._meta.verbose_name.title())
+        return '%s %s' % (cls._meta.app_label.title(), cls._meta.verbose_name)
 
     def _get_log_context(self, entity_name):
         context = super(SaltStackProperty, self)._get_log_context(entity_name)
-        context['property_type'] = self.get_type_display_name()
+        context['property_type'] = self.get_type_name()
         return context
 
     @classmethod
