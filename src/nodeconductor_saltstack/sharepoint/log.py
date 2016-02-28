@@ -1,5 +1,14 @@
 from nodeconductor.logging.log import EventLogger, event_logger
-from nodeconductor_saltstack.sharepoint.models import User, SiteCollection
+from nodeconductor_saltstack.sharepoint.models import User, SiteCollection, SharepointTenant
+
+
+class SharepointTenantEventLogger(EventLogger):
+    tenant = SharepointTenant
+
+    class Meta:
+        event_types = (
+            'sharepoint_tenant_quota_update',
+        )
 
 
 class SharepointUserEventLogger(EventLogger):
@@ -22,3 +31,4 @@ class SharepointSiteCollectionEventLogger(EventLogger):
 
 event_logger.register('sharepoint_user', SharepointUserEventLogger)
 event_logger.register('sharepoint_site_collection', SharepointSiteCollectionEventLogger)
+event_logger.register('sharepoint_tenant', SharepointTenantEventLogger)

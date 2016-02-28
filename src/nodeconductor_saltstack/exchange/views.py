@@ -113,12 +113,18 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         serializer = serializers.TenantQuotaSerializer(data=request.data, context={'tenant': tenant})
         serializer.is_valid(raise_exception=True)
 
-        if 'mailbox_size' in serializer.validated_data:
-            backend.tenants.change_quotas(mailbox_size=serializer.validated_data['mailbox_size'])
-            tenant.set_quota_limit(
-                models.ExchangeTenant.Quotas.mailbox_size, serializer.validated_data['mailbox_size'])
+        backend.tenants.change_quotas(mailbox_size=serializer.validated_data['mailbox_size'])
+        tenant.set_quota_limit(
+            models.ExchangeTenant.Quotas.mailbox_size, serializer.validated_data['mailbox_size'])
 
-        return Response('Tenant quotas were successfully changed.', status=HTTP_200_OK)
+        event_logger.exchange_tenant.info(
+            'Exchange tenant {tenant_name} quota has been updated.',
+            event_type='exchange_tenant_quota_update',
+            event_context={
+                'tenant': tenant,
+            })
+
+        return Response({'status': 'Tenant quotas were successfully changed.'}, status=HTTP_200_OK)
 
 
 class PropertyWithMembersViewSet(BasePropertyViewSet):

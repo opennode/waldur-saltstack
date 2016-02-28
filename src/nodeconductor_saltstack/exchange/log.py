@@ -1,6 +1,15 @@
 from nodeconductor.logging.log import EventLogger, event_logger
 
-from nodeconductor_saltstack.exchange.models import User
+from nodeconductor_saltstack.exchange.models import User, ExchangeTenant
+
+
+class ExchangeTenantEventLogger(EventLogger):
+    tenant = ExchangeTenant
+
+    class Meta:
+        event_types = (
+            'exchange_tenant_quota_update',
+        )
 
 
 class ExchangeUserEventLogger(EventLogger):
@@ -13,3 +22,4 @@ class ExchangeUserEventLogger(EventLogger):
 
 
 event_logger.register('exchange_user', ExchangeUserEventLogger)
+event_logger.register('exchange_tenant', ExchangeTenantEventLogger)
