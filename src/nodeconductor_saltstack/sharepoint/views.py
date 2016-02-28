@@ -40,6 +40,13 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         serializer = serializers.TenantQuotaSerializer(data=request.data, context={'tenant': tenant})
         serializer.is_valid(raise_exception=True)
         tenant.set_quota_limit(models.SharepointTenant.Quotas.storage, serializer.validated_data['storage'])
+
+        event_logger.sharepoint_tenant.info(
+            'Sharepoint tenant {tenant_name} quota has been updated.',
+            event_type='sharepoint_tenant_quota_update',
+            event_context={
+                'tenant': tenant,
+            })
         return response.Response({'status': 'Quotas were successfully changed.'}, status=HTTP_200_OK)
 
 
