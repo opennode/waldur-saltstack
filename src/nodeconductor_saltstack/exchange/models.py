@@ -53,6 +53,9 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
                 return False
         return True
 
+    def get_log_fields(self):
+        return super(ExchangeTenant, self).get_log_fields() + ('domain',)
+
 
 class ExchangeProperty(SaltStackProperty):
     tenant = models.ForeignKey(ExchangeTenant, related_name='+')
