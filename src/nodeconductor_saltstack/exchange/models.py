@@ -53,6 +53,10 @@ class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_model
                 return False
         return True
 
+    @property
+    def full_name(self):
+        return 'MS Exchange tenant %s' % self.name
+
     def get_log_fields(self):
         return super(ExchangeTenant, self).get_log_fields() + ('domain',)
 
