@@ -43,6 +43,11 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
                 backend.tenants.change(domain=new_domain)
                 tenant.domain = new_domain
                 tenant.save()
+
+                event_logger.exchange_tenant.info(
+                    'Exchange tenant {tenant_name} domain has been changed.',
+                    event_type='exchange_tenant_domain_change',
+                    event_context={'tenant': tenant})
             data = serializers.ExchangeDomainSerializer(instance=tenant, context={'request': request}).data
             return Response(data, status=HTTP_200_OK)
         elif request.method == 'GET':

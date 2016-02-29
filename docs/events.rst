@@ -39,6 +39,9 @@ Each event message contains in the context a **property_type** parameter specify
     **exchange_tenant_quota_update**
         Exchange tenant quota has been updated.
 
+    **exchange_tenant_domain_change**
+        Exchange tenant domain has been changed.
+
 ------------
 
 .. glossary::

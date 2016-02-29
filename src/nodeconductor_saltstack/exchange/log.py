@@ -9,6 +9,7 @@ class ExchangeTenantEventLogger(EventLogger):
     class Meta:
         event_types = (
             'exchange_tenant_quota_update',
+            'exchange_tenant_domain_change',
         )
 
 
