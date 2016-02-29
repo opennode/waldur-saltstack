@@ -6,7 +6,7 @@ from nodeconductor.structure import SupportedServices
 
 class SaltStackConfig(AppConfig):
     name = 'nodeconductor_saltstack.saltstack'
-    verbose_name = "NodeConductor SaltStack Core"
+    verbose_name = 'SaltStack Core'
     service_name = 'SaltStack'
 
     def ready(self):
