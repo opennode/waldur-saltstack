@@ -45,6 +45,10 @@ class SharepointTenant(QuotaModelMixin, structure_models.Resource, structure_mod
             return self.main_site_collection.access_url
         return
 
+    @property
+    def full_name(self):
+        return 'MS SharePoint tenant %s' % self.name
+
     def get_log_fields(self):
         return ('uuid', 'name', 'domain', 'service_project_link')
 
