@@ -119,6 +119,9 @@ class User(MailboxExchangeProperty):
     def get_url_name(cls):
         return 'exchange-users'
 
+    def get_log_fields(self):
+        return super(ExchangeProperty, self).get_log_fields() + ('username',)
+
 
 class Contact(ExchangeProperty):
     email = models.EmailField(max_length=255)
