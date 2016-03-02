@@ -123,7 +123,7 @@ class User(MailboxExchangeProperty):
         return 'exchange-users'
 
     def get_log_fields(self):
-        return super(ExchangeProperty, self).get_log_fields() + ('username', 'email')
+        return super(User, self).get_log_fields() + ('username', 'email')
 
 
 class Contact(ExchangeProperty):
