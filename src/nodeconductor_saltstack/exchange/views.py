@@ -39,13 +39,14 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             domain_serializer = serializers.ExchangeDomainSerializer(instance=tenant, data=request.data)
             domain_serializer.is_valid(raise_exception=True)
             new_domain = domain_serializer.validated_data['domain']
-            if new_domain != tenant.domain:
+            old_domain = tenant.domain
+            if new_domain != old_domain:
                 backend.tenants.change(domain=new_domain)
                 tenant.domain = new_domain
                 tenant.save()
 
                 event_logger.exchange_tenant.info(
-                    'Exchange tenant {tenant_name} domain has been changed.',
+                    'Exchange tenant {tenant_name} domain has been changed from %s to %s.' % (new_domain, old_domain),
                     event_type='exchange_tenant_domain_change',
                     event_context={'tenant': tenant})
             data = serializers.ExchangeDomainSerializer(instance=tenant, context={'request': request}).data
@@ -118,12 +119,13 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         serializer = serializers.TenantQuotaSerializer(data=request.data, context={'tenant': tenant})
         serializer.is_valid(raise_exception=True)
 
-        backend.tenants.change_quotas(mailbox_size=serializer.validated_data['mailbox_size'])
-        tenant.set_quota_limit(
-            models.ExchangeTenant.Quotas.mailbox_size, serializer.validated_data['mailbox_size'])
+        old_quota = tenant.quotas.get(name=models.ExchangeTenant.Quotas.mailbox_size)
+        new_quota_limit = serializer.validated_data['mailbox_size']
+        backend.tenants.change_quotas(mailbox_size=new_quota_limit)
+        tenant.set_quota_limit(models.ExchangeTenant.Quotas.mailbox_size, new_quota_limit)
 
         event_logger.exchange_tenant.info(
-            'Exchange tenant {tenant_name} quota has been updated.',
+            'Exchange tenant {tenant_name} quota has been updated from %s to %s.' % (old_quota.limit, new_quota_limit),
             event_type='exchange_tenant_quota_update',
             event_context={
                 'tenant': tenant,
@@ -134,11 +136,16 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
 
 class PropertyWithMembersViewSet(BasePropertyViewSet):
 
+    # TODO: Add events to `members_create` and `members_update` methods,
+    #       remove `members_update_with_db` method.
+
     def members_create(self, obj, field_name='', add_method=None):
         backend = self.get_backend(obj.tenant)
-        members = getattr(obj, field_name).values_list('backend_id', flat=True)
-        if members:
-            getattr(backend, add_method)(id=obj.backend_id, user_id=','.join(members))
+        members_ids = getattr(obj, field_name).values_list('backend_id', flat=True)
+
+        if members_ids:
+            getattr(backend, add_method)(id=obj.backend_id, user_id=','.join(members_ids))
+        return members_ids
 
     def members_update(self, obj, field_name='', add_method=None, del_method=None, list_method=None, data=None):
         backend = self.get_backend(obj.tenant)
@@ -153,6 +160,8 @@ class PropertyWithMembersViewSet(BasePropertyViewSet):
             # TODO: replace it with single method deletion when implemented on backend
             for old_user in cur_members - new_members:
                 getattr(backend, del_method)(id=obj.backend_id, user_id=old_user)
+            return new_users, cur_members - new_members
+        return [], []
 
     def members_list(self, field_name='', list_method=None):
         obj = self.get_object()
@@ -183,6 +192,8 @@ class PropertyWithMembersViewSet(BasePropertyViewSet):
         if old_users:
             getattr(backend, del_method)(id=obj.backend_id, user_id=','.join(old_users))
             members_qs.remove(*models.User.objects.filter(backend_id__in=old_users))
+
+        return new_users, old_users
 
 
 class UserViewSet(PropertyWithMembersViewSet):
@@ -230,7 +241,7 @@ class UserViewSet(PropertyWithMembersViewSet):
             sms_user_password(user)
 
         event_logger.exchange_user.info(
-            'Exchange user {affected_user_name} password has been reset.',
+            'Exchange user {affected_user_name} ({affected_user_email}) password has been reset.',
             event_type='exchange_user_password_reset',
             event_context={
                 'affected_user': user,
@@ -241,20 +252,54 @@ class UserViewSet(PropertyWithMembersViewSet):
     # XXX: put was added as portal has a temporary bug with widget update
     @detail_route(methods=['get', 'post', 'put'])
     def sendonbehalf(self, request, pk=None, **kwargs):
+        affected_user = self.get_object()
         if request.method in ('POST', 'PUT'):
-            self.members_update_with_db(
+            new_users_ids, old_users_ids = self.members_update_with_db(
                 request, 'send_on_behalf_members',
                 add_method='add_send_on_behalf', del_method='del_send_on_behalf')
+
+            for user in models.User.objects.filter(backend_id__in=new_users_ids):
+                event_logger.exchange_user_member.info(
+                    'Send On Behalf member %s was added to user {affected_user_name} ({affected_user_email})' % user.email,
+                    event_type='exchange_user_send_on_behalf_member_add',
+                    event_context={
+                        'affected_user': affected_user,
+                    })
+
+            for user in models.User.objects.filter(backend_id__in=old_users_ids):
+                event_logger.exchange_user_member.info(
+                    'Send On Behalf member %s was removed from user {affected_user_name} ({affected_user_email})' % user.email,
+                    event_type='exchange_user_send_on_behalf_member_remove',
+                    event_context={
+                        'affected_user': affected_user,
+                    })
 
         return self.members_list('send_on_behalf_members')
 
     # XXX: put was added as portal has a temporary bug with widget update
     @detail_route(methods=['get', 'post', 'put'])
     def sendas(self, request, pk=None, **kwargs):
+        affected_user = self.get_object()
         if request.method in ('POST', 'PUT'):
-            self.members_update_with_db(
+            new_users_ids, old_users_ids = self.members_update_with_db(
                 request, 'send_as_members',
                 add_method='add_send_as', del_method='del_send_as')
+
+            for user in models.User.objects.filter(backend_id__in=new_users_ids):
+                event_logger.exchange_user_member.info(
+                    'Send As member %s was added to user {affected_user_name} ({affected_user_email})' % user.email,
+                    event_type='exchange_user_send_as_member_add',
+                    event_context={
+                        'affected_user': affected_user,
+                    })
+
+            for user in models.User.objects.filter(backend_id__in=old_users_ids):
+                event_logger.exchange_user_member.info(
+                    'Send As member %s was removed from user {affected_user_name} ({affected_user_email})' % user.email,
+                    event_type='exchange_user_send_as_member_remove',
+                    event_context={
+                        'affected_user': affected_user,
+                    })
 
         return self.members_list('send_as_members')
 
@@ -287,16 +332,40 @@ class GroupViewSet(PropertyWithMembersViewSet):
 
     def post_create(self, group, serializer, backend_group):
         self.update_senders_out(group, serializer)
-        self.members_create(group, 'members', 'add_member')
+        new_users_ids = self.members_create(group, 'members', 'add_member')
+
+        for user in models.User.objects.filter(backend_id__in=new_users_ids):
+            event_logger.exchange_group_member.info(
+                'Member %s was added to group {group_name} ({group_email})' % user.email,
+                event_type='exchange_group_member_add',
+                event_context={
+                    'group': group,
+                })
 
     def pre_update(self, group, serializer):
         self.cur_members = set(group.members.values_list('backend_id', flat=True))
 
     def post_update(self, group, serializer):
         self.update_senders_out(group, serializer)
-        self.members_update(
+        new_users_ids, old_users_ids = self.members_update(
             group, 'members', data=serializer.validated_data,
             add_method='add_member', del_method='del_member', list_method='list_members')
+
+        for user in models.User.objects.filter(backend_id__in=new_users_ids):
+            event_logger.exchange_group_member.info(
+                'Member %s was added to group {group_name} ({group_email})' % user.email,
+                event_type='exchange_group_member_add',
+                event_context={
+                    'group': group,
+                })
+
+        for user in models.User.objects.filter(backend_id__in=old_users_ids):
+            event_logger.exchange_group_member.info(
+                'Member %s was removed from group {group_name} ({group_email})' % user.email,
+                event_type='exchange_group_member_remove',
+                event_context={
+                    'group': group,
+                })
 
     @detail_route(methods=['get'])
     def members(self, request, pk=None, **kwargs):
@@ -321,12 +390,26 @@ class GroupViewSet(PropertyWithMembersViewSet):
                 backend.add_delivery_members(
                     id=group.backend_id, user_id=','.join([u.backend_id for u in new_users]))
                 members_qs.add(*new_users)
+                for member in new_users:
+                    event_logger.exchange_group_delivery_member.info(
+                        'Delivery member %s has been added to exchange group {group_name} ({group_email}).' % member.email,
+                        event_type='exchange_group_delivery_member_add',
+                        event_context={
+                            'group': group
+                        })
 
             old_users = cur_members - new_members
             if old_users:
                 backend.del_delivery_members(
                     id=group.backend_id, user_id=','.join([u.backend_id for u in old_users]))
                 members_qs.remove(*old_users)
+                for member in old_users:
+                    event_logger.exchange_group_delivery_member.info(
+                        'Delivery member %s has been removed from exchange group {group_name} ({group_email}).' % member.email,
+                        event_type='exchange_group_delivery_member_remove',
+                        event_context={
+                            'group': group
+                        })
 
         return Response(serializers.DeliveryMembersSerializer(
             members_qs.all(), many=True, context={'request': request}).data, status=HTTP_200_OK)

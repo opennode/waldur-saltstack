@@ -39,10 +39,13 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
         tenant = self.get_object()
         serializer = serializers.TenantQuotaSerializer(data=request.data, context={'tenant': tenant})
         serializer.is_valid(raise_exception=True)
-        tenant.set_quota_limit(models.SharepointTenant.Quotas.storage, serializer.validated_data['storage'])
+
+        old_quota = tenant.quotas.get(name=models.SharepointTenant.Quotas.storage)
+        new_quota_limit = serializer.validated_data['storage']
+        tenant.set_quota_limit(models.SharepointTenant.Quotas.storage, new_quota_limit)
 
         event_logger.sharepoint_tenant.info(
-            'Sharepoint tenant {tenant_name} quota has been updated.',
+            'Sharepoint tenant {tenant_name} quota has been updated from %s to %s.' % (old_quota.limit, new_quota_limit),
             event_type='sharepoint_tenant_quota_update',
             event_context={
                 'tenant': tenant,
@@ -91,7 +94,7 @@ class UserViewSet(BasePropertyViewSet):
             sms_user_password(user)
 
         event_logger.sharepoint_user.info(
-            'Sharepoint user {affected_user_name} password has been reset.',
+            'Sharepoint user {affected_user_name} ({affected_user_email}) password has been reset.',
             event_type='sharepoint_user_password_reset',
             event_context={
                 'affected_user': user,
@@ -174,11 +177,13 @@ class SiteCollectionViewSet(mixins.CreateModelMixin,
                 site_collection.save()
 
         storage = serializer.validated_data['storage']
+        old_quota = site_collection.quotas.get(name=models.SiteCollection.Quotas.storage)
         backend.site_collections.set_storage(url=site_collection.access_url, storage=storage)
         site_collection.set_quota_limit(models.SiteCollection.Quotas.storage, storage)
 
         event_logger.sharepoint_site_collection.info(
-            'Sharepoint site collection {site_collection_name} quota has been updated.',
+            ('Sharepoint site collection {site_collection_name} quota has been updated from %s to %s.'
+             % (old_quota.limit, storage)),
             event_type='sharepoint_site_collection_quota_update',
             event_context={
                 'site_collection': site_collection,

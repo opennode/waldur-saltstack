@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from gm2m import GM2MField
+from model_utils import FieldTracker
 
 from nodeconductor.core.models import DescendantMixin
 from nodeconductor.quotas.models import QuotaModelMixin
@@ -101,6 +102,8 @@ class User(MailboxExchangeProperty):
     send_on_behalf_members = models.ManyToManyField('self', related_name='+')
     send_as_members = models.ManyToManyField('self', related_name='+')
 
+    tracker = FieldTracker()
+
     class Meta(object):
         unique_together = (('username', 'tenant'), ('name', 'tenant'))
 
@@ -120,13 +123,18 @@ class User(MailboxExchangeProperty):
         return 'exchange-users'
 
     def get_log_fields(self):
-        return super(ExchangeProperty, self).get_log_fields() + ('username',)
+        return super(ExchangeProperty, self).get_log_fields() + ('username', 'email')
 
 
 class Contact(ExchangeProperty):
     email = models.EmailField(max_length=255)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
+
+    tracker = FieldTracker()
+
+    def get_log_fields(self):
+        return super(Contact, self).get_log_fields() + ('email',)
 
 
 class Group(ExchangeProperty):
@@ -137,15 +145,22 @@ class Group(ExchangeProperty):
     senders_out = models.BooleanField(
         default=False, help_text='Delivery management for senders outside organizational unit')
 
+    tracker = FieldTracker()
+
     @property
     def email(self):
         return '{}@{}'.format(self.username, self.tenant.domain)
+
+    def get_log_fields(self):
+        return super(Group, self).get_log_fields() + ('username', 'email')
 
 
 class ConferenceRoom(MailboxExchangeProperty):
     username = models.CharField(max_length=255)
     location = models.CharField(max_length=255, blank=True)
     phone = models.CharField(max_length=255, blank=True)
+
+    tracker = FieldTracker()
 
     @property
     def email(self):
@@ -154,3 +169,6 @@ class ConferenceRoom(MailboxExchangeProperty):
     @classmethod
     def get_url_name(cls):
         return 'exchange-conference-rooms'
+
+    def get_log_fields(self):
+        return super(ConferenceRoom, self).get_log_fields() + ('username', )

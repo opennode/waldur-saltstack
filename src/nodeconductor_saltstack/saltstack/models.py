@@ -4,6 +4,7 @@ from django.apps import apps
 from django.db import models
 from django.utils.lru_cache import lru_cache
 from django.utils.encoding import python_2_unicode_compatible
+from model_utils import FieldTracker
 
 from nodeconductor.core import models as core_models
 from nodeconductor.logging.log import LoggableMixin
@@ -61,6 +62,8 @@ class SaltStackServiceProjectLink(structure_models.ServiceProjectLink):
 @python_2_unicode_compatible
 class SaltStackProperty(core_models.UuidMixin, core_models.NameMixin, LoggableMixin, models.Model):
     backend_id = models.CharField(max_length=255, db_index=True)
+
+    tracker = FieldTracker()
 
     class Meta(object):
         abstract = True

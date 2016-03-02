@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from model_utils import FieldTracker
 
 from nodeconductor.core.models import DescendantMixin
 from nodeconductor.quotas.fields import QuotaField, CounterQuotaField, LimitAggregatorQuotaField
@@ -72,6 +73,8 @@ class User(SaltStackProperty):
     phone = models.CharField(max_length=255, blank=True)
     personal_site_collection = models.ForeignKey('SiteCollection', related_name='+', blank=True, null=True)
 
+    tracker = FieldTracker()
+
     class Defaults(object):
         admin = {
             'name': 'Admin',
@@ -93,7 +96,7 @@ class User(SaltStackProperty):
         self.save()
 
     def get_log_fields(self):
-        return super(User, self).get_log_fields() + ('tenant',)
+        return super(User, self).get_log_fields() + ('tenant', 'email')
 
 
 class SiteCollection(QuotaModelMixin, SaltStackProperty, DescendantMixin):
@@ -112,6 +115,8 @@ class SiteCollection(QuotaModelMixin, SaltStackProperty, DescendantMixin):
     description = models.CharField(max_length=500)
     template = models.ForeignKey(Template, related_name='site_collections', blank=True, null=True)
     access_url = models.CharField(max_length=255)
+
+    tracker = FieldTracker()
 
     @classmethod
     def get_url_name(cls):

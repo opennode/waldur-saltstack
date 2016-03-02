@@ -3,7 +3,6 @@ from django.db import IntegrityError, transaction
 from rest_framework import exceptions, filters, permissions, viewsets
 
 from nodeconductor.core.exceptions import IncorrectStateException
-from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure.filters import GenericRoleFilter
 from nodeconductor.structure.models import Resource
 from nodeconductor.structure import views as structure_views
