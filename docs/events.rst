@@ -42,6 +42,30 @@ Each event message contains in the context a **property_type** parameter specify
     **exchange_tenant_domain_change**
         Exchange tenant domain has been changed.
 
+    **exchange_group_member_add**
+        Member has been added to distribution group.
+
+    **exchange_group_member_remove**
+        Member has been removed from distribution group.
+
+    **exchange_group_delivery_member_add**
+        Delivery member has been added to distribution group.
+
+    **exchange_group_delivery_member_remove**
+        Delivery member has been removed from distribution group.
+
+    **exchange_user_send_on_behalf_member_add**
+        Send On Behalf member was added to exchange user.
+
+    **exchange_user_send_on_behalf_member_remove**
+        Send On Behalf member was removed from exchange user.
+
+    **exchange_user_send_as_member_add**
+        Send As member was added to exchange user.
+
+    **exchange_user_send_as_member_remove**
+        Send As member was removed from exchange user.
+
 ------------
 
 .. glossary::
