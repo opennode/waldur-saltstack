@@ -21,7 +21,10 @@ def get_property_identifier(instance):
 def is_field_loggable(instance, field):
     if field in ('admin_id', 'backend_id', 'password'):
         return False
-    if isinstance(instance._meta.get_field(field), models.ForeignKey):
+    try:
+        if isinstance(instance._meta.get_field(field), models.ForeignKey):
+            return False
+    except models.fields.FieldDoesNotExist:
         return False
     return True
 
