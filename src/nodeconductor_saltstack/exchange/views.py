@@ -46,7 +46,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
                 tenant.save()
 
                 event_logger.exchange_tenant.info(
-                    'Exchange tenant {tenant_name} domain has been changed from %s to %s.' % (new_domain, old_domain),
+                    'Exchange tenant {tenant_name} domain has been changed from %s to %s.' % (old_domain, new_domain),
                     event_type='exchange_tenant_domain_change',
                     event_context={'tenant': tenant})
             data = serializers.ExchangeDomainSerializer(instance=tenant, context={'request': request}).data
