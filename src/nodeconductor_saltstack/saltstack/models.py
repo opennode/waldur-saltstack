@@ -29,7 +29,7 @@ def _get_sharepoint_tenant_model():
 
 
 # to avoid circular imports
-def _get_exhange_tenant_model():
+def _get_exchange_tenant_model():
     from ..exchange.models import ExchangeTenant
     return [ExchangeTenant]
 
@@ -58,7 +58,7 @@ class SaltStackServiceProjectLink(structure_models.ServiceProjectLink):
             default_limit=2,
         )
         exchange_tenant_number = CounterQuotaField(
-            target_models=_get_exhange_tenant_model,
+            target_models=_get_exchange_tenant_model,
             path_to_scope='service_project_link',
             default_limit=-1,
         )
