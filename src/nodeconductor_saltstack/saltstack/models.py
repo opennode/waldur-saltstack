@@ -12,8 +12,6 @@ from nodeconductor.quotas.fields import CounterQuotaField, LimitAggregatorQuotaF
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
 
-from .apps import SaltStackConfig
-
 
 class SaltStackService(structure_models.Service):
     projects = models.ManyToManyField(
@@ -28,6 +26,12 @@ class SaltStackService(structure_models.Service):
 def _get_sharepoint_tenant_model():
     from ..sharepoint.models import SharepointTenant
     return [SharepointTenant]
+
+
+# to avoid circular imports
+def _get_exchange_tenant_model():
+    from ..exchange.models import ExchangeTenant
+    return [ExchangeTenant]
 
 
 class SaltStackServiceProjectLink(structure_models.ServiceProjectLink):
@@ -52,6 +56,11 @@ class SaltStackServiceProjectLink(structure_models.ServiceProjectLink):
             target_models=_get_sharepoint_tenant_model,
             path_to_scope='service_project_link',
             default_limit=2,
+        )
+        exchange_tenant_number = CounterQuotaField(
+            target_models=_get_exchange_tenant_model,
+            path_to_scope='service_project_link',
+            default_limit=-1,
         )
 
     @classmethod
