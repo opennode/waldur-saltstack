@@ -84,10 +84,10 @@ where a user has a role.
 Service-project-link quotas
 ---------------------------
 
- - exchange_storage - limitation for all mailbox sizes of exchange tenants.
- - sharepoint_storage - limitation for storage sizes of all sharepoint tenants.
- - exchange_tenant_number - number of exchange tenants.
- - sharepoint_tenant_number - number of sharepoint tenants.
+ - exchange_storage - limitation for all mailbox sizes of Exchange tenants.
+ - sharepoint_storage - limitation for storage sizes of all SharePoint tenants.
+ - exchange_tenant_number - number of Exchange tenants.
+ - sharepoint_tenant_number - number of SharePoint tenants.
 
 
 MS Exchange
