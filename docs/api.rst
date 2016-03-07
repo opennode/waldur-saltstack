@@ -81,6 +81,15 @@ To get a list of connections between a project and an SaltStack service, run GET
 where a user has a role.
 
 
+Service-project-link quotas
+---------------------------
+
+ - exchange_storage - limitation for all mailbox sizes of exchange tenants.
+ - sharepoint_storage - limitation for storage sizes of all sharepoint tenants.
+ - exchange_tenant_number - number of exchange tenants.
+ - sharepoint_tenant_number - number of sharepoint tenants.
+
+
 MS Exchange
 ===========
 
