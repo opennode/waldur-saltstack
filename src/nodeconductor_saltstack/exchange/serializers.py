@@ -4,6 +4,7 @@ import binascii
 
 from rest_framework import serializers
 from rest_framework.utils import model_meta
+from rest_framework.utils.model_meta import _resolve_model as _old_resolve_model
 from rest_framework.compat import OrderedDict
 from gm2m.relations import GM2MTo
 
@@ -22,9 +23,8 @@ from . import models
 def _resolve_model(obj):
     if isinstance(obj, GM2MTo):
         return None
-    return model_meta._old_resolve_model(obj)
+    return _old_resolve_model(obj)
 
-model_meta._old_resolve_model = model_meta._resolve_model
 model_meta._resolve_model = _resolve_model
 
 
