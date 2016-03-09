@@ -88,6 +88,8 @@ Service-project-link quotas
  - sharepoint_storage - limitation for storage sizes of all sharepoint tenants.
  - exchange_tenant_number - number of exchange tenants.
  - sharepoint_tenant_number - number of sharepoint tenants.
+ - site_collection_count - count of sharepoint site collections.
+ - mailbox_count - count of exchange mailboxes(users and conference rooms).
 
 
 MS Exchange

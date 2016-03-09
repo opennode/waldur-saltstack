@@ -28,10 +28,19 @@ def _get_sharepoint_tenant_model():
     return [SharepointTenant]
 
 
-# to avoid circular imports
 def _get_exhange_tenant_model():
     from ..exchange.models import ExchangeTenant
     return [ExchangeTenant]
+
+
+def _get_site_collection_model():
+    from ..sharepoint.models import SiteCollection
+    return [SiteCollection]
+
+
+def _get_mailbox_models():
+    from ..exchange.models import User, ConferenceRoom
+    return [User, ConferenceRoom]
 
 
 class SaltStackServiceProjectLink(structure_models.ServiceProjectLink):
@@ -60,6 +69,16 @@ class SaltStackServiceProjectLink(structure_models.ServiceProjectLink):
         exchange_tenant_number = CounterQuotaField(
             target_models=_get_exhange_tenant_model,
             path_to_scope='service_project_link',
+            default_limit=-1,
+        )
+        site_collection_count = CounterQuotaField(
+            target_models=_get_site_collection_model,
+            path_to_scope='user.tenant.service_project_link',
+            default_limit=-1,
+        )
+        mailbox_count = CounterQuotaField(
+            target_models=_get_mailbox_models,
+            path_to_scope='tenant.service_project_link',
             default_limit=-1,
         )
 
