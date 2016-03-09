@@ -307,7 +307,7 @@ Example of a valid request:
     Host: example.com
 
     {
-        "csv": "name,first_name,last_name,username,mailbox_size,office,phone,department,company,title,email\nIvan P,Ivan,Petrov,ivan.p,2,,,,,,ivan.p@test.com\nZoe,Zoe,Chloe,zoe,2,,,,,,zoe@test.com"
+        "csv": "name,first_name,last_name,username,mailbox_size,office,phone,department,company,title,email\nIvan P,Ivan,Petrov,ivan.p,2,,,,,,ivan.p@test.com\nZoe,Zoe,Chloe,zoe,2,,,,,,zoe@test.com",
         "notify": true
     }
 
