@@ -14,7 +14,7 @@ class ExchangeTenantAdmin(structure_admin.ResourceAdmin):
     actions = ['sync_quotas']
 
     def sync_quotas(self, request, queryset):
-        tenant_uuids = list(queryset.values_list('uuid', flat=True))
+        tenant_uuids = [uuid.hex for uuid in queryset.values_list('uuid', flat=True)]
         tasks_scheduled = queryset.count()
 
         send_task('exchange', 'sync_tenant_quotas')(tenant_uuids)

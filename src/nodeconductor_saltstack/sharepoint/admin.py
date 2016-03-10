@@ -14,7 +14,7 @@ class SharepointTenantAdmin(structure_admin.ResourceAdmin):
     actions = ['sync_site_collections']
 
     def sync_site_collections(self, request, queryset):
-        tenant_uuids = list(queryset.values_list('uuid', flat=True))
+        tenant_uuids = [uuid.hex for uuid in queryset.values_list('uuid', flat=True)]
         tasks_scheduled = queryset.count()
 
         send_task('sharepoint', 'sync_site_collection_quotas')(tenant_uuids)
