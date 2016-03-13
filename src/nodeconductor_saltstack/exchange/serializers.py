@@ -3,10 +3,7 @@ import re
 import binascii
 
 from rest_framework import serializers
-from rest_framework.utils import model_meta
-from rest_framework.utils.model_meta import _resolve_model as _old_resolve_model
 from rest_framework.compat import OrderedDict
-from gm2m.relations import GM2MTo
 
 from nodeconductor.core.serializers import AugmentedSerializerMixin
 from nodeconductor.quotas.exceptions import QuotaExceededException
@@ -17,15 +14,6 @@ from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.models import SaltStackServiceProjectLink
 from ..saltstack.serializers import PhoneValidationMixin
 from . import models
-
-
-# XXX: hackish monkey patch for DRF in order to work with GM2M fields
-def _resolve_model(obj):
-    if isinstance(obj, GM2MTo):
-        return None
-    return _old_resolve_model(obj)
-
-model_meta._resolve_model = _resolve_model
 
 
 class ExchangeDomainSerializer(serializers.ModelSerializer):
