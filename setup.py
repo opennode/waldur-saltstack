@@ -7,7 +7,7 @@ dev_requires = [
     'Sphinx==1.2.2',
 ]
 
-tests_requires = [
+tests_require = [
     'django-celery==3.1.16',
 ]
 
@@ -33,6 +33,9 @@ else:
             'oslo.utils==1.0.0',
             'stevedore==1.0.0',
         ]
+    # handle the case when plugins are installed in develop mode
+    if action in ['develop']:
+        install_requires += tests_require
 
 
 setup(
