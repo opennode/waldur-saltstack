@@ -60,7 +60,7 @@ setup(
             'sharepoint = nodeconductor_saltstack.sharepoint.extension:SharepointExtension',
         ),
     },
-    # tests_require=tests_requires,
+    # tests_require=tests_require,
     include_package_data=True,
     classifiers=[
         'Framework :: Django',
