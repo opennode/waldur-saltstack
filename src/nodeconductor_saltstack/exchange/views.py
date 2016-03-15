@@ -3,7 +3,7 @@ from django.http import HttpResponse
 
 from rest_framework.decorators import detail_route
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 
 from nodeconductor.core.tasks import send_task
 from nodeconductor.core.csv import UnicodeDictReader, UnicodeDictWriter
@@ -86,7 +86,7 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             mailbox_quota = tenant.quotas.get(name='mailbox_size')
             if mailbox_quota.is_exceeded(mailbox_size_sum):
                 return Response({'detail': "Size of users' mailboxes exceeds tenant's quota %s" %
-                                 mailbox_quota.limit}, status=HTTP_409_CONFLICT)
+                                 mailbox_quota.limit}, status=HTTP_400_BAD_REQUEST)
 
             # check if global notification has been requested
             notify_user = request.data.get('notify', False)
