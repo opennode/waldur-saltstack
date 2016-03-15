@@ -7,6 +7,10 @@ dev_requires = [
     'Sphinx==1.2.2',
 ]
 
+tests_requires = [
+    'django-celery==3.1.16',
+]
+
 install_requires = [
     'django-gm2m==0.3',
     'nodeconductor>0.87.0',
