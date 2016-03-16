@@ -134,6 +134,7 @@ Example rendering of the tenant object:
         "backend_id": "NC_2AC92770A6",
         "access_url": "http://test-tenant.com",
         "domain": "test-tenant.com",
+        "publishing_state": "not published",
         "quotas": [
             {
                 "url": "http://example.com/api/quotas/707471368b8e415e8caf58cea3c3057a/",
