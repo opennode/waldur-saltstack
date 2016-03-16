@@ -8,7 +8,7 @@ from nodeconductor.structure import admin as structure_admin
 from .models import SharepointTenant, Template, SiteCollection, User
 
 
-class SharepointTenantAdmin(structure_admin.ResourceAdmin):
+class SharepointTenantAdmin(structure_admin.SaaSResourceAdmin):
     inlines = [QuotaInline]
 
     actions = ['sync_site_collections']
@@ -33,8 +33,8 @@ class SiteCollectionAdmin(ModelAdmin):
 
     list_display = ('name', 'access_url', 'type', 'template')
 
-admin.site.register(SharepointTenant, SharepointTenantAdmin)
 
+admin.site.register(SharepointTenant, SharepointTenantAdmin)
 admin.site.register(Template)
 admin.site.register(SiteCollection, SiteCollectionAdmin)
 admin.site.register(User)

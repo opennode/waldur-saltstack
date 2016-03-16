@@ -85,6 +85,7 @@ Example rendering of the tenant object:
         "domain": "test.com",
         "owa_url": "https://owa.example.com",
         "ecp_url": "https://ecp.example.com",
+        "publishing_state": "not published",
         "quotas": [
             {
                 "url": "http://example.com/api/quotas/4cd11b32339f41959120042ee53af984/",
