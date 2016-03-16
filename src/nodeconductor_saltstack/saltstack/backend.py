@@ -1,3 +1,4 @@
+import re
 import json
 import types
 import logging
@@ -160,6 +161,8 @@ class SaltStackAPI(object):
                 elif isinstance(v, bool):
                     yield '-{} {}'.format(k, str(v).lower())
                 else:
+                    if isinstance(v, basestring):
+                        v = re.sub(r'(["\$])', r'\\\1', v)
                     yield '-{} "{}"'.format(k, v)
 
         command = self.COMMAND.format(name=self.MAPPING.get(cmd) or cmd, args=' '.join(prepare_args()))
