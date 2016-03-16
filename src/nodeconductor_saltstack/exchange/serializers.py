@@ -35,7 +35,7 @@ class ExchangeDomainSerializer(serializers.ModelSerializer):
         fields = ('domain',)
 
 
-class TenantSerializer(structure_serializers.SaaSResourceSerializer):
+class TenantSerializer(structure_serializers.PublishableResourceSerializer):
     MAX_TENANT_SIZE = 2 * 1024 * 1024  # 2TB
 
     service = serializers.HyperlinkedRelatedField(
@@ -66,13 +66,13 @@ class TenantSerializer(structure_serializers.SaaSResourceSerializer):
     def get_ecp_url(self, tenant):
         return tenant.service_project_link.service.settings.options.get('ecp_url', 'Unknown')
 
-    class Meta(structure_serializers.SaaSResourceSerializer.Meta):
+    class Meta(structure_serializers.PublishableResourceSerializer.Meta):
         model = models.ExchangeTenant
         view_name = 'exchange-tenants-detail'
-        protected_fields = structure_serializers.SaaSResourceSerializer.Meta.protected_fields + (
+        protected_fields = structure_serializers.PublishableResourceSerializer.Meta.protected_fields + (
             'domain', 'mailbox_size',
         )
-        fields = structure_serializers.SaaSResourceSerializer.Meta.fields + (
+        fields = structure_serializers.PublishableResourceSerializer.Meta.fields + (
             'domain', 'quotas', 'owa_url', 'ecp_url', 'mailbox_size',
         )
 
