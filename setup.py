@@ -16,10 +16,7 @@ tests_require = [
 ]
 
 install_requires = [
-    'django-gm2m==0.3',
     'nodeconductor>0.89.0',
-    # transitive dependency from nodeconductor core requires Pillow version <3.0.0
-    'Pillow>=2.0.0,<3.0.0',
 ]
 
 # RPM installation does not need oslo, cliff and stevedore libs -
