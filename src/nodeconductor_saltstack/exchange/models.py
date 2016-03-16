@@ -14,7 +14,7 @@ from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
 from .validators import domain_validator
 
 
-class ExchangeTenant(QuotaModelMixin, structure_models.Resource, structure_models.PaidResource):
+class ExchangeTenant(QuotaModelMixin, structure_models.PublishableResource, structure_models.PaidResource):
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='exchange_tenants', on_delete=models.PROTECT)
     domain = models.CharField(max_length=255, validators=[domain_validator])

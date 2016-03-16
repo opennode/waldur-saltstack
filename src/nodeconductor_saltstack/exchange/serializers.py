@@ -3,10 +3,7 @@ import re
 import binascii
 
 from rest_framework import serializers
-from rest_framework.utils import model_meta
-from rest_framework.utils.model_meta import _resolve_model as _old_resolve_model
 from rest_framework.compat import OrderedDict
-from gm2m.relations import GM2MTo
 
 from nodeconductor.core.serializers import AugmentedSerializerMixin
 from nodeconductor.quotas.exceptions import QuotaExceededException
@@ -19,15 +16,6 @@ from ..saltstack.serializers import PhoneValidationMixin
 from . import models
 
 
-# XXX: hackish monkey patch for DRF in order to work with GM2M fields
-def _resolve_model(obj):
-    if isinstance(obj, GM2MTo):
-        return None
-    return _old_resolve_model(obj)
-
-model_meta._resolve_model = _resolve_model
-
-
 class ExchangeDomainSerializer(serializers.ModelSerializer):
 
     class Meta():
@@ -35,7 +23,7 @@ class ExchangeDomainSerializer(serializers.ModelSerializer):
         fields = ('domain',)
 
 
-class TenantSerializer(structure_serializers.BaseResourceSerializer):
+class TenantSerializer(structure_serializers.PublishableResourceSerializer):
     MAX_TENANT_SIZE = 2 * 1024 * 1024  # 2TB
 
     service = serializers.HyperlinkedRelatedField(
@@ -66,13 +54,13 @@ class TenantSerializer(structure_serializers.BaseResourceSerializer):
     def get_ecp_url(self, tenant):
         return tenant.service_project_link.service.settings.options.get('ecp_url', 'Unknown')
 
-    class Meta(structure_serializers.BaseResourceSerializer.Meta):
+    class Meta(structure_serializers.PublishableResourceSerializer.Meta):
         model = models.ExchangeTenant
         view_name = 'exchange-tenants-detail'
-        protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
+        protected_fields = structure_serializers.PublishableResourceSerializer.Meta.protected_fields + (
             'domain', 'mailbox_size',
         )
-        fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
+        fields = structure_serializers.PublishableResourceSerializer.Meta.fields + (
             'domain', 'quotas', 'owa_url', 'ecp_url', 'mailbox_size',
         )
 

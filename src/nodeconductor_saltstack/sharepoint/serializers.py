@@ -89,7 +89,7 @@ class UserSerializer(AugmentedSerializerMixin, PhoneValidationMixin, serializers
         return tenant
 
 
-class TenantSerializer(PhoneValidationMixin, structure_serializers.BaseResourceSerializer):
+class TenantSerializer(PhoneValidationMixin, structure_serializers.PublishableResourceSerializer):
     MINIMUM_TENANT_STORAGE_SIZE = 1024
 
     service = serializers.HyperlinkedRelatedField(
@@ -131,14 +131,14 @@ class TenantSerializer(PhoneValidationMixin, structure_serializers.BaseResourceS
             return tenant.admin_site_collection.access_url
         return
 
-    class Meta(structure_serializers.BaseResourceSerializer.Meta):
+    class Meta(structure_serializers.PublishableResourceSerializer.Meta):
         model = SharepointTenant
         view_name = 'sharepoint-tenants-detail'
-        fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
+        fields = structure_serializers.PublishableResourceSerializer.Meta.fields + (
             'domain', 'quotas', 'storage', 'management_ip', 'site_name', 'site_description', 'template',
             'admin', 'admin_site_collection', 'main_site_collection', 'phone', 'notify', 'access_url',
         )
-        protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
+        protected_fields = structure_serializers.PublishableResourceSerializer.Meta.protected_fields + (
             'domain', 'storage', 'site_name', 'site_description', 'template', 'phone', 'notify',
         )
 

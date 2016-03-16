@@ -82,6 +82,12 @@ class TenantViewSet(structure_views.BaseOnlineResourceViewSet):
             serializer = serializers.UserSerializer(data=data, many=True, context={'request': request})
             serializer.is_valid(raise_exception=True)
 
+            mailbox_size_sum = sum([user['mailbox_size'] for user in serializer.validated_data])
+            mailbox_quota = tenant.quotas.get(name='mailbox_size')
+            if mailbox_quota.is_exceeded(mailbox_size_sum):
+                return Response({'detail': "Size of users' mailboxes exceeds tenant's quota %s" %
+                                 mailbox_quota.limit}, status=HTTP_400_BAD_REQUEST)
+
             # check if global notification has been requested
             notify_user = request.data.get('notify', False)
 

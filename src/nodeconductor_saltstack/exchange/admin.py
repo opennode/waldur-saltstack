@@ -8,7 +8,7 @@ from nodeconductor.structure import admin as structure_admin
 from .models import ExchangeTenant, User, Group, Contact
 
 
-class ExchangeTenantAdmin(structure_admin.ResourceAdmin):
+class ExchangeTenantAdmin(structure_admin.PublishableResourceAdmin):
     inlines = [QuotaInline]
 
     actions = ['sync_quotas']

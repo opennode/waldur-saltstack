@@ -7,8 +7,16 @@ dev_requires = [
     'Sphinx==1.2.2',
 ]
 
+tests_require = [
+    'factory_boy==2.4.1',
+    'django-celery==3.1.16',
+    'mock==1.0.1',
+    'mock-django==0.6.6',
+    'six>=1.9.0',
+]
+
 install_requires = [
-    'nodeconductor>0.87.0',
+    'nodeconductor>0.89.0',
 ]
 
 # RPM installation does not need oslo, cliff and stevedore libs -
@@ -26,6 +34,9 @@ else:
             'oslo.utils==1.0.0',
             'stevedore==1.0.0',
         ]
+    # handle the case when plugins are installed in develop mode
+    if action in ['develop']:
+        install_requires += tests_require
 
 
 setup(
@@ -50,7 +61,7 @@ setup(
             'sharepoint = nodeconductor_saltstack.sharepoint.extension:SharepointExtension',
         ),
     },
-    # tests_require=tests_requires,
+    # tests_require=tests_require,
     include_package_data=True,
     classifiers=[
         'Framework :: Django',
