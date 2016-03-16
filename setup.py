@@ -9,6 +9,9 @@ dev_requires = [
 
 tests_require = [
     'django-celery==3.1.16',
+    'mock==1.0.1',
+    'mock-django==0.6.6',
+    'six>=1.9.0',
 ]
 
 install_requires = [
