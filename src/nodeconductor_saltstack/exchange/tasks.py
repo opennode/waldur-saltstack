@@ -93,7 +93,7 @@ def sync_tenants():
         sync_tenant_quotas.delay(tenant.uuid.hex)
 
 
-@shared_task
+@shared_task(name='nodeconductor.exchange.sync_tenant_quotas')
 def sync_tenant_quotas(tenant_uuids):
     if not isinstance(tenant_uuids, (list, tuple)):
         tenant_uuids = [tenant_uuids]
@@ -120,3 +120,35 @@ def sync_tenant_quotas(tenant_uuids):
             data = stats[model][obj.backend_id]
             obj.set_quota_usage(model.Quotas.mailbox_size, data.usage)
             obj.set_quota_limit(model.Quotas.mailbox_size, data.limit)
+
+
+@shared_task(name='nodeconductor.exchange.pull_tenant_users')
+def pull_tenant_users(tenant_uuids):
+    if not isinstance(tenant_uuids, (list, tuple)):
+        tenant_uuids = [tenant_uuids]
+
+    tenants = ExchangeTenant.objects.filter(uuid__in=tenant_uuids)
+    user_model_fields = set(map(lambda f: f.name, User._meta.fields))
+    for tenant in tenants:
+        backend = tenant.get_backend()
+        with throttle(key=tenant.service_project_link.service.settings.backend_url, concurrency=2):
+            backend_users = backend.users.list()
+
+        backend_user_names = set([user.name for user in backend_users])
+        db_user_names = set(User.objects.filter(tenant=tenant).values_list('name', flat=True))
+        added_users = [user for user in backend_users if user.name not in db_user_names]
+        for user in added_users:
+            fields = user_model_fields & set(user.__dict__.keys())
+            new_user = {field: getattr(user, field) for field in fields}
+            new_user.update({
+                'backend_id': new_user.pop('id'),
+                'tenant': tenant
+            })
+            if hasattr(user, 'email') and user.email:
+                new_user['username'] = user.email.split('@')[0]
+
+            User.objects.create(**new_user)
+
+        deleted_users = db_user_names - backend_user_names
+        if deleted_users:
+            User.objects.filter(tenant=tenant, name__in=deleted_users).delete()
