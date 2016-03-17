@@ -104,7 +104,7 @@ class TenantSerializer(structure_serializers.PublishableResourceSerializer):
             return fields
 
         if not user.is_staff:
-            del fields['ecp_url']
+            fields.pop('ecp_url', None)
 
         return fields
 
