@@ -7,8 +7,7 @@ License: Copyright 2015 OpenNode LLC.  All rights reserved.
 Url: http://nodeconductor.com
 Source0: %{name}-%{version}.tar.gz
 
-Requires: nodeconductor >= 0.78.0
-Requires: python-django-gm2m = 0.3
+Requires: nodeconductor >= 0.90.0
 
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
@@ -46,4 +45,3 @@ rm -rf %{buildroot}
 
 * Thu Oct 29 2015 Juri Hudolejev <juri@opennodecloud.com> - 0.1.0-1.el7
 - Initial version of the package
-
