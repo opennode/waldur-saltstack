@@ -33,7 +33,7 @@ class ExchangeTenantAdmin(structure_admin.PublishableResourceAdmin):
     def pull_users(self, request, queryset):
         selected_tenants = queryset.count()
         queryset = queryset.filter(state=SynchronizationStates.IN_SYNC)
-        tentants_uuids = list(queryset.values_list('uuid', flat=True))
+        tentants_uuids = [uuid.hex for uuid in queryset.values_list('uuid', flat=True)]
         send_task('exchange', 'pull_tenant_users')(tentants_uuids)
 
         tasks_scheduled = queryset.count()

@@ -1,4 +1,7 @@
+import logging
+
 from celery import shared_task, chain
+from django.db import IntegrityError
 from django.utils import timezone
 
 from nodeconductor.core.tasks import save_error_message, transition, throttle
@@ -6,6 +9,9 @@ from nodeconductor.structure.tasks import sync_service_project_links
 
 from ..saltstack.utils import sms_user_password
 from .models import ExchangeTenant, ConferenceRoom, User
+
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task(name='nodeconductor.exchange.provision')
@@ -131,6 +137,7 @@ def pull_tenant_users(tenant_uuids):
     user_model_fields = set(map(lambda f: f.name, User._meta.fields))
     for tenant in tenants:
         backend = tenant.get_backend()
+
         with throttle(key=tenant.service_project_link.service.settings.backend_url, concurrency=2):
             backend_users = backend.users.list()
 
@@ -147,7 +154,10 @@ def pull_tenant_users(tenant_uuids):
             if hasattr(user, 'email') and user.email:
                 new_user['username'] = user.email.split('@')[0]
 
-            User.objects.create(**new_user)
+            try:
+                User.objects.create(**new_user)
+            except IntegrityError as e:
+                logger.warning('Failed to pull MS Exchange backend user with id %s: %s' % (user.id, e))
 
         deleted_users = db_user_names - backend_user_names
         if deleted_users:

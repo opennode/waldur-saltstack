@@ -1,17 +1,22 @@
 import binascii
+import logging
 import os
 
 from celery import shared_task, chain
 
+from django.db import IntegrityError
 from django.utils import timezone
 
-from nodeconductor.core.tasks import save_error_message, transition
+from nodeconductor.core.tasks import save_error_message, transition, throttle
 from nodeconductor.structure.tasks import sync_service_project_links
 
 from .models import SharepointTenant, SiteCollection, Template, User
 from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.models import SaltStackServiceProjectLink
 from ..saltstack.utils import sms_user_password
+
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task(name='nodeconductor.sharepoint.provision')
@@ -177,3 +182,38 @@ def sync_site_collection_quotas(tenant_uuids):
                 registered_site_collection.set_quota_usage(SiteCollection.Quotas.storage, sc.storage_usage)
                 registered_site_collection.set_quota_limit(SiteCollection.Quotas.storage, sc.storage_limit)
 
+
+@shared_task(name='nodeconductor.sharepoint.pull_tenant_users')
+def pull_tenant_users(tenant_uuids):
+    if not isinstance(tenant_uuids, (list, tuple)):
+        tenant_uuids = [tenant_uuids]
+
+    tenants = SharepointTenant.objects.filter(uuid__in=tenant_uuids)
+    user_model_fields = set(map(lambda f: f.name, User._meta.fields))
+    for tenant in tenants:
+        backend = tenant.get_backend()
+
+        with throttle(key=tenant.service_project_link.service.settings.backend_url, concurrency=2):
+            backend_users = backend.users.list()
+
+        backend_user_names = set([user.name for user in backend_users])
+        db_user_names = set(User.objects.filter(tenant=tenant).values_list('name', flat=True))
+        added_users = [user for user in backend_users if user.name not in db_user_names]
+        for user in added_users:
+            fields = user_model_fields & set(user.__dict__.keys())
+            new_user = {field: getattr(user, field) for field in fields}
+            new_user.update({
+                'backend_id': new_user.pop('id'),
+                'tenant': tenant
+            })
+            if hasattr(user, 'email') and user.email:
+                new_user['username'] = user.email.split('@')[0]
+
+            try:
+                User.objects.create(**new_user)
+            except IntegrityError as e:
+                logger.warning('Failed to pull MS Sharepoint backend user with id %s: %s' % (user.id, e))
+
+        deleted_users = db_user_names - backend_user_names
+        if deleted_users:
+            User.objects.filter(tenant=tenant, name__in=deleted_users).delete()
