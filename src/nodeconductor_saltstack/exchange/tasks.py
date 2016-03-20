@@ -128,18 +128,16 @@ def sync_tenant_quotas(tenant_uuids):
             obj.set_quota_limit(model.Quotas.mailbox_size, data.limit)
 
 
-@shared_task(name='nodeconductor.exchange.pull_tenant_users')
+@shared_task(name='nodeconductor.exchange.pull_tenant_users', heavy_task=True)
 def pull_tenant_users(tenant_uuids):
     if not isinstance(tenant_uuids, (list, tuple)):
         tenant_uuids = [tenant_uuids]
 
     tenants = ExchangeTenant.objects.filter(uuid__in=tenant_uuids)
-    user_model_fields = set(map(lambda f: f.name, User._meta.fields))
+    user_model_fields = set(User._meta.get_all_field_names())
     for tenant in tenants:
         backend = tenant.get_backend()
-
-        with throttle(key=tenant.service_project_link.service.settings.backend_url, concurrency=2):
-            backend_users = backend.users.list()
+        backend_users = backend.users.list()
 
         backend_user_names = set([user.name for user in backend_users])
         db_user_names = set(User.objects.filter(tenant=tenant).values_list('name', flat=True))
