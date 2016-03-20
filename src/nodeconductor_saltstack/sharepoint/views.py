@@ -102,6 +102,24 @@ class UserViewSet(BasePropertyViewSet):
 
         return response.Response(serializer.data, status=HTTP_200_OK)
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        if instance.username == models.User.Defaults.admin['username'] and \
+                data.get('username', '') != instance.username:
+            return response.Response({'detail': "Admin user's username cannot be changed."},
+                                     status=HTTP_409_CONFLICT)
+        elif instance.name == models.User.Defaults.admin['name'] and \
+                data.get('name', '') != instance.name:
+            return response.Response({'detail': "Admin user's name cannot be changed."},
+                                     status=HTTP_409_CONFLICT)
+
+        self.perform_update(serializer)
+        return response.Response(serializer.data, status=HTTP_200_OK)
+
 
 class SiteCollectionViewSet(mixins.CreateModelMixin,
                             mixins.RetrieveModelMixin,

@@ -388,6 +388,7 @@ Update user
 -----------
 
 To update user data - issue PUT or PATCH request against **/api/sharepoint-users/<user_uuid>/**.
+Note that `username` and `name` fields of admin user cannot be changed.
 
 
 Reset user password
