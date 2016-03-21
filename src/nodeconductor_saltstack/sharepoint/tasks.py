@@ -1,5 +1,4 @@
 import binascii
-import logging
 import os
 
 from celery import shared_task, chain
@@ -12,9 +11,6 @@ from nodeconductor.structure.tasks import sync_service_project_links
 from .models import SharepointTenant, SiteCollection, Template, User
 from ..saltstack.models import SaltStackServiceProjectLink
 from ..saltstack.utils import sms_user_password
-
-
-logger = logging.getLogger(__name__)
 
 
 @shared_task(name='nodeconductor.sharepoint.provision')

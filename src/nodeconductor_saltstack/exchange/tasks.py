@@ -1,5 +1,3 @@
-import logging
-
 from celery import shared_task, chain
 from django.utils import timezone
 
@@ -8,9 +6,6 @@ from nodeconductor.structure.tasks import sync_service_project_links
 
 from ..saltstack.utils import sms_user_password
 from .models import ExchangeTenant, ConferenceRoom, User
-
-
-logger = logging.getLogger(__name__)
 
 
 @shared_task(name='nodeconductor.exchange.provision')
