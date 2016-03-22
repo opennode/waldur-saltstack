@@ -88,6 +88,24 @@ class UserSerializer(AugmentedSerializerMixin, PhoneValidationMixin, serializers
             raise serializers.ValidationError('Tenant has not enough space for user creation.')
         return tenant
 
+    def validate_name(self, name):
+        if not self.instance:
+            return name
+
+        if self.instance.name == User.Defaults.admin['name'] and name != self.instance.name:
+            raise serializers.ValidationError("Admin user's name cannot be changed.")
+
+        return name
+
+    def validate_username(self, username):
+        if not self.instance:
+            return username
+
+        if self.instance.username == User.Defaults.admin['username'] and username != self.instance.username:
+            raise serializers.ValidationError("Admin user's username cannot be changed.")
+
+        return username
+
 
 class TenantSerializer(PhoneValidationMixin, structure_serializers.PublishableResourceSerializer):
     MINIMUM_TENANT_STORAGE_SIZE = 1024
