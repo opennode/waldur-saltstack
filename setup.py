@@ -13,6 +13,7 @@ tests_require = [
     'mock==1.0.1',
     'mock-django==0.6.6',
     'six>=1.9.0',
+    'sqlalchemy>=1.0.12'
 ]
 
 install_requires = [

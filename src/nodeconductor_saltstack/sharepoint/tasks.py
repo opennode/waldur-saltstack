@@ -9,7 +9,6 @@ from nodeconductor.core.tasks import save_error_message, transition
 from nodeconductor.structure.tasks import sync_service_project_links
 
 from .models import SharepointTenant, SiteCollection, Template, User
-from ..saltstack.backend import SaltStackBackendError
 from ..saltstack.models import SaltStackServiceProjectLink
 from ..saltstack.utils import sms_user_password
 
@@ -177,3 +176,29 @@ def sync_site_collection_quotas(tenant_uuids):
                 registered_site_collection.set_quota_usage(SiteCollection.Quotas.storage, sc.storage_usage)
                 registered_site_collection.set_quota_limit(SiteCollection.Quotas.storage, sc.storage_limit)
 
+
+@shared_task(name='nodeconductor.sharepoint.sync_tenant_users', heavy_task=True)
+def sync_tenant_users(tenant_uuid):
+    tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
+    user_model_fields = set(User._meta.get_all_field_names())
+
+    backend = tenant.get_backend()
+    backend_users = backend.users.list()
+    backend_users_ids = set([user.id for user in backend_users])
+    db_users_ids = set(User.objects.filter(tenant=tenant).values_list('backend_id', flat=True))
+    added_users = [user for user in backend_users if user.id not in db_users_ids]
+    for user in added_users:
+        fields = user_model_fields & set(user.__dict__.keys())
+        new_user = {field: getattr(user, field) for field in fields}
+        new_user.update({
+            'backend_id': new_user.pop('id'),
+            'tenant': tenant
+        })
+        if hasattr(user, 'email') and user.email:
+            new_user['username'] = user.email.split('@')[0]
+
+        User.objects.create(**new_user)
+
+    deleted_users = db_users_ids - backend_users_ids
+    if deleted_users:
+        User.objects.filter(tenant=tenant, name__in=deleted_users).delete()
