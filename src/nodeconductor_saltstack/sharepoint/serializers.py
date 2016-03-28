@@ -118,8 +118,7 @@ class TenantSerializer(PhoneValidationMixin, structure_serializers.PublishableRe
 
     service_project_link = serializers.HyperlinkedRelatedField(
         view_name='saltstack-spl-detail',
-        queryset=SaltStackServiceProjectLink.objects.all(),
-        write_only=True)
+        queryset=SaltStackServiceProjectLink.objects.all())
 
     storage = serializers.IntegerField(min_value=MINIMUM_TENANT_STORAGE_SIZE, write_only=True, initial=5 * 1024)
     site_name = serializers.CharField(help_text='Main site collection name.', write_only=True)
