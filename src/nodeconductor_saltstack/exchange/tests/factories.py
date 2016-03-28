@@ -14,6 +14,7 @@ class ServiceSettingsFactory(factory.DjangoModelFactory):
 
     name = factory.Sequence(lambda n: 'SaltStack settings %s' % n)
     state = SynchronizationStates.IN_SYNC
+    backend_url = 'http://example.com/'
     shared = False
     type = 'SaltStack'
 
