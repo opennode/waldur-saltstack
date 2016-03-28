@@ -34,8 +34,7 @@ class TenantSerializer(structure_serializers.PublishableResourceSerializer):
 
     service_project_link = serializers.HyperlinkedRelatedField(
         view_name='saltstack-spl-detail',
-        queryset=SaltStackServiceProjectLink.objects.all(),
-        write_only=True)
+        queryset=SaltStackServiceProjectLink.objects.all())
 
     mailbox_size = serializers.IntegerField(
         min_value=1, write_only=True, help_text='Maximum storage size of all tenant mailboxes together, MB')
