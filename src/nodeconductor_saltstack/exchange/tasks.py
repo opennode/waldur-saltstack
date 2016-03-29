@@ -1,8 +1,7 @@
-from celery import shared_task, chain
+from celery import shared_task
 from django.utils import timezone
 
 from nodeconductor.core.tasks import save_error_message, transition, throttle
-from nodeconductor.structure.tasks import sync_service_project_links
 
 from ..saltstack.utils import sms_user_password
 from .models import ExchangeTenant, ConferenceRoom, User
@@ -10,13 +9,10 @@ from .models import ExchangeTenant, ConferenceRoom, User
 
 @shared_task(name='nodeconductor.exchange.provision')
 def provision(tenant_uuid, **kwargs):
-    tenant = ExchangeTenant.objects.get(uuid=tenant_uuid)
-    chain(
-        sync_service_project_links.s(tenant.service_project_link.to_string(), initial=True),
-        provision_tenant.si(tenant_uuid, **kwargs),
-    ).apply_async(
+    provision_tenant.si(tenant_uuid, **kwargs).apply_async(
         link=set_online.si(tenant_uuid),
-        link_error=set_erred.si(tenant_uuid))
+        link_error=set_erred.si(tenant_uuid)
+    )
 
 
 @shared_task(name='nodeconductor.exchange.destroy')

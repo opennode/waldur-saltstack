@@ -33,7 +33,6 @@ class ServiceProjectLinkFactory(factory.DjangoModelFactory):
 
     service = factory.SubFactory(ServiceFactory)
     project = factory.SubFactory(ProjectFactory)
-    state = SynchronizationStates.IN_SYNC
 
 
 class ExchangeTenantFactory(factory.DjangoModelFactory):
