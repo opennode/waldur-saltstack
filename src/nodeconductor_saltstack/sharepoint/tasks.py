@@ -1,12 +1,10 @@
 import binascii
 import os
 
-from celery import shared_task, chain
-
+from celery import shared_task
 from django.utils import timezone
 
 from nodeconductor.core.tasks import save_error_message, transition
-from nodeconductor.structure.tasks import sync_service_project_links
 
 from .models import SharepointTenant, SiteCollection, Template, User
 from ..saltstack.models import SaltStackServiceProjectLink
@@ -15,13 +13,10 @@ from ..saltstack.utils import sms_user_password
 
 @shared_task(name='nodeconductor.sharepoint.provision')
 def provision(tenant_uuid, **kwargs):
-    tenant = SharepointTenant.objects.get(uuid=tenant_uuid)
-    chain(
-        sync_service_project_links.s(tenant.service_project_link.to_string(), initial=True),
-        provision_tenant.si(tenant_uuid, **kwargs),
-    ).apply_async(
+    provision_tenant.si(tenant_uuid, **kwargs).apply_async(
         link=set_online.si(tenant_uuid),
-        link_error=set_erred.si(tenant_uuid))
+        link_error=set_erred.si(tenant_uuid)
+    )
 
 
 @shared_task(name='nodeconductor.sharepoint.destroy')
