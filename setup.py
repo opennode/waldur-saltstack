@@ -17,7 +17,7 @@ tests_require = [
 ]
 
 install_requires = [
-    'nodeconductor>0.89.0',
+    'nodeconductor>0.91.0',
 ]
 
 # RPM installation does not need oslo, cliff and stevedore libs -

@@ -7,7 +7,7 @@ import django_fsm
 import nodeconductor.core.models
 import nodeconductor.core.validators
 import django.db.models.deletion
-import nodeconductor.logging.log
+import nodeconductor.logging.loggers
 import uuidfield.fields
 import model_utils.fields
 
@@ -42,6 +42,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.core.models.DescendantMixin, nodeconductor.logging.log.LoggableMixin, models.Model),
+            bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.core.models.DescendantMixin, nodeconductor.logging.loggers.LoggableMixin, models.Model),
         ),
     ]
