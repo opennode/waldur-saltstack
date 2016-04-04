@@ -5,7 +5,7 @@ from django.db import models, migrations
 import django_fsm
 import nodeconductor.core.models
 import nodeconductor.core.validators
-import nodeconductor.logging.log
+import nodeconductor.logging.loggers
 import uuidfield.fields
 
 
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.logging.log.LoggableMixin, models.Model),
+            bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.logging.loggers.LoggableMixin, models.Model),
         ),
         migrations.CreateModel(
             name='SaltStackServiceProjectLink',
@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'SaltStack service project link',
                 'verbose_name_plural': 'SaltStack service project links',
             },
-            bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.core.models.DescendantMixin, nodeconductor.logging.log.LoggableMixin, models.Model),
+            bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.core.models.DescendantMixin, nodeconductor.logging.loggers.LoggableMixin, models.Model),
         ),
         migrations.AddField(
             model_name='saltstackservice',
