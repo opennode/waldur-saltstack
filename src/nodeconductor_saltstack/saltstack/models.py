@@ -64,7 +64,7 @@ class SaltStackServiceProjectLink(structure_models.ServiceProjectLink):
         sharepoint_tenant_number = CounterQuotaField(
             target_models=_get_sharepoint_tenant_model,
             path_to_scope='service_project_link',
-            default_limit=2,
+            default_limit=-1,
         )
         exchange_tenant_number = CounterQuotaField(
             target_models=_get_exchange_tenant_model,
