@@ -21,6 +21,10 @@ class SaltStackService(structure_models.Service):
     def get_url_name(cls):
         return 'saltstack'
 
+    class Meta(structure_models.Service.Meta):
+        verbose_name = 'SaltStack service'
+        verbose_name_plural = 'SaltStack service'
+
 
 # to avoid circular imports
 def _get_sharepoint_tenant_model():
