@@ -4,7 +4,8 @@ from __future__ import unicode_literals
 from django.db import models, migrations
 import django_fsm
 import nodeconductor.core.models
-import nodeconductor.logging.log
+import nodeconductor.core.validators
+import nodeconductor.logging.loggers
 import uuidfield.fields
 
 
@@ -19,7 +20,7 @@ class Migration(migrations.Migration):
             name='SaltStackService',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.CharField(max_length=150, verbose_name='name')),
+                ('name', models.CharField(max_length=150, verbose_name='name', validators=[nodeconductor.core.validators.validate_name])),
                 ('uuid', uuidfield.fields.UUIDField(unique=True, max_length=32, editable=False, blank=True)),
                 ('available_for_all', models.BooleanField(default=False, help_text='Service will be automatically added to all customers projects if it is available for all')),
                 ('customer', models.ForeignKey(to='structure.Customer')),
@@ -27,7 +28,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.logging.log.LoggableMixin, models.Model),
+            bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.logging.loggers.LoggableMixin, models.Model),
         ),
         migrations.CreateModel(
             name='SaltStackServiceProjectLink',
@@ -40,8 +41,10 @@ class Migration(migrations.Migration):
             ],
             options={
                 'abstract': False,
+                'verbose_name': 'SaltStack service project link',
+                'verbose_name_plural': 'SaltStack service project links',
             },
-            bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.core.models.DescendantMixin, nodeconductor.logging.log.LoggableMixin, models.Model),
+            bases=(nodeconductor.core.models.SerializableAbstractMixin, nodeconductor.core.models.DescendantMixin, nodeconductor.logging.loggers.LoggableMixin, models.Model),
         ),
         migrations.AddField(
             model_name='saltstackservice',

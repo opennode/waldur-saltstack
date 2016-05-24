@@ -1,10 +1,24 @@
-from rest_framework import status, viewsets, exceptions
-from rest_framework.response import Response
+from functools import wraps
+from django.db import IntegrityError, transaction
+from rest_framework import exceptions, filters, permissions, viewsets
 
+from nodeconductor.core.exceptions import IncorrectStateException
+from nodeconductor.structure.filters import GenericRoleFilter
+from nodeconductor.structure.models import Resource
 from nodeconductor.structure import views as structure_views
 
 from .backend import SaltStackBackendError
 from . import models, serializers
+
+
+def track_exceptions(view_fn):
+    @wraps(view_fn)
+    def wrapped(*args, **kwargs):
+        try:
+            return view_fn(*args, **kwargs)
+        except (SaltStackBackendError, IntegrityError) as e:
+            raise exceptions.APIException(e.traceback_str)
+    return wrapped
 
 
 class SaltStackServiceViewSet(structure_views.BaseServiceViewSet):
@@ -17,47 +31,69 @@ class SaltStackServiceProjectLinkViewSet(structure_views.BaseServiceProjectLinkV
     serializer_class = serializers.ServiceProjectLinkSerializer
 
 
-class BasePropertyViewSet(viewsets.ViewSet):
+class BasePropertyViewSet(viewsets.ModelViewSet):
+    queryset = NotImplemented
     serializer_class = NotImplemented
-    api_name = NotImplemented
+    lookup_field = 'uuid'
+    permission_classes = (permissions.IsAuthenticated, permissions.DjangoObjectPermissions)
+    filter_backends = (GenericRoleFilter, filters.DjangoFilterBackend,)
+    backend_name = NotImplemented
 
-    @property
-    def api(self):
-        backend = self.resource.get_backend()
-        return getattr(backend, self.api_name)
+    def get_backend(self, tenant):
+        backend = tenant.get_backend()
+        return getattr(backend, self.backend_name)
 
-    def get_serializer(self, *args, **kwargs):
-        kwargs['context'] = {'resource': self.resource, 'request': self.request}
-        return self.serializer_class(*args, **kwargs)
+    def pre_create(self, serializer):
+        pass
 
-    def list(self, request, **kwargs):
-        try:
-            serializer = self.get_serializer(self.api.list(), many=True)
-            return Response(serializer.data)
-        except SaltStackBackendError as e:
-            raise exceptions.APIException(e)
+    def post_create(self, obj, serializer, backend_obj):
+        pass
 
-    def retrieve(self, request, pk=None, **kwargs):
-        user = self.api.get(pk)
-        if user is None:
-            raise exceptions.NotFound
-        return Response(self.get_serializer(user).data)
+    def pre_update(self, obj, serializer):
+        pass
 
-    def destroy(self, request, pk=None, **kwargs):
-        try:
-            self.api.delete(id=pk)
-        except SaltStackBackendError as e:
-            raise exceptions.APIException(e)
-        return Response({'status': 'Deleted'}, status=status.HTTP_202_ACCEPTED)
+    def post_update(self, obj, serializer):
+        pass
 
-    def create(self, request, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def post_destroy(self, obj):
+        pass
 
-        try:
-            user = self.api.create(**serializer.validated_data)
-            user_data = self.get_serializer(user).data
-        except SaltStackBackendError as e:
-            raise exceptions.APIException(e)
+    @track_exceptions
+    def perform_create(self, serializer):
+        tenant = serializer.validated_data['tenant']
+        backend = self.get_backend(tenant)
 
-        return Response(user_data, status=status.HTTP_201_CREATED)
+        if tenant.state != Resource.States.ONLINE:
+            raise IncorrectStateException(
+                "Tenant must be in stable state to perform this operation")
+
+        valid_args = [arg for arg in backend.Methods.create['input'] if arg != 'tenant']
+        backend_obj = backend.create(
+            **{k: v for k, v in serializer.validated_data.items() if k in valid_args and v is not None})
+
+        with transaction.atomic():
+            self.pre_create(serializer)
+            obj = serializer.save(backend_id=backend_obj.id)
+            self.post_create(obj, serializer, backend_obj)
+
+    @track_exceptions
+    def perform_update(self, serializer):
+        obj = self.get_object()
+        backend = self.get_backend(obj.tenant)
+        changed = {
+            k: v for k, v in serializer.validated_data.items()
+            if v and k in backend.Methods.change['input'] and getattr(obj, k) != v}
+        if changed:
+            backend.change(id=obj.backend_id, **changed)
+
+        with transaction.atomic():
+            self.pre_update(obj, serializer)
+            serializer.save()
+            self.post_update(obj, serializer)
+
+    @track_exceptions
+    def perform_destroy(self, obj):
+        backend = self.get_backend(obj.tenant)
+        backend.delete(id=obj.backend_id)
+        obj.delete()
+        self.post_destroy(obj)

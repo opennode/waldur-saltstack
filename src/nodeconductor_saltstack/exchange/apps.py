@@ -7,16 +7,16 @@ from nodeconductor.template import TemplateRegistry
 
 class SaltStackConfig(AppConfig):
     name = 'nodeconductor_saltstack.exchange'
-    verbose_name = "NodeConductor SaltStack Exchange"
+    verbose_name = 'SaltStack Exchange'
     service_name = 'SaltStack'
 
     def ready(self):
         from .cost_tracking import SaltStackCostTrackingBackend
         CostTrackingRegister.register(self.label, SaltStackCostTrackingBackend)
 
-        from .backend import ExchangeBackend
-        SupportedServices.register_backend(ExchangeBackend)
-
         # template
         from .template import TenantProvisionTemplateForm
         TemplateRegistry.register(TenantProvisionTemplateForm)
+
+        from .backend import ExchangeBackend
+        SupportedServices.register_backend(ExchangeBackend, nested=True)
