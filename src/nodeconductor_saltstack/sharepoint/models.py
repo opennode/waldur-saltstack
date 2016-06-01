@@ -11,7 +11,8 @@ from nodeconductor.structure import models as structure_models
 from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
 
 
-class SharepointTenant(QuotaModelMixin, structure_models.PublishableResource, structure_models.PaidResource):
+class SharepointTenant(QuotaModelMixin, structure_models.PublishableResource, structure_models.ApplicationMixin,
+                       structure_models.PaidResource):
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='sharepoint_tenants', on_delete=models.PROTECT)
 
