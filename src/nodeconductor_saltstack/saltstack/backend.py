@@ -7,6 +7,8 @@ import functools
 
 from django.utils import six
 from nodeconductor.structure import ServiceBackend, ServiceBackendError
+
+from . import models
 from .. import __version__
 
 
@@ -104,6 +106,26 @@ class SaltStackBaseBackend(six.with_metaclass(SaltStackMetaclass, ServiceBackend
             if raise_exception:
                 six.reraise(SaltStackBackendError, e)
             return False
+
+    def get_stats(self):
+        links = models.SaltStackServiceProjectLink.objects.filter(
+            service_project_link__service__settings=self.settings)
+        quota_names = ('exchange_storage', 'sharepoint_storage')
+        quota_values = models.SaltStackServiceProjectLink.get_sum_of_quotas_as_dict(
+            links, quota_names=quota_names, fields=['limit'])
+        quota_stats = {
+            'exchange_storage_quota': quota_values.get('exchange_storage', -1.0),
+            'sharepoint_storage_quota': quota_values.get('sharepoint_storage', -1.0),
+        }
+
+        stats = {}
+        for quota in self.settings.quotas.all():
+            if quota.name not in quota_names:
+                continue
+            stats[quota.name] = quota.limit
+            stats[quota.name + '_usage'] = quota.usage
+        stats.update(quota_stats)
+        return stats
 
 
 class SaltStackAPI(object):
