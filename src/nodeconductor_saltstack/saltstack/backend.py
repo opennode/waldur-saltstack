@@ -109,7 +109,7 @@ class SaltStackBaseBackend(six.with_metaclass(SaltStackMetaclass, ServiceBackend
 
     def get_stats(self):
         links = models.SaltStackServiceProjectLink.objects.filter(
-            service_project_link__service__settings=self.settings)
+            service__settings=self.settings)
         quota_names = ('exchange_storage', 'sharepoint_storage')
         quota_values = models.SaltStackServiceProjectLink.get_sum_of_quotas_as_dict(
             links, quota_names=quota_names, fields=['limit'])
