@@ -1,6 +1,15 @@
 SaltStack service
 =================
 
+SaltStack service settings
+--------------------------
+
+SaltStack service settings have additional quotas:
+
+- exchange_storage - total disk space for Exchange installation.
+- sharepoint_storage - total disk space for SharePoint installation.
+- exchange_tenant_count - count of all created exchange tenants.
+
 SaltStack services list
 -----------------------
 
@@ -21,7 +30,7 @@ Request parameters:
 
 The following rules for generation of the service settings are used:
 
- - backend_url - URL for slat master API (required, e.g.: http://salt-master.example.com:8080);
+ - backend_url - URL for SaltStack master API (required, e.g.: http://salt-master.example.com:8080);
  - password - Secret key;
 
 Example of a request:
@@ -67,9 +76,20 @@ To remove a link, issue DELETE to url of the corresponding connection as staff u
 
 Project-service connection list
 -------------------------------
-To get a list of connections between a project and an oracle service, run GET against
+To get a list of connections between a project and an SaltStack service, run GET against
 **/api/saltstack-service-project-link/** as authenticated user. Note that a user can only see connections of a project
 where a user has a role.
+
+
+Service-project-link quotas
+---------------------------
+
+ - exchange_storage - limitation for all mailbox sizes of Exchange tenants.
+ - sharepoint_storage - limitation for storage sizes of all SharePoint tenants.
+ - exchange_tenant_number - number of Exchange tenants.
+ - sharepoint_tenant_number - number of SharePoint tenants.
+ - site_collection_count - count of SharePoint site collections.
+ - mailbox_count - count of Exchange mailboxes(users and conference rooms).
 
 
 MS Exchange

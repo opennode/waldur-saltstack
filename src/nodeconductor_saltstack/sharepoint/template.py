@@ -1,18 +1,14 @@
-from django import forms
-
-from rest_framework import serializers
-
-from nodeconductor.template.forms import TemplateForm
-from nodeconductor.template.serializers import BaseTemplateSerializer
+from nodeconductor.template.forms import ResourceTemplateForm
+from nodeconductor.template.serializers import BaseResourceTemplateSerializer
 from nodeconductor_saltstack.sharepoint import models
 
 
-class SiteProvisionTemplateForm(TemplateForm):
+class SharepointTenantTemplateForm(ResourceTemplateForm):
 
-    class Meta(TemplateForm.Meta):
-        fields = TemplateForm.Meta.fields
+    class Meta(ResourceTemplateForm.Meta):
+        fields = ResourceTemplateForm.Meta.fields
 
-    class Serializer(BaseTemplateSerializer):
+    class Serializer(BaseResourceTemplateSerializer):
         pass
 
     @classmethod
@@ -20,5 +16,5 @@ class SiteProvisionTemplateForm(TemplateForm):
         return cls.Serializer
 
     @classmethod
-    def get_resource_model(cls):
-        return models.Site
+    def get_model(cls):
+        return models.SharepointTenant

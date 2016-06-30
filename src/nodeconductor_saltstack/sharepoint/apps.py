@@ -7,16 +7,16 @@ from nodeconductor.template import TemplateRegistry
 
 class SaltStackConfig(AppConfig):
     name = 'nodeconductor_saltstack.sharepoint'
-    verbose_name = "NodeConductor SaltStack SharePoint"
+    verbose_name = 'SaltStack SharePoint'
     service_name = 'SaltStack'
 
     def ready(self):
         from .cost_tracking import SaltStackCostTrackingBackend
         CostTrackingRegister.register(self.label, SaltStackCostTrackingBackend)
 
-        from .backend import SharepointBackend
-        SupportedServices.register_backend(SharepointBackend)
-
         # template
-        from .template import SiteProvisionTemplateForm
-        TemplateRegistry.register(SiteProvisionTemplateForm)
+        from .template import SharepointTenantTemplateForm
+        TemplateRegistry.register(SharepointTenantTemplateForm)
+
+        from .backend import SharepointBackend
+        SupportedServices.register_backend(SharepointBackend, nested=True)
