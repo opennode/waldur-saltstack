@@ -7,7 +7,7 @@ License: Copyright 2015 OpenNode LLC.  All rights reserved.
 Url: http://nodeconductor.com
 Source0: %{name}-%{version}.tar.gz
 
-Requires: nodeconductor >= 0.90.0
+Requires: nodeconductor > 0.102.2
 
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot

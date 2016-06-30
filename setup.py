@@ -17,7 +17,7 @@ tests_require = [
 ]
 
 install_requires = [
-    'nodeconductor>=0.101.2',
+    'nodeconductor>0.102.2',
 ]
 
 
