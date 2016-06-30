@@ -4,6 +4,7 @@ from django.db import models
 from model_utils import FieldTracker
 
 from nodeconductor.core.models import DescendantMixin
+from nodeconductor.cost_tracking.models import PayableMixin
 from nodeconductor.quotas.fields import QuotaField, CounterQuotaField, LimitAggregatorQuotaField
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.structure import models as structure_models
@@ -12,7 +13,7 @@ from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
 
 
 class SharepointTenant(QuotaModelMixin, structure_models.PublishableResource, structure_models.ApplicationMixin,
-                       structure_models.PaidResource):
+                       PayableMixin):
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='sharepoint_tenants', on_delete=models.PROTECT)
 
