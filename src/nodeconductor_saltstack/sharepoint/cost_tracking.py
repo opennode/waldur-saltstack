@@ -1,36 +1,33 @@
-from django.contrib.contenttypes.models import ContentType
+from nodeconductor.cost_tracking import CostTrackingRegister, ConsumableItem, CostTrackingStrategy
 
-from nodeconductor.cost_tracking import CostTrackingBackend
-from nodeconductor.cost_tracking.models import DefaultPriceListItem
-
-from .models import SharepointTenant
+from . import models
 
 
-SUPPORT = 'support'
-STORAGE = 'storage'
-STORAGE_KEY = '1 MB'
-SUPPORT_KEY = 'premium'
+class SharepointTenantStrategy(CostTrackingStrategy):
+    resource_class = models.SharepointTenant
 
+    class Types(object):
+        SUPPORT = 'support'
+        STORAGE = 'storage'
 
-class SaltStackCostTrackingBackend(CostTrackingBackend):
-    NUMERICAL = [STORAGE]
-
-    @classmethod
-    def get_default_price_list_items(cls):
-        content_type = ContentType.objects.get_for_model(SharepointTenant)
-
-        yield DefaultPriceListItem(
-            item_type=STORAGE, key=STORAGE_KEY,
-            resource_content_type=content_type)
-
-        yield DefaultPriceListItem(
-            item_type=SUPPORT, key=SUPPORT_KEY,
-            resource_content_type=content_type)
+    class Keys(object):
+        STORAGE = '1 GB'
+        SUPPORT = 'premium'
 
     @classmethod
-    def get_used_items(cls, tenant):
-        storage = tenant.quotas.get(name=SharepointTenant.Quotas.storage).usage
+    def get_consumable_items(cls):
         return [
-            (STORAGE, STORAGE_KEY, storage),
-            (SUPPORT, SUPPORT_KEY, 1),
+            ConsumableItem(item_type=cls.Types.STORAGE, key=cls.Keys.STORAGE, name='1 GB of storage', units='GB'),
+            ConsumableItem(item_type=cls.Types.SUPPORT, key=cls.Keys.SUPPORT, name='Support: premium'),
         ]
+
+    @classmethod
+    def get_configuration(cls, tenant):
+        storage = tenant.quotas.get(name=models.SharepointTenant.Quotas.mailbox_size).usage
+        return {
+            ConsumableItem(item_type=cls.Types.STORAGE, key=cls.Keys.STORAGE): float(storage) / 1024,
+            ConsumableItem(item_type=cls.Types.SUPPORT, key=cls.Keys.SUPPORT): 1,
+        }
+
+
+CostTrackingRegister.register_strategy(SharepointTenantStrategy)
