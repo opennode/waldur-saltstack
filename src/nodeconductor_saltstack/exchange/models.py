@@ -6,7 +6,6 @@ from gm2m import GM2MField
 from model_utils import FieldTracker
 
 from nodeconductor.core.models import DescendantMixin
-from nodeconductor.cost_tracking.models import PayableMixin
 from nodeconductor.quotas.models import QuotaModelMixin
 from nodeconductor.quotas.fields import QuotaLimitField, QuotaField, CounterQuotaField, LimitAggregatorQuotaField
 from nodeconductor.structure import models as structure_models
@@ -15,8 +14,7 @@ from ..saltstack.models import SaltStackServiceProjectLink, SaltStackProperty
 from .validators import domain_validator
 
 
-class ExchangeTenant(QuotaModelMixin, structure_models.PublishableResource, structure_models.ApplicationMixin,
-                     PayableMixin):
+class ExchangeTenant(QuotaModelMixin, structure_models.PublishableResource, structure_models.ApplicationMixin):
     service_project_link = models.ForeignKey(
         SaltStackServiceProjectLink, related_name='exchange_tenants', on_delete=models.PROTECT)
     domain = models.CharField(max_length=255, validators=[domain_validator])
