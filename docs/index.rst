@@ -33,7 +33,7 @@ Endpoints
 License
 -------
 
-NodeConductor SaltStack plugin is open-source under Apache v2 license.
+NodeConductor SaltStack plugin is open-source under MIT license.
 
 Indices and tables
 ==================

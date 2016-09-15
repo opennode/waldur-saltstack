@@ -1,9 +1,9 @@
 Name: nodeconductor-saltstack
 Summary: SaltStack plugin for NodeConductor
 Group: Development/Libraries
-Version: 0.3.0
+Version: 0.4.0
 Release: 1.el7
-License: Copyright 2015 OpenNode LLC.  All rights reserved.
+License: MIT
 Url: http://nodeconductor.com
 Source0: %{name}-%{version}.tar.gz
 
@@ -34,6 +34,9 @@ rm -rf %{buildroot}
 %defattr(-,root,root)
 
 %changelog
+* Thu Sep 15 2016 Jenkins <jenkins@opennodecloud.com> - 0.4.0-1.el7
+- New upstream release
+
 * Wed Aug 17 2016 Jenkins <jenkins@opennodecloud.com> - 0.3.0-1.el7
 - New upstream release
 
