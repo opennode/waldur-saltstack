@@ -1,6 +1,7 @@
 import django_filters
 
 from nodeconductor.core import filters as core_filters
+from nodeconductor.core.filters import UUIDFilter
 from nodeconductor.structure.filters import BaseResourceFilter
 
 from . import models
@@ -12,7 +13,7 @@ class UserFilter(django_filters.FilterSet):
     email = django_filters.CharFilter(lookup_type='icontains')
     first_name = django_filters.CharFilter(lookup_type='icontains')
     last_name = django_filters.CharFilter(lookup_type='icontains')
-    tenant_uuid = django_filters.CharFilter(name='tenant__uuid')
+    tenant_uuid = UUIDFilter(name='tenant__uuid')
     tenant = core_filters.URLFilter(
         view_name='sharepoint-tenants-detail',
         name='tenant__uuid',
@@ -57,11 +58,11 @@ class SiteCollectionFilter(django_filters.FilterSet):
     name = django_filters.CharFilter(lookup_type='icontains')
     description = django_filters.CharFilter(lookup_type='icontains')
     access_url = django_filters.CharFilter(lookup_type='icontains')
-    user_uuid = django_filters.CharFilter(name='user__uuid')
+    user_uuid = UUIDFilter(name='user__uuid')
     template_code = django_filters.CharFilter(lookup_type='icontains', name='template__code')
     template_name = django_filters.CharFilter(lookup_type='icontains', name='template__name')
-    template_uuid = django_filters.CharFilter(name='template__uuid')
-    tenant_uuid = django_filters.CharFilter(name='user__tenant__uuid')
+    template_uuid = UUIDFilter(name='template__uuid')
+    tenant_uuid = UUIDFilter(name='user__tenant__uuid')
     type = django_filters.MultipleChoiceFilter(
         choices=models.SiteCollection.Types.CHOICES,
     )

@@ -1,5 +1,6 @@
 import django_filters
 
+from nodeconductor.core.filters import UUIDFilter
 from nodeconductor.structure.filters import BaseResourceFilter
 
 from . import models
@@ -19,7 +20,7 @@ class ContactFilter(django_filters.FilterSet):
     email = django_filters.CharFilter(lookup_type='icontains')
     first_name = django_filters.CharFilter(lookup_type='icontains')
     last_name = django_filters.CharFilter(lookup_type='icontains')
-    tenant_uuid = django_filters.CharFilter(name='tenant__uuid')
+    tenant_uuid = UUIDFilter(name='tenant__uuid')
 
     class Meta(object):
         model = models.Contact
@@ -38,7 +39,7 @@ class ConferenceRoomFilter(django_filters.FilterSet):
     phone = django_filters.CharFilter(lookup_type='icontains')
     location = django_filters.CharFilter(lookup_type='icontains')
     tenant_domain = django_filters.CharFilter(name='tenant__domain', lookup_type='icontains')
-    tenant_uuid = django_filters.CharFilter(name='tenant__uuid')
+    tenant_uuid = UUIDFilter(name='tenant__uuid')
 
     class Meta(object):
         model = models.ConferenceRoom
@@ -56,7 +57,7 @@ class GroupFilter(django_filters.FilterSet):
     name = django_filters.CharFilter(lookup_type='icontains')
     username = django_filters.CharFilter(lookup_type='icontains')
     tenant_domain = django_filters.CharFilter(name='tenant__domain', lookup_type='icontains')
-    tenant_uuid = django_filters.CharFilter(name='tenant__uuid')
+    tenant_uuid = UUIDFilter(name='tenant__uuid')
 
     class Meta(object):
         model = models.Group
@@ -74,7 +75,7 @@ class UserFilter(django_filters.FilterSet):
     first_name = django_filters.CharFilter(lookup_type='icontains')
     last_name = django_filters.CharFilter(lookup_type='icontains')
     username = django_filters.CharFilter(lookup_type='icontains')
-    tenant_uuid = django_filters.CharFilter(name='tenant__uuid')
+    tenant_uuid = UUIDFilter(name='tenant__uuid')
 
     class Meta(object):
         model = models.User
