@@ -16,13 +16,13 @@ tests_require = [
 ]
 
 install_requires = [
-    'nodeconductor>0.105.0',
+    'nodeconductor>=0.107.0',
 ]
 
 
 setup(
     name='nodeconductor-saltstack',
-    version='0.3.0',
+    version='0.4.0',
     author='OpenNode Team',
     author_email='info@opennodecloud.com',
     url='http://nodeconductor.com',

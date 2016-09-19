@@ -8,7 +8,7 @@ import nodeconductor.core.models
 import nodeconductor.core.validators
 import django.db.models.deletion
 import nodeconductor.logging.loggers
-import uuidfield.fields
+import nodeconductor.core.fields
 import model_utils.fields
 
 
@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ('modified', model_utils.fields.AutoLastModifiedField(default=django.utils.timezone.now, verbose_name='modified', editable=False)),
                 ('description', models.CharField(max_length=500, verbose_name='description', blank=True)),
                 ('name', models.CharField(max_length=150, verbose_name='name', validators=[nodeconductor.core.validators.validate_name])),
-                ('uuid', uuidfield.fields.UUIDField(unique=True, max_length=32, editable=False, blank=True)),
+                ('uuid', nodeconductor.core.fields.UUIDField()),
                 ('error_message', models.TextField(blank=True)),
                 ('billing_backend_id', models.CharField(help_text='ID of a resource in backend', max_length=255, blank=True)),
                 ('last_usage_update_time', models.DateTimeField(null=True, blank=True)),
